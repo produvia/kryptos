@@ -12,7 +12,8 @@ requires = [
     'matplotlib',
     'numpy',
     'pandas',
-    'TA-Lib'
+    'TA-Lib',
+    'Click'
 ]
 
 
@@ -40,7 +41,11 @@ setup(
     # license='MIT',
     packages=find_packages(base_dir),
     install_requires=requires,
-    # entry_points={'console_scripts': console_scripts},
+    entry_points='''
+        [console_scripts]
+        benchmark=crypto_platform.scripts.run_benchmark:benchmark
+        compare_all=crypto_platform.scripts.run_strategies:run
+    ''',
     zip_safe=False,
 )
 

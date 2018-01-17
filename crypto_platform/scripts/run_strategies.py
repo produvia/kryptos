@@ -11,9 +11,10 @@ from catalyst.api import record
 
 from logbook import Logger
 from crypto_platform.utils import load, outputs, viz
-from config import CONFIG
+from crypto_platform.config import CONFIG
 
 import matplotlib.pyplot as plt
+import click
 
 log = Logger ('Strategy Runner')
 
@@ -34,9 +35,9 @@ def record_data(context, data):
     record(price=price, cash=context.portfolio.cash)
 
 
-
+@click.command()
 def run():
-    for algo in load.single_asset_algos():
+    for algo in load.load_algos():
         if algo is None:
             continue
         log.info('Running {}'.format(algo.NAMESPACE))

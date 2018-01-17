@@ -9,7 +9,7 @@ class CONFIG(object):
     BUY_EXHANGE = 'bitfinex'
     SELL_EXCHANGE = 'bittrex'
     BASE_CURRENCY = 'usd'
-    START = pd.to_datetime('2016-01-1', utc=True)
+    START = pd.to_datetime('2016-04-10', utc=True)
     END = pd.to_datetime('2018-01-2', utc=True)
     PERF_DIR = os.path.abspath('../performance_results')
 
