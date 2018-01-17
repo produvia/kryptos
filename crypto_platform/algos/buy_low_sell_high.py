@@ -14,7 +14,7 @@ from catalyst.exchange.utils.stats_utils import get_pretty_stats
 from catalyst.utils.run_algo import run_algorithm
 
 CONFIG = None
-NAMESPACE = 'buy_the_dip_live'
+NAMESPACE = 'buy_low_sell_high'
 log = Logger(NAMESPACE)
 
 
