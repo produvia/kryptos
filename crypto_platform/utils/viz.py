@@ -29,3 +29,25 @@ def plot_portfolio(context, perf, algo_name):
     start, end = ax.get_ylim()
     ax.yaxis.set_ticks(np.arange(start, end, (end - start) / 5))
 
+
+def plot_percent_return(context, results, algo_name=None, share_x=None):
+    title = '{}/Price, Buys, Sells'.format(algo_name)
+    # if share_x:
+    #     ax1 = plt.subplot(221, sharex=share_x, title=title)
+    # else:
+    #     ax1 = plt.subplot(221)
+    ax1 = plt.subplot(411)
+    ax1.set_ylabel('Percent Return (%)')
+    res = results.loc[:, ['algorithm_period_return']]
+    ax1.plot(res, label=algo_name)
+    # results[[
+    #         'algorithm_period_return',
+    #         'benchmark_period_return',
+    #         ]].plot(ax=ax1)
+
+    return ax1
+
+def plot_benchmark(results):
+    ax1 = plt.subplot(411)
+    bench = results.loc[:, ['benchmark_period_return']]
+    ax1.plot(bench, label='benchmark_period_return')
