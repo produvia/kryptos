@@ -37,6 +37,7 @@ def initialize(context):
 
     # In our example, we're looking at Neo in Ether.
     context.market = symbol(CONFIG.ASSETS[0])
+    context.asset = symbol(CONFIG.ASSETS[0])
     context.base_price = None
     context.current_day = None
 

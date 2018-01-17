@@ -15,13 +15,14 @@ from catalyst.api import (
 )
 from catalyst.utils.run_algo import run_algorithm
 
+CONFIG = None
 NAMESPACE = 'rsi'
 log = Logger(NAMESPACE)
 
 
 def initialize(context):
     log.info('initializing algo')
-    context.asset = symbol('eth_btc')
+    context.asset = symbol(CONFIG.ASSETS[0])
     context.base_price = None
 
     context.MAX_HOLDINGS = 0.2

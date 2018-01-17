@@ -40,6 +40,10 @@ def get_algo(filename):
         algo_module = import_with_2(
             module_name, os.path.join(SINGLE_ALGOS, filename))
 
+    except AttributeError:
+        log.info('Skipping import of {}'.format(module_name))
+        return
+
     return algo_module
 
 
@@ -48,7 +52,7 @@ def load_algos(dir):
     algos = []
     log.info('Grabbing algos from {}'.format(dir))
     for f in os.listdir(dir):
-        if '__' not in f:
+        if '__' not in f and f[-3:] == '.py':
             algo = get_algo(f)
             algos.append(algo)
             log.info('Loaded {}'.format(algo.NAMESPACE))

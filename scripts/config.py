@@ -9,9 +9,17 @@ class CONFIG(object):
     BUY_EXHANGE = 'bitfinex'
     SELL_EXCHANGE = 'bittrex'
     BASE_CURRENCY = 'usd'
-    START = pd.to_datetime('2017-10-1', utc=True)
-    END = pd.to_datetime('2017-10-2', utc=True)
+    START = pd.to_datetime('2016-01-1', utc=True)
+    END = pd.to_datetime('2018-01-2', utc=True)
     PERF_DIR = os.path.abspath('../performance_results')
+
+    # For all trading pairs in the poloniex bundle, the default denomination
+    # currently supported by Catalyst is 1/1000th of a full coin. Use this
+    # constant to scale the price of up to that of a full coin if desired.
+    TICK_SIZE = 1
+    if BUY_EXHANGE == 'poloniex':
+        TICK_SIZE = 1000.0
+
 
 
 

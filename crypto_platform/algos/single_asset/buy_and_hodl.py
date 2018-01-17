@@ -28,8 +28,6 @@ from catalyst.api import (order_target_value, symbol, record,
 NAMESPACE = 'buy_and_hodl'
 CONFIG = None
 
-def set_up(config):
-    CONFIG = config
 
 
 def initialize(context):
