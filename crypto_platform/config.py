@@ -11,7 +11,7 @@ class CONFIG(object):
     BASE_CURRENCY = 'usd'
     START = pd.to_datetime('2016-04-10', utc=True)
     END = pd.to_datetime('2018-01-2', utc=True)
-    PERF_DIR = os.path.abspath('../performance_results')
+    PERF_DIR = os.path.abspath('./performance_results')
 
     # For all trading pairs in the poloniex bundle, the default denomination
     # currently supported by Catalyst is 1/1000th of a full coin. Use this
