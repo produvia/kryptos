@@ -69,7 +69,6 @@ def run(algo_name, metrics):
         load.ingest_exchange(CONFIG)
         log.info('Run completed for {}'.format(algo.NAMESPACE))
 
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=2)
     viz.show_plot()
 
 

@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
@@ -14,6 +13,11 @@ def show_plot():
         break
 
 
+def add_legend():
+    # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
+
+
 def plot_portfolio(context, perf, algo_name=None):
     # Get the base_currency that was passed as a parameter to the simulation
     exchange = list(context.exchanges.values())[0]
@@ -21,8 +25,6 @@ def plot_portfolio(context, perf, algo_name=None):
 
     # First chart: Plot portfolio value using base_currency
     ax = plt.subplot(211)
-    # ax.set_title(algo_name)
-    # ax.legend()
 
     val = perf.loc[:, ['portfolio_value']]
     ax.plot(val, label=algo_name)
@@ -64,7 +66,7 @@ def plot_metrics(context, results, metrics, algo_name=None):
 def plot_benchmark(results):
     ax = plt.subplot(311)
     bench = results.loc[:, ['benchmark_period_return']]
-    ax.plot(bench, label='benchmark_period_return')
+    ax.plot(bench, label='benchmark_period_return', linestyle='--')
 
 
 def plot_leverage(context, results, share_x=False):
