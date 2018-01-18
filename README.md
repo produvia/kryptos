@@ -37,7 +37,9 @@ Running `benchmark <algo_name>` will plot the percent return of a given algorith
 Running `metrics <algo_name>` will plot the specified performance metrics over the trading period.
 
 Metrics are specified via *config.py* or via CLI options.
+
 For example:
+
 `metrics sma_crossover -m sharpe -m sortino -m max_drawdown`
 
 Available metrics can be enabled/disabled via comments in *config.py*
