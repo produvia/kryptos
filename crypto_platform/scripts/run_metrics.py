@@ -47,7 +47,7 @@ def run(algo_name, metrics):
         algo.handle_data(context, data)
 
     def analyze(context, results):
-        viz.plot_metrics(context, results, CONFIG.METRICS)
+        viz.plot_metrics(context, results, CONFIG.METRICS, algo_name=algo.NAMESPACE)
 
     run_algorithm(
         capital_base=CONFIG.CAPITAL_BASE,

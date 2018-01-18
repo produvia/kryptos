@@ -1,12 +1,6 @@
-from os.path import basename
-import matplotlib.pyplot as plt
-from matplotlib.dates import date2num
-from matplotlib.finance import candlestick_ohlc
-import numpy as np
-import pandas as pd
-import talib as ta
-from logbook import Logger
 
+import matplotlib.pyplot as plt
+import numpy as np
 from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
 
 
@@ -39,34 +33,29 @@ def plot_portfolio(context, perf, algo_name=None):
     return ax
 
 
-def plot_percent_return(context,
-        results, algo_name=None, share_x=None):
+def plot_percent_return(context, results, algo_name=None, share_x=None):
     ax1 = plt.subplot(311)
     ax1.set_ylabel('Percent Return (%)')
     res = results.loc[:, ['algorithm_period_return']]
     ax1.plot(res, label=algo_name)
 
 
-def plot_metrics(context, results, metrics):
+def plot_metrics(context, results, metrics, algo_name=None):
     if len(metrics) == 0:
         metrics = list(results)
 
-    row_len = len(metrics) / 3
-    idx = 1
-    ax1 = plot_portfolio(context, results)
-    # start, end = ax1.get_xlim()
-    # ax1.xaxis.set_ticks(np.arange(start, end, (end - start) / 3))
+    fig, ax = plt.subplots(len(metrics), 1, sharex=True)
 
+    if algo_name is not None:
+        title = '{}\nPerformance Metrics'.format(algo_name.replace('_', ' ').title())
+        fig.suptitle(title)
 
-    for m in metrics:
-        print('Plotting {}'.format(m))
-        ax = plt.subplot(row_len, 3, idx, sharex=ax1)
+    for ax_m in zip(ax, metrics):
+        ax, m = ax_m
         ax.set_ylabel('{}'.format(m.replace('_', ' ').title()))
         res = results.loc[:, [m]]
         try:
             ax.plot(res)
-            idx += 1
-            # ax.set_xticklabels([])
         except ValueError:
             print('Skipping {} because not formatted as array'.format(m))
             print(type(res))
