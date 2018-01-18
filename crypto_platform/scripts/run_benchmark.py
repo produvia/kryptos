@@ -35,6 +35,7 @@ def benchmark(algo_name):
     def initialize(context):
         context.ASSET_NAME = CONFIG.ASSET
         context.asset = symbol(context.ASSET_NAME)
+        context.market = symbol(CONFIG.ASSET)
         algo.initialize(context)
 
         set_benchmark(context.asset)
@@ -46,6 +47,8 @@ def benchmark(algo_name):
     def analyze(context, results):
         viz.plot_percent_return(context, results, algo.NAMESPACE)
         viz.plot_benchmark(results)
+        output_file = outputs.get_output_file(algo, CONFIG) + '.csv'
+        log.info('Dumping result csv to {}'.format(output_file))
 
     run_algorithm(
         capital_base=CONFIG.CAPITAL_BASE,
@@ -63,7 +66,7 @@ def benchmark(algo_name):
     log.info('Run completed for {}'.format(algo.NAMESPACE))
 
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=2)
-    plt.show()
+    viz.show_plot()
 
 
 if __name__ == '__main__':

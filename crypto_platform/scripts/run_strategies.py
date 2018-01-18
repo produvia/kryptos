@@ -64,7 +64,7 @@ def run():
 
 
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=2)
-    plt.show()
+    viz.show_plot()
 
 
 if __name__ == '__main__':

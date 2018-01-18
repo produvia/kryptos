@@ -10,7 +10,17 @@ from logbook import Logger
 from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
 
 
-def plot_portfolio(context, perf, algo_name):
+def show_plot():
+    """Prevents crashing when scrolling on macOS"""
+    while True:
+        try:
+            plt.show()
+        except UnicodeDecodeError:
+            continue
+        break
+
+
+def plot_portfolio(context, perf, algo_name=None):
     # Get the base_currency that was passed as a parameter to the simulation
     exchange = list(context.exchanges.values())[0]
     base_currency = exchange.base_currency.upper()
@@ -26,26 +36,40 @@ def plot_portfolio(context, perf, algo_name):
     ax.set_ylabel('Portfolio Value\n({})'.format(base_currency))
     start, end = ax.get_ylim()
     ax.yaxis.set_ticks(np.arange(start, end, (end - start) / 5))
+    return ax
 
 
-def plot_percent_return(context, results, algo_name=None, share_x=None):
+def plot_percent_return(context,
+        results, algo_name=None, share_x=None):
     ax1 = plt.subplot(311)
     ax1.set_ylabel('Percent Return (%)')
     res = results.loc[:, ['algorithm_period_return']]
     ax1.plot(res, label=algo_name)
 
-def plot_metrics_over_time(results, metrics):
-    print(results.index)
-    print(results.columns)
-    row_len = len(metrics)
+
+def plot_metrics(context, results, metrics):
+    if len(metrics) == 0:
+        metrics = list(results)
+
+    row_len = len(metrics) / 3
     idx = 1
+    ax1 = plot_portfolio(context, results)
+    # start, end = ax1.get_xlim()
+    # ax1.xaxis.set_ticks(np.arange(start, end, (end - start) / 3))
+
 
     for m in metrics:
-        ax = plt.subplot(row_len, 1, idx)
+        print('Plotting {}'.format(m))
+        ax = plt.subplot(row_len, 3, idx, sharex=ax1)
         ax.set_ylabel('{}'.format(m.replace('_', ' ').title()))
         res = results.loc[:, [m]]
-        ax.plot(res)
-        idx += 1
+        try:
+            ax.plot(res)
+            idx += 1
+            # ax.set_xticklabels([])
+        except ValueError:
+            print('Skipping {} because not formatted as array'.format(m))
+            print(type(res))
 
 
 def plot_benchmark(results):

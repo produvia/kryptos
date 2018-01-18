@@ -20,123 +20,48 @@ class CONFIG(object):
     if BUY_EXHANGE == 'poloniex':
         TICK_SIZE = 1000.0
 
-
-
-
-ASSET_BY_SECTOR = {
-    "digital_currency": [
-        "ETH/BTC",
-        "BCH/BTC",
-        "MONA/BTC",
-        "DOGE/BTC",
-        "LTC/BTC",
-        "OMG/BTC",
-        "VTC/BTC",
-        "BTG/BTC",
-        "DGB/BTC"
-    ],
-    "identity": [
-        "CVC/BTC",
-        "FCT/BTC"
-    ],
-    "privacy": [
-        "XMR/BTC",
-        "XVG/BTC",
-        "DASH/BTC",
-        "KMD/BTC",
-        "ZEC/BTC",
-        "XZC/BTC",
-        "PIVX/BTC",
-        "BTCD/BTC",
-        "NAV/BTC",
-        "ENG/BTC",
-        "ZCL/BTC"
-    ],
-    "smart_contract": [
-        "NEO/BTC",
-        "QTUM/BTC",
-        "ADA/BTC",
-        "LSK/BTC",
-        "WAVES/BTC",
-        "STRAT/BTC",
-        "ETC/BTC",
-        "NXT/BTC",
-        "ARDR/BTC",
-        "DCR/BTC"
-    ],
-    "gambling": [
-        "FUN/BTC",
-        "EDG/BTC"
-    ],
-    "gaming": [
-        "MANA/BTC",
-        "GAME/BTC",
-        "VOX/BTC"
-    ],
-    "prediction": [
-        "REP/BTC",
-        "GNO/BTC"
-    ],
-    "lending": [
-        "RCN/BTC",
-        "SALT/BTC"
-    ],
-    "investment": [
-    ],
-    "payment": [
-        "MTL/BTC",
-        "XLM/BTC",
-        "XRP/BTC"
-    ],
-    "credit": [
-        "PAY/BTC",
-        "MCO/BTC"
-    ],
-    "medical": [
-        "PTOY/BTC"
-    ],
-    "ticketing": [
-        "TIX/BTC"
-    ],
-    "social": [
-        "SNT/BTC",
-        "SYS/BTC",
-        "RDD/BTC",
-        "BAY/BTC"
-    ],
-    "ad_tech": [
-        "BAT/BTC",
-        "ADX/BTC"
-    ],
-    "energy": [
-        "POWR/BTC"
-    ],
-    "insurance": [
-    ],
-    "exchanges": [
-        "BNT/BTC"
-    ],
-    "storage_computing": [
-        "SC/BTC",
-        "STORJ/BTC",
-        "GNT/BTC",
-        "MAID/BTC"
-    ],
-    "cannabis": [
-        "THC/BTC",
-        "DOPE/BTC"
-    ],
-    "alt_blockchain": [
-        "GBYTE/BTC"
-    ],
-    "connecting_tech": [
-        "ARK/BTC",
-        "XEM/BTC"
-    ],
-    "oracle": [
-    ],
-    "quantum_resistant": [
-        "NXS/BTC",
-        "QRL/BTC"
-    ]
-}
+    # Optionally set metrics here instead of with the metrics "-m" option
+    METRICS = [
+        'algo_volatility',
+    #     'algorithm_period_return',
+        # 'alpha',
+    #     'benchmark_period_return',
+    #     'benchmark_volatility',
+        # 'beta',
+    #     'capital_used',
+        # 'cash',
+    #     'ending_cash',
+    #     'ending_exposure',
+    #     'ending_value',
+        # 'excess_return',
+    #     'gross_leverage',
+    #     'information',
+        # 'leverage',
+    #     'long_exposure',
+    #     'long_value',
+    #     'longs_count',
+        'max_drawdown',
+    #     'max_leverage',
+    #     'net_leverage',
+    #     'orders',
+    #     'period_close',
+    #     'period_label',
+    #     'period_open',
+        'pnl',
+        'portfolio_value',
+    #     'positions',
+    #     'price',
+    #     'returns',
+        'sharpe',
+    #     'short_exposure',
+    #     'short_value',
+    #     'shorts_count',
+        'sortino',
+    #     'starting_cash',
+    #     'starting_exposure',
+    #     'starting_value',
+    #     'trading_days',
+    #     'transactions',
+    #     'treasury_period_return',
+    #     'volume'
+        ]
