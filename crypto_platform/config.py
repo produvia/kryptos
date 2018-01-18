@@ -6,8 +6,7 @@ class CONFIG(object):
     DATA_FREQUENCY = 'daily'
     HISTORY_FREQ = '1D'
     CAPITAL_BASE = 1000
-    BUY_EXHANGE = 'bitfinex'
-    SELL_EXCHANGE = 'bittrex'
+    BUY_EXCHANGE = 'bitfinex'
     BASE_CURRENCY = 'usd'
     START = pd.to_datetime('2016-04-10', utc=True)
     END = pd.to_datetime('2018-01-2', utc=True)
@@ -17,7 +16,7 @@ class CONFIG(object):
     # currently supported by Catalyst is 1/1000th of a full coin. Use this
     # constant to scale the price of up to that of a full coin if desired.
     TICK_SIZE = 1
-    if BUY_EXHANGE == 'poloniex':
+    if BUY_EXCHANGE == 'poloniex':
         TICK_SIZE = 1000.0
 
     # Optionally set metrics here instead of with the metrics "-m" option

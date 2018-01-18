@@ -1,5 +1,7 @@
 import os
 from logbook import Logger
+from catalyst.exchange.exchange_bundle import ExchangeBundle
+
 from crypto_platform import algos
 
 
@@ -51,3 +53,27 @@ def load_algos():
             algos.append(algo)
             log.info('Loaded {}'.format(algo.NAMESPACE))
     return algos
+
+
+def ingest_exchange(config):
+    """
+    Ingest data for the given exchange.
+    """
+
+    if config.BUY_EXCHANGE is None:
+        log.error("must specify an exchange name")
+
+    exchange_bundle = ExchangeBundle(config.BUY_EXCHANGE)
+
+    log.info('Ingesting exchange bundle {}...'.format(config.BUY_EXCHANGE))
+    exchange_bundle.ingest(
+        data_frequency=config.DATA_FREQUENCY,
+        include_symbols=[config.ASSET],
+        exclude_symbols=None,
+        start=config.START,
+        end=config.END,
+        show_progress=True,
+        show_breakdown=False,
+        show_report=False,
+        csv=None
+    )

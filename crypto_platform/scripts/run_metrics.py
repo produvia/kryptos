@@ -1,10 +1,10 @@
-import os
-import tempfile
 from catalyst import run_algorithm
 from catalyst.api import record, set_benchmark, symbol
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+
 
 from logbook import Logger
-from crypto_platform.utils import load, outputs, viz, metrics
+from crypto_platform.utils import load, outputs, viz
 from crypto_platform.config import CONFIG
 
 import matplotlib.pyplot as plt
@@ -35,6 +35,7 @@ def run(algo_name, metrics):
     algo.CONFIG = CONFIG
 
     def initialize(context):
+        log.info('Running {} using {} on {}'.format(algo.NAMESPACE, CONFIG.ASSET, CONFIG.BUY_EXCHANGE))
         context.ASSET_NAME = CONFIG.ASSET
         context.asset = symbol(context.ASSET_NAME)
         context.market = symbol(CONFIG.ASSET)
@@ -49,20 +50,24 @@ def run(algo_name, metrics):
     def analyze(context, results):
         viz.plot_metrics(context, results, CONFIG.METRICS, algo_name=algo.NAMESPACE)
 
-    run_algorithm(
-        capital_base=CONFIG.CAPITAL_BASE,
-        data_frequency=CONFIG.DATA_FREQUENCY,
-        initialize=initialize,
-        handle_data=handle_data,
-        analyze=analyze,
-        exchange_name=CONFIG.BUY_EXHANGE,
-        algo_namespace=algo.NAMESPACE,
-        base_currency=CONFIG.BASE_CURRENCY,
-        start=CONFIG.START,
-        end=CONFIG.END,
-        output=outputs.get_output_file(algo, CONFIG) + '.p'
-    )
-    log.info('Run completed for {}'.format(algo.NAMESPACE))
+    try:
+        run_algorithm(
+            capital_base=CONFIG.CAPITAL_BASE,
+            data_frequency=CONFIG.DATA_FREQUENCY,
+            initialize=initialize,
+            handle_data=handle_data,
+            analyze=analyze,
+            exchange_name=CONFIG.BUY_EXCHANGE,
+            algo_namespace=algo.NAMESPACE,
+            base_currency=CONFIG.BASE_CURRENCY,
+            start=CONFIG.START,
+            end=CONFIG.END,
+            output=outputs.get_output_file(algo, CONFIG) + '.p'
+        )
+    except PricingDataNotLoadedError:
+        log.info('Ingesting required exchange bundle data')
+        load.ingest_exchange(CONFIG)
+        log.info('Run completed for {}'.format(algo.NAMESPACE))
 
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), shadow=True, ncol=2)
     viz.show_plot()
