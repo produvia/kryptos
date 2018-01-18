@@ -1,12 +1,8 @@
 # From catalyst examples
-import pandas as pd
 import talib
 from logbook import Logger, INFO
 
-from catalyst import run_algorithm
-from catalyst.api import symbol, record
-from catalyst.exchange.utils.stats_utils import get_pretty_stats, \
-    extract_transactions
+from catalyst.api import record
 
 CONFIG = None
 NAMESPACE = 'simple_loop'
@@ -16,7 +12,6 @@ log = Logger(NAMESPACE, level=INFO)
 
 def initialize(context):
     log.info('initializing')
-    context.asset = symbol(CONFIG.ASSET)
     context.base_price = None
 
 

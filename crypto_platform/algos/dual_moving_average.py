@@ -1,13 +1,8 @@
 # From catalyst examples
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 from logbook import Logger
-
-from catalyst import run_algorithm
-from catalyst.api import (record, symbol, order_target_percent,
+from catalyst.api import (record, order_target_percent,
                           get_open_orders)
-from catalyst.exchange.utils.stats_utils import extract_transactions
+
 
 CONFIG = None
 NAMESPACE = 'dual_moving_average'
@@ -16,7 +11,6 @@ log = Logger(NAMESPACE)
 
 def initialize(context):
     context.i = 0
-    context.asset = symbol(CONFIG.ASSET)
     context.base_price = None
 
 

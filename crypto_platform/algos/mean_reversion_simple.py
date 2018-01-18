@@ -3,23 +3,14 @@
 # For this example, we're going to write a simple momentum script.  When the
 # stock goes up quickly, we're going to buy; when it goes down quickly, we're
 # going to sell.  Hopefully we'll ride the waves.
-import os
-import tempfile
 import time
 
-import numpy as np
-import pandas as pd
 import talib
 from logbook import Logger
 
-from catalyst import run_algorithm
 from catalyst.api import symbol, record, order_target_percent, get_open_orders
-from catalyst.exchange.utils.stats_utils import extract_transactions
-# We give a name to the algorithm which Catalyst will use to persist its state.
-# In this example, Catalyst will create the `.catalyst/data/live_algos`
-# directory. If we stop and start the algorithm, Catalyst will resume its
-# state using the files included in the folder.
-from catalyst.utils.paths import ensure_directory
+
+
 
 CONFIG = None
 NAMESPACE = 'mean_reversion_simple'
@@ -37,7 +28,6 @@ def initialize(context):
 
     # In our example, we're looking at Neo in Ether.
     context.market = symbol(CONFIG.ASSET)
-    context.asset = symbol(CONFIG.ASSET)
     context.base_price = None
     context.current_day = None
 

@@ -1,7 +1,7 @@
 import os
 import tempfile
 from catalyst import run_algorithm
-from catalyst.api import record, set_benchmark
+from catalyst.api import record, set_benchmark, symbol
 
 from logbook import Logger
 from crypto_platform.utils import load, outputs, viz
@@ -33,7 +33,10 @@ def benchmark(algo_name):
     algo.CONFIG = CONFIG
 
     def initialize(context):
+        context.ASSET_NAME = CONFIG.ASSET
+        context.asset = symbol(context.ASSET_NAME)
         algo.initialize(context)
+
         set_benchmark(context.asset)
 
     def handle_data(context, data):

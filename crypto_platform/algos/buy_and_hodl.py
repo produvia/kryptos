@@ -17,11 +17,8 @@
 
 # From catalyst examples
 
-import pandas as pd
-import matplotlib.pyplot as plt
 
-from catalyst import run_algorithm
-from catalyst.api import (order_target_value, symbol, record,
+from catalyst.api import (order_target_value, record,
                           cancel_order, get_open_orders, )
 
 
@@ -29,15 +26,11 @@ NAMESPACE = 'buy_and_hodl'
 CONFIG = None
 
 
-
 def initialize(context):
-    context.ASSET_NAME = CONFIG.ASSET
     context.TARGET_HODL_RATIO = 0.8
     context.RESERVE_RATIO = 1.0 - context.TARGET_HODL_RATIO
 
     context.is_buying = True
-    context.asset = symbol(context.ASSET_NAME)
-
     context.i = 0
 
 
@@ -78,6 +71,3 @@ def handle_data(context, data):
         starting_cash=context.portfolio.starting_cash,
         leverage=context.account.leverage,
     )
-
-
-

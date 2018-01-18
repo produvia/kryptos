@@ -1,10 +1,7 @@
 # Description of a bear market by investopedia
 # http://www.investopedia.com/terms/b/bearmarket.asp?lgl=rira-baseline-vertical
 
-from catalyst.api import order_target_percent, record, symbol, set_benchmark
-from catalyst import run_algorithm
-import pandas as pd
-
+from catalyst.api import order_target_percent, record
 from logbook import Logger
 
 CONFIG = None
@@ -12,10 +9,6 @@ NAMESPACE = 'bear_market'
 log = Logger(NAMESPACE)
 
 def initialize(context):
-    context.ASSET_NAME = CONFIG.ASSET
-    context.asset = symbol(context.ASSET_NAME)
-    set_benchmark(context.asset)
-    
     # Start this trading algorithm when market is bullish
     context.i = 0
     context.IS_MARKET_BEAR = False

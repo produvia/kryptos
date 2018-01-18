@@ -19,11 +19,9 @@ from logbook import Logger
 from matplotlib.dates import date2num
 from matplotlib.finance import candlestick_ohlc
 
-from catalyst import run_algorithm
 from catalyst.api import (
     order,
     order_target_percent,
-    symbol,
 )
 from catalyst.exchange.utils.stats_utils import get_pretty_stats
 
@@ -33,9 +31,6 @@ log = Logger(NAMESPACE)
 
 def initialize(context):
     log.info('Starting TALib Simple Example')
-
-    context.ASSET_NAME = CONFIG.ASSET
-    context.asset = symbol(context.ASSET_NAME)
 
     context.ORDER_SIZE = 10
     context.SLIPPAGE_ALLOWED = 0.05

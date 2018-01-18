@@ -9,7 +9,6 @@ from logbook import Logger
 
 from catalyst.api import (
     order,
-    symbol,
     record,
     get_open_orders,
 )
@@ -22,7 +21,6 @@ log = Logger(NAMESPACE)
 
 def initialize(context):
     log.info('initializing algo')
-    context.asset = symbol(CONFIG.ASSET)
     context.base_price = None
 
     context.MAX_HOLDINGS = 0.2

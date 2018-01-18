@@ -1,17 +1,14 @@
 # From catalyst examples
 import talib
-import pandas as pd
 from logbook import Logger
 
 from catalyst.api import (
     order,
     order_target_percent,
-    symbol,
     record,
     get_open_orders,
 )
-from catalyst.exchange.utils.stats_utils import get_pretty_stats
-from catalyst.utils.run_algo import run_algorithm
+
 
 CONFIG = None
 NAMESPACE = 'buy_low_sell_high'
@@ -19,16 +16,11 @@ log = Logger(NAMESPACE)
 
 
 def initialize(context):
-    log.info('initializing algo')
-    context.ASSET_NAME = CONFIG.ASSET
-    context.asset = symbol(context.ASSET_NAME)
-
     context.TARGET_POSITIONS = 30
     context.PROFIT_TARGET = 0.1
     context.SLIPPAGE_ALLOWED = 0.02
 
     context.errors = []
-    pass
 
 
 def _handle_data(context, data):
