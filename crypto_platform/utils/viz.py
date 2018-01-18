@@ -54,7 +54,7 @@ def plot_benchmark(results, ax=None):
 def plot_metrics(context, results, metrics, algo_name=None):
     if len(metrics) == 0:
         metrics = list(results)
-    log.info(metrics)
+
     fig, ax = plt.subplots(len(metrics), 1, sharex=True)
 
     if algo_name is not None:
@@ -80,6 +80,10 @@ def plot_metrics(context, results, metrics, algo_name=None):
 
         except KeyError:
             log.warn('Skipping {} because it missing from the results'.format(m))
+
+        except Exception as e:
+            log.warn('Skipping {}'.format(m))
+            log.warn(e)
 
 
 def plot_leverage(context, results, share_x=False):
