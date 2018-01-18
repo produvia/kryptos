@@ -16,9 +16,7 @@ from crypto_platform.config import CONFIG
 import matplotlib.pyplot as plt
 import click
 
-log = Logger ('Strategy Runner')
-
-
+log = Logger('Benchmark Runner')
 
 
 def record_data(context, data):
@@ -29,13 +27,11 @@ def record_data(context, data):
     record(price=price, cash=context.portfolio.cash)
 
 
-
-
 @click.command()
 @click.argument('algo_name')
 def benchmark(algo_name):
+
     for a in load.load_algos():
-        log.info('checking {}'.format(a.NAMESPACE))
         if a.NAMESPACE == str(algo_name):
             algo = a
             break
@@ -47,16 +43,12 @@ def benchmark(algo_name):
         set_benchmark(context.asset)
 
     def handle_data(context, data):
-       record_data(context, data)
-       algo.handle_data(context, data)
+        record_data(context, data)
+        algo.handle_data(context, data)
 
     def analyze(context, results):
         viz.plot_percent_return(context, results, algo.NAMESPACE)
         viz.plot_benchmark(results)
-        # output_file = get_output_file(algo) + '.csv'
-        # log.info('Dumping result csv to {}'.format(output_file))
-        # outputs.dump_to_csv(output_file, results)
-
 
     run_algorithm(
         capital_base=CONFIG.CAPITAL_BASE,
