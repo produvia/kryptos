@@ -22,8 +22,8 @@ Then install this library
 ## Using the library
 The libray currently contains the following CLI commands
 
-#### compare_all
-Running `compare_all` will use produce a plot comparing the portfolio value of all strategies in the *algos/* directory. The results will be saved to *scripts/performance_results_* and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
+#### compare_all_strategies
+Running `compare_all_strategies` will use produce a plot comparing the portfolio value of all strategies in the *algos/* directory. The results will be saved to *scripts/performance_results_* and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
 
 
 The results are not yet standardized, but instead record the data specified by each algorithim.
@@ -31,6 +31,16 @@ The results are not yet standardized, but instead record the data specified by e
 #### benchmark
 
 Running `benchmark <algo_name>` will plot the percent return of a given algorithim against the benchmark of bitcoin price (*btc_usdt*)
+
+#### metrics
+
+Running `metrics <algo_name>` will plot the specified performance metrics over the trading period.
+
+Metrics are specified via *config.py* or via CLI options.
+For example:
+`metrics sma_crossover -m sharpe -m sortino -m max_drawdown`
+
+Available metrics can be enabled/disabled via comments in *config.py*
 
 Available algorithm names include:
 
@@ -41,7 +51,10 @@ Available algorithm names include:
 - mean_reversion_simple
 - rsi
 - simple_loop
-- talib_sample
+- sma_crossover
+- pugilist
+- dynamic rebalance
+
 
 
 
