@@ -22,7 +22,7 @@ log = Logger(NAMESPACE)
 
 def initialize(context):
     log.info('initializing algo')
-    context.asset = symbol(CONFIG.ASSETS[0])
+    context.asset = symbol(CONFIG.ASSET)
     context.base_price = None
 
     context.MAX_HOLDINGS = 0.2
@@ -175,82 +175,7 @@ def handle_data(context, data):
         log.info('the errors:\n{}'.format(context.errors))
 
 
-def analyze(context=None, results=None):
-    import matplotlib.pyplot as plt
 
-    exchange = list(context.exchanges.values())[0]
-    base_currency = exchange.base_currency.upper()
-    # Plot the portfolio and asset data.
-    ax1 = plt.subplot(611)
-    results.loc[:, 'portfolio_value'].plot(ax=ax1)
-    ax1.set_ylabel('Portfolio Value ({})'.format(base_currency))
-
-    ax2 = plt.subplot(612, sharex=ax1)
-    results.loc[:, 'price'].plot(ax=ax2)
-    ax2.set_ylabel('{asset} ({base})'.format(
-        asset=context.asset.symbol, base=base_currency
-    ))
-
-    trans = results.loc[[t != [] for t in results.transactions], :]
-    buys = trans.loc[[t[0]['amount'] > 0 for t in trans.transactions], :]
-    sells = trans.loc[[t[0]['amount'] < 0 for t in trans.transactions], :]
-    # buys = results.loc[results['action'] == 1, :]
-    # sells = results.loc[results['action'] == 0, :]
-
-    ax2.plot(
-        buys.index,
-        results.loc[buys.index, 'price'],
-        '^',
-        markersize=10,
-        color='g',
-    )
-    ax2.plot(
-        sells.index,
-        results.loc[sells.index, 'price'],
-        'v',
-        markersize=10,
-        color='r',
-    )
-
-    ax3 = plt.subplot(613, sharex=ax1)
-    results.loc[:, ['alpha', 'beta']].plot(ax=ax3)
-    ax3.set_ylabel('Alpha / Beta ')
-
-    ax4 = plt.subplot(614, sharex=ax1)
-    results.loc[:, ['starting_cash', 'cash']].plot(ax=ax4)
-    ax4.set_ylabel('Base Currency ({})'.format(base_currency))
-
-    results['algorithm'] = results.loc[:, 'algorithm_period_return']
-
-    ax5 = plt.subplot(615, sharex=ax1)
-    results.loc[:, ['algorithm', 'price_change']].plot(ax=ax5)
-    ax5.set_ylabel('Percent Change')
-
-    ax6 = plt.subplot(616, sharex=ax1)
-    results.loc[:, 'rsi'].plot(ax=ax6)
-    ax6.set_ylabel('RSI')
-
-    ax6.plot(
-        buys.index,
-        results.loc[buys.index, 'rsi'],
-        '^',
-        markersize=10,
-        color='g',
-    )
-    ax6.plot(
-        sells.index,
-        results.loc[sells.index, 'rsi'],
-        'v',
-        markersize=10,
-        color='r',
-    )
-
-    plt.legend(loc=3)
-
-    # Show the plot.
-    plt.gcf().set_size_inches(18, 8)
-    plt.show()
-    pass
 
 
 if __name__ == '__main__':

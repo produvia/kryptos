@@ -20,7 +20,7 @@ log = Logger(NAMESPACE)
 
 def initialize(context):
     log.info('initializing algo')
-    context.ASSET_NAME = CONFIG.ASSETS[0]
+    context.ASSET_NAME = CONFIG.ASSET
     context.asset = symbol(context.ASSET_NAME)
 
     context.TARGET_POSITIONS = 30
@@ -138,36 +138,3 @@ def handle_data(context, data):
     if len(context.errors) > 0:
         log.info('the errors:\n{}'.format(context.errors))
 
-
-def analyze(context, stats):
-    log.info('the daily stats:\n{}'.format(get_pretty_stats(stats)))
-    pass
-
-
-if __name__ == '__main__':
-    live = False
-    if live:
-        run_algorithm(
-            capital_base=0.001,
-            initialize=initialize,
-            handle_data=handle_data,
-            analyze=analyze,
-            exchange_name='binance',
-            live=True,
-            algo_namespace=algo_namespace,
-            base_currency='btc',
-            simulate_orders=True,
-        )
-    else:
-        run_algorithm(
-            capital_base=10000,
-            data_frequency='daily',
-            initialize=initialize,
-            handle_data=handle_data,
-            analyze=analyze,
-            exchange_name='poloniex',
-            algo_namespace='buy_and_hodl',
-            base_currency='usdt',
-            start=pd.to_datetime('2015-03-01', utc=True),
-            end=pd.to_datetime('2017-10-31', utc=True),
-        )

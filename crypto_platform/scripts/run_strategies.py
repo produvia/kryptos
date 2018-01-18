@@ -23,7 +23,7 @@ def get_output_file(algo):
     perf_dir = CONFIG.PERF_DIR
     algo_dir = os.path.join(perf_dir, algo.NAMESPACE)
     os.makedirs(algo_dir, exist_ok=True)
-    file_specs = '{}_{}_{}'.format(CONFIG.ASSETS[0], CONFIG.BUY_EXHANGE, CONFIG.DATA_FREQUENCY)
+    file_specs = '{}_{}_{}'.format(CONFIG.ASSET, CONFIG.BUY_EXHANGE, CONFIG.DATA_FREQUENCY)
     return os.path.join(algo_dir, file_specs)
 
 

@@ -31,7 +31,7 @@ CONFIG = None
 
 
 def initialize(context):
-    context.ASSET_NAME = CONFIG.ASSETS[0]
+    context.ASSET_NAME = CONFIG.ASSET
     context.TARGET_HODL_RATIO = 0.8
     context.RESERVE_RATIO = 1.0 - context.TARGET_HODL_RATIO
 
@@ -80,77 +80,4 @@ def handle_data(context, data):
     )
 
 
-def analyze(context=None, results=None):
 
-    # Plot the portfolio and asset data.
-    ax1 = plt.subplot(611)
-    results[['portfolio_value']].plot(ax=ax1)
-    ax1.set_ylabel('Portfolio\nValue\n(USD)')
-
-    ax2 = plt.subplot(612, sharex=ax1)
-    ax2.set_ylabel('{asset}\n(USD)'.format(asset=context.ASSET_NAME))
-    results[['price']].plot(ax=ax2)
-
-    trans = results.ix[[t != [] for t in results.transactions]]
-    buys = trans.ix[
-        [t[0]['amount'] > 0 for t in trans.transactions]
-    ]
-    ax2.scatter(
-        buys.index.to_pydatetime(),
-        results.price[buys.index],
-        marker='^',
-        s=100,
-        c='g',
-        label=''
-    )
-
-    ax3 = plt.subplot(613, sharex=ax1)
-    results[['leverage', 'alpha', 'beta']].plot(ax=ax3)
-    ax3.set_ylabel('Leverage ')
-
-    ax4 = plt.subplot(614, sharex=ax1)
-    results[['starting_cash', 'cash']].plot(ax=ax4)
-    ax4.set_ylabel('Cash (USD)')
-
-    results[[
-        'treasury',
-        'algorithm',
-        'benchmark',
-    ]] = results[[
-        'treasury_period_return',
-        'algorithm_period_return',
-        'benchmark_period_return',
-    ]]
-
-    ax5 = plt.subplot(615, sharex=ax1)
-    results[[
-        'treasury',
-        'algorithm',
-        'benchmark',
-    ]].plot(ax=ax5)
-    ax5.set_ylabel('Percent\nChange')
-
-    ax6 = plt.subplot(616, sharex=ax1)
-    results[['volume']].plot(ax=ax6)
-    ax6.set_ylabel('Volume')
-
-    plt.legend(loc=3)
-
-    # Show the plot.
-    plt.gcf().set_size_inches(18, 8)
-    plt.show()
-
-
-if __name__ == '__main__':
-    run_algorithm(
-        capital_base=CONFIG,
-        data_frequency='daily',
-        initialize=initialize,
-        handle_data=handle_data,
-        analyze=analyze,
-        exchange_name='bitfinex',
-        algo_namespace='buy_and_hodl',
-        base_currency='usd',
-        start=pd.to_datetime('2015-03-01', utc=True),
-        end=pd.to_datetime('2017-10-31', utc=True),
-    )

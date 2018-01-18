@@ -1,9 +1,3 @@
-""" This script simply runs each algorithim within algos/single_asset/
-The recorded results are saved to a csv file  and as a pickled pandas Dataframe
-in scripts/performance_results
-"""
-
-
 import os
 import tempfile
 from catalyst import run_algorithm

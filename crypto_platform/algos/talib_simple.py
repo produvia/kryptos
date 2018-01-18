@@ -34,7 +34,7 @@ log = Logger(NAMESPACE)
 def initialize(context):
     log.info('Starting TALib Simple Example')
 
-    context.ASSET_NAME = CONFIG.ASSETS[0]
+    context.ASSET_NAME = CONFIG.ASSET
     context.asset = symbol(context.ASSET_NAME)
 
     context.ORDER_SIZE = 10

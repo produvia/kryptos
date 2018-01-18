@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 class CONFIG(object):
-    ASSETS = ['btc_usd']
+    ASSET = 'btc_usd'
     DATA_FREQUENCY = 'daily'
     HISTORY_FREQ = '1D'
     CAPITAL_BASE = 1000
