@@ -50,5 +50,4 @@ def load_algos():
             algo = get_algo(f)
             algos.append(algo)
             log.info('Loaded {}'.format(algo.NAMESPACE))
-            algos.append(algo)
     return algos
