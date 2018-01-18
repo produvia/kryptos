@@ -10,8 +10,6 @@ from setuptools import setup, find_packages
 requires = [
     'enigma-catalyst',
     'matplotlib',
-    'numpy',
-    'pandas',
     'TA-Lib',
     'Click'
 ]
@@ -44,7 +42,7 @@ setup(
     entry_points='''
         [console_scripts]
         benchmark=crypto_platform.scripts.run_benchmark:benchmark
-        compare_all=crypto_platform.scripts.run_strategies:run
+        compare_all_strategies=crypto_platform.scripts.run_strategies:run
     ''',
     zip_safe=False,
 )
