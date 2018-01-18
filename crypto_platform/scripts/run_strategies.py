@@ -12,6 +12,8 @@ from catalyst.api import record, symbol
 from logbook import Logger
 from crypto_platform.utils import load, outputs, viz
 from crypto_platform.config import CONFIG
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+from catalyst.exchange import exchange_bundle
 
 import matplotlib.pyplot as plt
 import click
@@ -40,7 +42,7 @@ def run():
 
         def analyze(context, results):
             viz.plot_portfolio(context, results, algo.NAMESPACE)
-            output_file = get_output_file(algo) + '.csv'
+            output_file = outputs.get_output_file(algo, CONFIG) + '.csv'
             log.info('Dumping result csv to {}'.format(output_file))
             outputs.dump_to_csv(output_file, results)
 
