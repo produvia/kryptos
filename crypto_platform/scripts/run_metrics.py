@@ -29,10 +29,13 @@ def run(algo_name, metrics):
         if a.NAMESPACE == str(algo_name):
             algo = a
             break
-    # log.info('Benchmarking {}'.format(algo.NAMESPACE))
-    if len(metrics) < 0:
+
+    if len(metrics) > 0:
         CONFIG.METRICS = metrics
+
     algo.CONFIG = CONFIG
+
+   
 
     def initialize(context):
         log.info('Running {} using {} on {}'.format(algo.NAMESPACE, CONFIG.ASSET, CONFIG.BUY_EXCHANGE))
@@ -48,6 +51,7 @@ def run(algo_name, metrics):
         algo.handle_data(context, data)
 
     def analyze(context, results):
+        log.info('Analyzing {} with {}'.format(algo.NAMESPACE, CONFIG.METRICS))
         viz.plot_metrics(context, results, CONFIG.METRICS, algo_name=algo.NAMESPACE)
 
     try:
@@ -69,6 +73,7 @@ def run(algo_name, metrics):
         load.ingest_exchange(CONFIG)
         log.info('Run completed for {}'.format(algo.NAMESPACE))
 
+    viz.add_legend()
     viz.show_plot()
 
 
