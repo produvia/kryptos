@@ -7,7 +7,7 @@ import pandas as pd
 import talib as ta
 from logbook import Logger
 
-from catalyst.exchange.utils.stats_utils import extract_transactions
+from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
 
 
 def plot_portfolio(context, perf, algo_name):
@@ -15,10 +15,8 @@ def plot_portfolio(context, perf, algo_name):
     exchange = list(context.exchanges.values())[0]
     base_currency = exchange.base_currency.upper()
 
-    # create own
-
     # First chart: Plot portfolio value using base_currency
-    ax = plt.subplot(411)
+    ax = plt.subplot(211)
     # ax.set_title(algo_name)
     # ax.legend()
 
@@ -35,6 +33,19 @@ def plot_percent_return(context, results, algo_name=None, share_x=None):
     ax1.set_ylabel('Percent Return (%)')
     res = results.loc[:, ['algorithm_period_return']]
     ax1.plot(res, label=algo_name)
+
+def plot_metrics_over_time(results, metrics):
+    print(results.index)
+    print(results.columns)
+    row_len = len(metrics)
+    idx = 1
+
+    for m in metrics:
+        ax = plt.subplot(row_len, 1, idx)
+        ax.set_ylabel('{}'.format(m.replace('_', ' ').title()))
+        res = results.loc[:, [m]]
+        ax.plot(res)
+        idx += 1
 
 
 def plot_benchmark(results):
