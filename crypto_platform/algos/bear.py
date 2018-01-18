@@ -8,10 +8,12 @@ CONFIG = None
 NAMESPACE = 'bear_market'
 log = Logger(NAMESPACE)
 
+
 def initialize(context):
     # Start this trading algorithm when market is bullish
     context.i = 0
     context.IS_MARKET_BEAR = False
+
 
 def handle_data(context, data):
 
@@ -22,17 +24,17 @@ def handle_data(context, data):
     bottom = price_history.min()
     price = price_history.ix[-1]
 
-    # Trading logic: 
+    # Trading logic:
     # If current price is more than 20% lower than highest-closing price over a
-    # 2-month period, market enters Bear territory and algorithm sells all 
-    # asset and holds only cash. Market exits bear market when prices are at 
+    # 2-month period, market enters Bear territory and algorithm sells all
+    # asset and holds only cash. Market exits bear market when prices are at
     # least 20% higher than lowest-closing price over a 2-month period. In this
     # case, algorithm invests 90% of portfolio in the asset.
-    if price < 0.75*peak :
+    if price < 0.75 * peak:
         context.IS_MARKET_BEAR = True
-    elif price > 1.2*bottom:
+    elif price > 1.2 * bottom:
         context.IS_MARKET_BEAR = False
-    
+
     if context.IS_MARKET_BEAR:
         order_target_percent(
             context.asset,
@@ -43,9 +45,9 @@ def handle_data(context, data):
             context.asset,
             0.75,
         )
-        
-    Portfolio_cumulative_return = (context.portfolio.portfolio_value/context.portfolio.starting_cash-1)*100
-    
+
+    Portfolio_cumulative_return = (context.portfolio.portfolio_value / context.portfolio.starting_cash - 1) * 100
+
     # Save values for later inspection
     record(price=price,
            peak=peak,
@@ -53,5 +55,4 @@ def handle_data(context, data):
            cash=context.portfolio.cash,
            leverage=context.account.leverage,
            Portfolio_cumulative_return=Portfolio_cumulative_return,
-    )
-
+           )
