@@ -33,6 +33,8 @@ def run(algo_name, metrics):
     if len(metrics) > 0:
         CONFIG.METRICS = metrics
 
+    algo = load.load_by_name(algo_name)
+    click.echo('Benchmarking {}'.format(algo.NAMESPACE))
     algo.CONFIG = CONFIG
 
    
@@ -52,7 +54,7 @@ def run(algo_name, metrics):
 
     def analyze(context, results):
         log.info('Analyzing {} with {}'.format(algo.NAMESPACE, CONFIG.METRICS))
-        viz.plot_metrics(context, results, CONFIG.METRICS, algo_name=algo.NAMESPACE)
+        viz.plot_metrics(context, results, CONFIG.METRICS, algo.NAMESPACE)
 
     try:
         run_algorithm(

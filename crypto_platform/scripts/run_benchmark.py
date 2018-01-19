@@ -24,11 +24,8 @@ def record_data(context, data):
 @click.argument('algo_name')
 def benchmark(algo_name):
 
-    for a in load.load_algos():
-        if a.NAMESPACE == str(algo_name):
-            algo = a
-            break
-    log.info('Benchmarking {}'.format(algo.NAMESPACE))
+    algo = load.load_by_name(algo_name)
+    click.echo('Benchmarking {}'.format(algo.NAMESPACE))
     algo.CONFIG = CONFIG
 
     def initialize(context):

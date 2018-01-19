@@ -37,11 +37,25 @@ def get_algo(filename):
         algo_module = import_with_2(
             module_name, os.path.join(ALGOS, filename))
 
-    except AttributeError:
-        log.info('Skipping import of {}'.format(module_name))
+    except Exception as e:
+        log.warn('Could not import algo {} by namespace'.format(module_name))
         return
 
     return algo_module
+
+
+def load_by_name(namespace):
+    algo = None
+    f = namespace + '.py'
+    algo = get_algo(f)
+
+    if algo is not None:
+        return algo
+
+    log.info('Searching algo files for {} namespace'.format(namespace))
+    for a in load_algos():
+        if a.NAMESPACE == namespace:
+            return a
 
 
 def load_algos():
@@ -51,7 +65,6 @@ def load_algos():
         if '__' not in f and f[-3:] == '.py':
             algo = get_algo(f)
             algos.append(algo)
-            log.info('Loaded {}'.format(algo.NAMESPACE))
     return algos
 
 
