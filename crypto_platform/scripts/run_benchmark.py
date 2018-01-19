@@ -44,7 +44,7 @@ def benchmark(algo_name):
         algo.trade_logic(context, data)
 
     def analyze(context, results):
-        viz.plot_percent_return(context, results, algo.NAMESPACE)
+        viz.plot_percent_return(results, algo.NAMESPACE)
         viz.plot_benchmark(results)
         output_file = outputs.get_output_file(algo, CONFIG) + '.csv'
         log.info('Dumping result csv to {}'.format(output_file))
