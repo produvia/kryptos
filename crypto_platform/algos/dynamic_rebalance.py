@@ -6,14 +6,10 @@ NAMESPACE = 'dynamic_rebalance'
 log = Logger(NAMESPACE)
 
 def initialize(context):
-    # For all trading pairs in the poloniex bundle, the default denomination
-    # currently supported by Catalyst is 1/1000th of a full coin. Use this
-    # constant to scale the price of up to that of a full coin if desired.
-    # context.TICK_SIZE = 1.0
     pass
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
 
     # Cancel any outstanding orders
     orders = get_open_orders(context.asset) or []

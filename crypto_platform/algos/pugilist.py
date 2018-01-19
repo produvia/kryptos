@@ -11,7 +11,7 @@ def initialize(context):
     context.INVEST_RATIO = .5
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
 
     # Define base price and make initial trades to achieve target investment
 

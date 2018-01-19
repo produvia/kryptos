@@ -41,7 +41,7 @@ def benchmark(algo_name):
 
     def handle_data(context, data):
         record_data(context, data)
-        algo.handle_data(context, data)
+        algo.trade_logic(context, data)
 
     def analyze(context, results):
         viz.plot_percent_return(context, results, algo.NAMESPACE)

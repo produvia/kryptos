@@ -15,7 +15,7 @@ def initialize(context):
     context.IS_MARKET_BEAR = False
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
 
     # Get price history for the last two months. Find peak, bottom, and last
     # prices for the period

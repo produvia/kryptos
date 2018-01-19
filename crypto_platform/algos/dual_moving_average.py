@@ -14,7 +14,7 @@ def initialize(context):
     context.base_price = None
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     # define the windows for the moving averages
     short_window = 50
     long_window = 200

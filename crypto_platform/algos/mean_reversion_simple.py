@@ -41,7 +41,7 @@ def initialize(context):
     context.set_slippage(spread=0.0001)
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     # This handle_data function is where the real work is done.  Our data is
     # minute-level tick data, and each minute is called a frame.  This function
     # runs on each frame of the data.

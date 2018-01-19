@@ -4,12 +4,13 @@ in scripts/performance_results
 """
 
 from catalyst import run_algorithm
-from catalyst.api import record, symbol
+from catalyst.api import record, symbol, set_benchmark
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
 from logbook import Logger
 from crypto_platform.utils import load, outputs, viz
 from crypto_platform.config import CONFIG
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+
 
 import matplotlib.pyplot as plt
 import click
@@ -33,7 +34,7 @@ def run():
         def handle_data(context, data):
             price = data.current(context.asset, 'price')
             record(price=price, cash=context.portfolio.cash)
-            algo.handle_data(context, data)
+            algo.trade_logic(context, data)
 
         def analyze(context, results):
             viz.plot_portfolio(context, results, algo.NAMESPACE)

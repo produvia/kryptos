@@ -48,7 +48,7 @@ def run(algo_name, metrics):
 
     def handle_data(context, data):
         record_data(context, data)
-        algo.handle_data(context, data)
+        algo.trade_logic(context, data)
 
     def analyze(context, results):
         log.info('Analyzing {} with {}'.format(algo.NAMESPACE, CONFIG.METRICS))

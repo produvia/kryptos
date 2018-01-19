@@ -87,7 +87,7 @@ def perform_ta(context, data):
     logAnalysis(analysis)
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     log.info('handling bar {}'.format(data.current_dt))
     try:
         perform_ta(context, data)

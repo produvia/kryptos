@@ -15,7 +15,7 @@ def initialize(context):
     context.base_price = None
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     log.info('handling bar: {}'.format(data.current_dt))
 
     price = data.current(context.asset, 'close')

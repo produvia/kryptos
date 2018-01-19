@@ -34,7 +34,7 @@ def initialize(context):
     context.i = 0
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     context.i += 1
 
     starting_cash = context.portfolio.starting_cash

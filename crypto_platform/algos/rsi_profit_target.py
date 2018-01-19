@@ -153,7 +153,7 @@ def _handle_data_rsi_only(context, data):
     _handle_buy_sell_decision(context, data, signal, price)
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     dt = data.current_dt
 
     if context.last_bar is None or (

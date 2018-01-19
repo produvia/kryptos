@@ -23,7 +23,7 @@ def initialize(context):
     context.errors = []
 
 
-def _handle_data(context, data):
+def perform_ta(context, data):
     price = data.current(context.asset, 'price')
     log.info('got price {price}'.format(price=price))
 
@@ -114,10 +114,10 @@ def _handle_data(context, data):
         )
 
 
-def handle_data(context, data):
+def trade_logic(context, data):
     log.info('handling bar {}'.format(data.current_dt))
     # try:
-    _handle_data(context, data)
+    perform_ta(context, data)
     # except Exception as e:
     #     log.warn('aborting the bar on error {}'.format(e))
     #     context.errors.append(e)
