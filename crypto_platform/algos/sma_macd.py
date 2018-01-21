@@ -20,7 +20,7 @@ from catalyst.api import (
 )
 
 
-NAMESPACE = 'sma'
+NAMESPACE = 'sma_macd'
 log = Logger(NAMESPACE)
 
 
@@ -40,9 +40,12 @@ def initialize(context):
     # Technical Analysis Settings
     context.SMA_FAST = 50
     context.SMA_SLOW = 100
+    context.MACD_FAST = 12
+    context.MACD_SLOW = 26
+    context.MACD_SIGNAL = 9
+
 
     pass
-
 
 def perform_ta(context, data):
     # Get price, open, high, low, close
@@ -52,7 +55,7 @@ def perform_ta(context, data):
         fields=['price', 'open', 'high', 'low', 'close'],
         frequency='1d')
 
-    # Create a analysis data frame
+     # Create a analysis data frame
     analysis = pd.DataFrame(index=prices.index)
 
     # SMA FAST
@@ -62,8 +65,20 @@ def perform_ta(context, data):
     # SMA SLOW
     analysis['sma_s'] = ta.SMA(prices.close.as_matrix(), context.SMA_SLOW)
 
+
+    # MACD, MACD Signal, MACD Histogram
+    analysis['macd'], analysis['macdSignal'], analysis['macdHist'] = ta.MACD(
+        prices.close.as_matrix(), fastperiod=context.MACD_FAST,
+        slowperiod=context.MACD_SLOW, signalperiod=context.MACD_SIGNAL)
+
+
     # SMA FAST over SLOW Crossover
     analysis['sma_test'] = np.where(analysis.sma_f > analysis.sma_s, 1, 0)
+
+    # MACD over Signal Crossover
+    analysis['macd_test'] = np.where((analysis.macd > analysis.macdSignal), 1,
+                                     0)
+
 
     # Save the prices and analysis to send to analyze
     context.prices = prices
@@ -91,6 +106,7 @@ def trade_logic(context, data):
 
     if len(context.errors) > 0:
         log.info('the errors:\n{}'.format(context.errors))
+
 
 
 def makeOrders(context, analysis):
@@ -150,7 +166,9 @@ def makeOrders(context, analysis):
 def isBuy(context, analysis):
     # Bullish SMA Crossover
     if (getLast(analysis, 'sma_test') == 1):
-        return True
+        # Bullish MACD
+        if (getLast(analysis, 'macd_test') == 1):
+            return True
 
     return False
 
@@ -158,9 +176,12 @@ def isBuy(context, analysis):
 def isSell(context, analysis):
     # Bearish SMA Crossover
     if (getLast(analysis, 'sma_test') == 0):
-        return True
+        # Bearish MACD
+        if (getLast(analysis, 'macd_test') == 0):
+            return True
 
     return False
+
 
 
 def logAnalysis(analysis):
@@ -168,7 +189,18 @@ def logAnalysis(analysis):
     log.info('- sma_f:          {:.2f}'.format(getLast(analysis, 'sma_f')))
     log.info('- sma_s:          {:.2f}'.format(getLast(analysis, 'sma_s')))
 
+    # log.info('- sma_r:          {:.2f}'.format(getLast(analysis, 'sma_r')))
+
+    log.info('- macd:           {:.2f}'.format(getLast(analysis, 'macd')))
+    log.info(
+        '- macdSignal:     {:.2f}'.format(getLast(analysis, 'macdSignal')))
+    log.info('- macdHist:       {:.2f}'.format(getLast(analysis, 'macdHist')))
+
+
     log.info('- sma_test:       {}'.format(getLast(analysis, 'sma_test')))
+    log.info('- macd_test:      {}'.format(getLast(analysis, 'macd_test')))
+
+
 
 
 def getLast(arr, name):
