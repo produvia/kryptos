@@ -16,6 +16,11 @@ def show_plot():
         break
 
 
+def get_start_geo(num_plots, cols=1):
+    start = int(str(num_plots) + str(cols) + '1')
+    return start
+
+
 def add_legend():
     # plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
@@ -46,42 +51,21 @@ def plot_percent_return(results, name=None, pos=211):
 
 def plot_benchmark(results, pos=211,):
 
-    ax = plt.subplot(211)
+    ax = plt.subplot(pos)
     bench = results.loc[:, ['benchmark_period_return']]
     ax.plot(bench, label='benchmark_period_return', linestyle='--')
 
+def plot_metric(results, metric, pos, y_label=None, label=None, add_mean=False):
+    if y_label is None:
+        y_label = '{}'.format(metric.replace('_', '\n').title())
 
-def plot_metrics(context, results, metrics, name=None, pos=111):
-    if len(metrics) == 0:
-        metrics = list(results)
+    ax = plt.subplot(pos)
+    ax.set_ylabel(y_label)
+    res = results.loc[:, [metric]]
+    ax.plot(res, label=label)
 
-    fig, ax = plt.subplots(len(metrics), 1, sharex=True)
-
-    if name is not None:
-        title = '{}\nPerformance Metrics'.format(name.replace('_', ' ').title())
-        fig.suptitle(title)
-
-    try:
-        m_plots = zip(ax, metrics)
-    except TypeError:
-        ax = plt.subplot(pos)
-        m_plots = [(ax, metrics[0])]
-
-    for ax, m in m_plots:
-        ax.set_ylabel('{}'.format(m.replace('_', ' ').title()))
-        try:
-            res = results.loc[:, [m]]
-            mean = [np.mean(res) for i in res.index]
-            ax.plot(res)
-            ax.plot(res.index, mean, linestyle='--', label='mean')
-        except ValueError:
-            log.warn('Skipping {} because not formatted as array'.format(m))
-            log.warn(type(res))
-
-        except KeyError:
-            log.warn('Skipping {} because it missing from the results'.format(m))
-
-        except Exception as e:
-            log.warn('Skipping {}'.format(m))
-            log.warn(e)
+    if add_mean:
+        mean = [np.mean(res) for i in res.index]
+        ax.plot(res, label=label)
+        ax.plot(res.index, mean, linestyle='--', label='mean')
 

@@ -54,7 +54,11 @@ def run(algo_name, metrics):
 
     def analyze(context, results):
         log.info('Analyzing {} with {}'.format(algo.NAMESPACE, CONFIG.METRICS))
-        viz.plot_metrics(context, results, CONFIG.METRICS, algo.NAMESPACE)
+        pos = viz.get_start_geo(len(CONFIG.METRICS) + 1)
+        for m in CONFIG.METRICS:
+            viz.plot_metric(results, m, pos, label=algo.NAMESPACE)
+            pos += 1
+
 
     try:
         run_algorithm(

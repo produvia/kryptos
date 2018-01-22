@@ -7,7 +7,6 @@ from crypto_platform.utils import load, outputs, viz
 from crypto_platform.config import CONFIG
 from logbook import Logger
 
-import matplotlib.pyplot as plt
 import click
 
 log = Logger('Comparison')
@@ -25,11 +24,9 @@ def record_data(context, data):
 @click.argument('algos', nargs=-1)
 @click.option('--metrics', '-m', multiple=True, default=None)
 def run(algos, metrics):
-    click.secho('Comparing {}\n using {}'.format(algos, metrics), fg='white')
+    click.secho('Comparing Strategies: {}\nAnalyzing Metrics: {}'.format(algos, metrics), fg='white')
     if len(metrics) > 0:
         CONFIG.METRICS = metrics
-
-    RESULTS_FOR_BENCHMARK = None
 
     for a in algos:
         algo = load.load_by_name(a)
@@ -49,9 +46,15 @@ def run(algos, metrics):
             algo.trade_logic(context, data)
 
         def analyze(context, results):
-            viz.plot_percent_return(results, name=algo.NAMESPACE)
+            pos = viz.get_start_geo(len(CONFIG.METRICS) + 1)
+            viz.plot_percent_return(results, name=algo.NAMESPACE, pos=pos)
             if algos.index(a) == len(algos) - 1:
-                viz.plot_benchmark(results)
+                viz.plot_benchmark(results, pos=pos)
+            pos += 1
+
+            for m in CONFIG.METRICS:
+                viz.plot_metric(results, m, pos=pos, label=algo.NAMESPACE)
+                pos += 1
 
         try:
             run_algorithm(
