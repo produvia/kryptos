@@ -57,7 +57,6 @@ def perform_ta(context, data):
 
     # SMA FAST
     analysis['sma_f'] = ta.SMA(prices.close.as_matrix(), context.SMA_FAST)
-    log.info(analysis['sma_f'].values)
 
     # SMA SLOW
     analysis['sma_s'] = ta.SMA(prices.close.as_matrix(), context.SMA_SLOW)
