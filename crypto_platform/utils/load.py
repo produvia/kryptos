@@ -39,6 +39,7 @@ def get_algo(filename):
 
     except Exception as e:
         log.warn('Could not import algo {} by namespace'.format(module_name))
+        log.error(e)
         return
 
     return algo_module
@@ -49,7 +50,7 @@ def load_by_name(namespace):
     f = namespace + '.py'
     algo = get_algo(f)
 
-    if algo is not None:
+    if hasattr(algo, 'NAMESPACE'):
         return algo
 
     log.info('Searching algo files for {} namespace'.format(namespace))
@@ -64,7 +65,8 @@ def load_algos():
     for f in os.listdir(ALGOS):
         if '__' not in f and f[-3:] == '.py':
             algo = get_algo(f)
-            algos.append(algo)
+            if hasattr(algo, 'NAMESPACE'):
+                algos.append(algo)
     return algos
 
 
