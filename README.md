@@ -70,10 +70,11 @@ Available metrics can be enabled/disabled via comments in *config.py*
 - bbands_psar (Modified BOlligner bands: PSAR determines whether to close position)
 
 Most Successful Strategies:
-    1. SMA Crossover (sma_crossover)
-    2. MACDFIX (macdfix)
-    3. Bollinger Bands (bbands)
-    4. Bollinger Bands with PSAR (bbands_psar)
+
+1. SMA Crossover (sma_crossover)
+2. MACDFIX (macdfix)
+3. Bollinger Bands (bbands)
+4. Bollinger Bands with PSAR (bbands_psar)
 
 
 
