@@ -55,6 +55,7 @@ def plot_benchmark(results, pos=211,):
     bench = results.loc[:, ['benchmark_period_return']]
     ax.plot(bench, label='benchmark_period_return', linestyle='--')
 
+
 def plot_metric(results, metric, pos, y_label=None, label=None, add_mean=False):
     if y_label is None:
         y_label = '{}'.format(metric.replace('_', '\n').title())
@@ -69,3 +70,31 @@ def plot_metric(results, metric, pos, y_label=None, label=None, add_mean=False):
         ax.plot(res, label=label)
         ax.plot(res.index, mean, linestyle='--', label='mean')
 
+    return ax
+
+
+def plot_buy_sells(results, pos):
+    # Plot the price increase or decrease over time.
+
+    ax = plot_metric(results, 'price', pos, y_label='Buy/Sells')
+
+    transaction_df = extract_transactions(results)
+    if not transaction_df.empty:
+        buy_df = transaction_df[transaction_df['amount'] > 0]
+        sell_df = transaction_df[transaction_df['amount'] < 0]
+        ax.scatter(
+            buy_df.index.to_pydatetime(),
+            results.loc[buy_df.index, 'price'],
+            marker='^',
+            s=100,
+            c='green',
+            label=''
+        )
+        ax.scatter(
+            sell_df.index.to_pydatetime(),
+            results.loc[sell_df.index, 'price'],
+            marker='v',
+            s=100,
+            c='red',
+            label=''
+        )

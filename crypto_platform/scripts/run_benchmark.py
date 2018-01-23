@@ -45,6 +45,8 @@ def benchmark(algo_name):
         viz.plot_benchmark(results)
         output_file = outputs.get_output_file(algo, CONFIG) + '.csv'
         log.info('Dumping result csv to {}'.format(output_file))
+        viz.plot_buy_sells(results, pos=212)
+
 
     try:
         run_algorithm(
