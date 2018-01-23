@@ -29,6 +29,7 @@ def run():
         def initialize(context):
             context.ASSET_NAME = CONFIG.ASSET
             context.asset = symbol(context.ASSET_NAME)
+            context.market = symbol(CONFIG.ASSET)
             algo.initialize(context)
 
         def handle_data(context, data):
