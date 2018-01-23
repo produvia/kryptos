@@ -83,7 +83,7 @@ def ingest_exchange(config):
     log.info('Ingesting exchange bundle {}...'.format(config.BUY_EXCHANGE))
     exchange_bundle.ingest(
         data_frequency=config.DATA_FREQUENCY,
-        include_symbols=[config.ASSET],
+        include_symbols=config.ASSET,
         exclude_symbols=None,
         start=config.START,
         end=config.END,
