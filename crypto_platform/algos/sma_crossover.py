@@ -20,7 +20,7 @@ from catalyst.api import (
 )
 
 
-NAMESPACE = 'sma'
+NAMESPACE = 'sma_crossover'
 log = Logger(NAMESPACE)
 
 
