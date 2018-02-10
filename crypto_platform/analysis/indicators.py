@@ -32,12 +32,31 @@ class TAAnalysis(object):
 
     @property
     def current_price(self):
-        if self.data and self.context:
-            return self.data.current(self.context.asset, 'price')
+        return self.data.current(self.context.asset, 'price')
 
     @property
     def bbands(self):
         return BBANDS(self.current_price, self.prices.close)
+
+    @property
+    def psar(self):
+        return PSAR(self.current_price, self.prices.low, self.prices.high)
+
+    @property
+    def macd(self):
+        return MACD(self.prices)
+
+    @property
+    def macdfix(self):
+        return MACDFIX(self.prices)
+
+    @property
+    def obv(self):
+        return OBV(self.prices.close, self.prices.volume)
+
+    @property
+    def rsi(self):
+        return RSI(self.prices)
 
 
 class BBANDS(object):
@@ -86,17 +105,22 @@ class PSAR(object):
 
 class MACD(object):
 
-    def __init__(self, closes):
-        self.closes = closes
+    def __init__(self, prices):
+        self.closes = prices.close
+        self.results = pd.DataFrame(index=prices)
 
         self.calculate()
 
     def calculate(self):
+
         self.macd, self.macd_signal, self.macd_hist = ta.MACD(
             self.closes.as_matrix(), fastperiod=CONFIG.MACD_FAST,
             slowperiod=CONFIG.MACD_SLOW, signalperiod=CONFIG.MACD_SIGNAL)
 
-        self.macd_test = np.where((self.macd > self.macd_signal), 1, 0)
+        self.results['macd'] = self.macd
+        self.results['macd_signal'] = self.macd_signal
+
+        self.macd_test = np.where((self.results.macd > self.results.macd_signal), 1, 0)
 
     @property
     def is_bullish(self):
@@ -109,7 +133,7 @@ class MACD(object):
 
 class MACDFIX(MACD):
 
-    def __init__(self, closes):
+    def __init__(self, prices):
         super(MACDFIX).__init__(closes)
 
     def calculate(self):
@@ -131,7 +155,6 @@ class OBV(object):
             self.close.as_matrix(),
             self.volume.as_matrix()
         )
-        return obv
 
     @property
     def is_bullish(self):
@@ -143,31 +166,35 @@ class OBV(object):
 
 
 class RSI(object):
-    def __init__(self, close):
+    def __init__(self, prices):
         super(RSI, self).__init__()
-        self.close = close
+        self.prices = prices
+        self.results = pd.DataFrame(index=self.prices)
+
+        self.results['rsi'] = self.rsi
 
     @property
     def rsi(self):
-        return ta.RSI(close.as_matrix(), CONFIG.RSI_PERIOD)
+        self.results['rsi'] = ta.RSI(self.prices.close.as_matrix(), CONFIG.RSI_PERIOD)
+        return self.results['rsi']
 
     @property
     def overbought(self):
         # RSI OVER BOUGHT & Decreasing
-        return np.where((self.rsi > CONFIG.RSI_OVER_BOUGHT) & (self.rsi < self.rsi.shift(1)), 1, 0)
+        return np.where((self.results.rsi > CONFIG.RSI_OVER_BOUGHT) & (self.results.rsi < self.results.rsi.shift(1)), 1, 0)
 
     @property
     def oversold(self):
         # RSI OVER SOLD & Increasing
-        return np.where((self.rsi < CONFIG.RSI_OVER_SOLD) & (self.rsi > self.rsi.shift(1)), 1, 0)
+        return np.where((self.results.rsi < CONFIG.RSI_OVER_SOLD) & (self.results.rsi > self.results.rsi.shift(1)), 1, 0)
 
     @property
     def is_bullish(self):
-        return self.oversold == 1
+        return self.oversold[-1] == 1
 
     @property
     def is_bearish(self):
-        return self.overbought == 0
+        return self.overbought[-1] == 0
 
     @property
     def sma_rsi(self):
@@ -176,7 +203,8 @@ class RSI(object):
     @property
     def sma_fast(self):
         close = self.get_fields('close')
-        return ta.SMA(close.as_matrix(), CONFIG.SMA_FAST)
+        self.results['sma_fast'] = ta.SMA(close.as_matrix(), CONFIG.SMA_FAST)
+        return self.results['sma_fast']
 
     @property
     def sma_slow(self):
