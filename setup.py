@@ -44,6 +44,8 @@ setup(
         benchmark=crypto_platform.scripts.run_benchmark:benchmark
         compare_all_strategies=crypto_platform.scripts.run_strategies:run
         metrics=crypto_platform.scripts.run_metrics:run
+        compare=crypto_platform.scripts.compare:run
+        ta=crypto_platform.scripts.run_ta:run
     ''',
     zip_safe=False,
 )
