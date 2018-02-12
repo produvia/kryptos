@@ -96,6 +96,10 @@ class PSAR(object):
             maximum=CONFIG.SAR_MAX)
 
     @property
+    def is_bullish(self):
+        pass
+
+    @property
     def is_bearish(self):
         if self.current_price < self.psar[-1]:
             log.info('Closing position due to PSAR')
@@ -134,13 +138,16 @@ class MACD(object):
 class MACDFIX(MACD):
 
     def __init__(self, prices):
-        super(MACDFIX).__init__(closes)
+        super(MACDFIX, self).__init__(prices)
 
     def calculate(self):
         self.macd, self.macd_signal, self.macd_hist = ta.MACDFIX(
             self.closes.as_matrix(), signalperiod=CONFIG.MACD_SIGNAL)
 
-        self.macd_test = np.where((self.macd > self.macd_signal), 1, 0)
+        self.results['macd'] = self.macd
+        self.results['macd_signal'] = self.macd_signal
+
+        self.macd_test = np.where((self.results.macd > self.results.macd_signal), 1, 0)
 
 
 class OBV(object):
