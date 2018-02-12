@@ -20,10 +20,11 @@ def record_data(context, data):
     record(price=price, cash=context.portfolio.cash)
 
 
-def perform_ta(context, data, ta_data, indicator):
-    ta_data.update(context, data)
+def perform_ta(context, data, indicator):
+    context.ta.update(context, data)
 
-    ta_ind = getattr(ta_data, indicator)
+    ta_ind = getattr(context.ta, indicator)
+    ta_ind.record()
 
     if ta_ind.is_bullish:
         signal_buy(context)
@@ -108,6 +109,8 @@ def run(indicators):
 
         set_benchmark(context.asset)
 
+        context.ta = TAAnalysis()
+
     def handle_data(context, data):
         record_data(context, data)
 
@@ -130,12 +133,9 @@ def run(indicators):
         for i in get_open_orders(context.asset):
             cancel_order(i)
 
-        ta_data = TAAnalysis()
-
         for i in indicators:
-
             try:
-                perform_ta(context, data, ta_data, indicator=i)
+                perform_ta(context, data, indicator=i)
             except Exception as e:
                 log.error('Failed to perform {} analysis'.format(i))
                 log.warn('aborting the bar on error {}'.format(e))
@@ -151,12 +151,16 @@ def run(indicators):
             log.info('the errors:\n{}'.format(context.errors))
 
     def analyze(context, results):
-        # pos = viz.get_start_geo(len(CONFIG.METRICS) + 1)
-        viz.plot_percent_return(results)
-        viz.plot_benchmark(results)
+        pos = viz.get_start_geo(len(indicators) + 2)
+        viz.plot_percent_return(results, pos)
+        viz.plot_benchmark(results, pos)
+        pos += 1
+        for i in indicators:
+            ta_ind = getattr(context.ta, i)
+            ta_ind.plot(results, pos)
+            pos += 1
 
-        viz.add_legend()
-        viz.show_plot()
+        viz.plot_buy_sells(results, pos=pos)
 
     try:
         run_algorithm(
@@ -178,6 +182,9 @@ def run(indicators):
         # log.info('Run completed for {}'.format(algo.NAMESPACE))
         # run(algos, metrics)
         # break
+
+    viz.add_legend()
+    viz.show_plot()
 
 
 if __name__ == '__main__':

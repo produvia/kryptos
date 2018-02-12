@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
 import talib as ta
+import matplotlib.pyplot as plt
+
+from catalyst.api import record
 
 from logbook import Logger
 from crypto_platform.config import TAConfig as CONFIG
+from crypto_platform.utils import viz
 
 log = Logger('INDICATOR')
 
@@ -69,6 +73,17 @@ class BBANDS(object):
     def calculate(self):
         self.upper, self.middle, self.lower = ta.BBANDS(self.closes.as_matrix(), matype=ta.MA_Type.T3)
 
+    def record(self):
+        record(upper=self.upper[-1], middle=self.middle[-1], lower=self.lower[-1])
+
+    def plot(self, results, pos):
+        y_label = 'BBands'
+        viz.plot_metric(results, 'price', pos, label='price', color='black')
+        viz.plot_metric(results, 'upper', pos, y_label=y_label, label='upper')
+        viz.plot_metric(results, 'middle', pos, y_label=y_label, label='middle')
+        viz.plot_metric(results, 'lower', pos, y_label=y_label, label='lower')
+        plt.legend()
+
     @property
     def is_bullish(self):
         print('Comparing {} to {}'.format(self.price, self.upper[-1]))
@@ -125,6 +140,19 @@ class MACD(object):
         self.results['macd_signal'] = self.macd_signal
 
         self.macd_test = np.where((self.results.macd > self.results.macd_signal), 1, 0)
+
+    def record(self):
+        record(macd=self.macd[-1], macd_signal=self.macd_signal[-1],
+               macd_hist=self.macd_hist[-1], macd_test=self.macd_test[-1])
+
+    def plot(self, results, pos):
+        y_label = 'MACD'
+        viz.plot_metric(results, 'macd', pos, y_label=y_label, label='macd')
+        viz.plot_metric(results, 'macd_signal', pos, y_label=y_label, label='macd_signal')
+        ax = viz.plot_metric(results, 'macd_hist', pos, y_label=y_label, label='macd_hist')
+        viz.plot_buy_sells(results, pos, y_val='macd')
+
+        plt.legend()
 
     @property
     def is_bullish(self):
