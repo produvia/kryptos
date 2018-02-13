@@ -110,6 +110,15 @@ class PSAR(object):
             acceleration=CONFIG.SAR_ACCEL,
             maximum=CONFIG.SAR_MAX)
 
+    def record(self):
+        record(psar=self.psar[-1])
+
+    def plot(self, results, pos):
+        y_label = 'PSAR'
+        viz.plot_metric(results, 'price', pos, label='price', color='black')
+        viz.plot_metric(results, 'psar', pos, y_label=y_label, label='psar')
+        plt.legend()
+
     @property
     def is_bullish(self):
         pass
@@ -149,7 +158,7 @@ class MACD(object):
         y_label = 'MACD'
         viz.plot_metric(results, 'macd', pos, y_label=y_label, label='macd')
         viz.plot_metric(results, 'macd_signal', pos, y_label=y_label, label='macd_signal')
-        ax = viz.plot_metric(results, 'macd_hist', pos, y_label=y_label, label='macd_hist')
+        viz.plot_metric(results, 'macd_hist', pos, y_label=y_label, label='macd_hist')
         viz.plot_buy_sells(results, pos, y_val='macd')
 
         plt.legend()
@@ -191,6 +200,16 @@ class OBV(object):
             self.volume.as_matrix()
         )
 
+    def record(self):
+        record(obv=self.obv[-1])
+
+    def plot(self, results, pos):
+        y_label = 'OBV'
+        viz.plot_metric(results, 'obv', pos, y_label=y_label, label='obv')
+        viz.plot_buy_sells(results, pos, y_val='macd')
+
+        plt.legend()
+
     @property
     def is_bullish(self):
         return self.obv[-1] > self.obv[-2]
@@ -204,32 +223,52 @@ class RSI(object):
     def __init__(self, prices):
         super(RSI, self).__init__()
         self.prices = prices
-        self.results = pd.DataFrame(index=self.prices)
 
-        self.results['rsi'] = self.rsi
+    def record(self):
+        record(rsi=self.rsi[-1], overbought=self.overbought, oversold=self.oversold)
+
+    def plot(self, results, pos):
+        y_label = 'RSI'
+        ax = viz.plot_metric(results, 'rsi', pos, y_label=y_label, label='rsi')
+
+        overbought_line = [CONFIG.RSI_OVER_BOUGHT for i in results.index]
+        oversold_line = [CONFIG.RSI_OVER_SOLD for i in results.index]
+        ax.plot(results.index, overbought_line)
+        ax.plot(results.index, oversold_line)
+
+        overboughts = results[results['overbought']]
+        oversolds = results[results['oversold']]
+        viz.plot_points(overboughts, pos, y_val='rsi', color='red', label='overbought')
+        viz.plot_points(oversolds, pos, y_val='rsi', label='oversold')
+
+        plt.legend()
 
     @property
     def rsi(self):
-        self.results['rsi'] = ta.RSI(self.prices.close.as_matrix(), CONFIG.RSI_PERIOD)
-        return self.results['rsi']
+        return ta.RSI(self.prices.close.as_matrix(), CONFIG.RSI_PERIOD)
+
 
     @property
     def overbought(self):
         # RSI OVER BOUGHT & Decreasing
-        return np.where((self.results.rsi > CONFIG.RSI_OVER_BOUGHT) & (self.results.rsi < self.results.rsi.shift(1)), 1, 0)
+        return self.rsi[-2] >= CONFIG.RSI_OVER_BOUGHT and self.rsi[-1] < CONFIG.RSI_OVER_BOUGHT
+
 
     @property
     def oversold(self):
         # RSI OVER SOLD & Increasing
-        return np.where((self.results.rsi < CONFIG.RSI_OVER_SOLD) & (self.results.rsi > self.results.rsi.shift(1)), 1, 0)
+        return self.rsi[-2] <= CONFIG.RSI_OVER_SOLD and self.rsi[-1] > CONFIG.RSI_OVER_SOLD
+
 
     @property
     def is_bullish(self):
-        return self.oversold[-1] == 1
+        print(self.rsi[-1], self.rsi[-1])
+        return self.rsi[-2] <= CONFIG.RSI_OVER_SOLD and self.rsi[-1] > CONFIG.RSI_OVER_SOLD
 
     @property
     def is_bearish(self):
-        return self.overbought[-1] == 0
+        print(self.rsi[-1], self.rsi[-1])
+        return self.rsi[-2] >= CONFIG.RSI_OVER_BOUGHT and self.rsi[-1] < CONFIG.RSI_OVER_BOUGHT
 
     @property
     def sma_rsi(self):
