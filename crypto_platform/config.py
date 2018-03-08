@@ -86,9 +86,9 @@ class TAConfig(object):
     RSI_OVERBOUGHT_BBANDS = 55
 
     # rsi_ta
-    RSI_PERIOD = 14
-    RSI_OVER_BOUGHT = 80
-    RSI_OVER_SOLD = 20
+    RSI_PERIOD = 7
+    RSI_OVER_BOUGHT = 70
+    RSI_OVER_SOLD = 30
     RSI_AVG_PERIOD = 15
 
     # sma_crossover
@@ -111,9 +111,9 @@ class TAConfig(object):
     STOCH_OVER_SOLD = 80
 
     #stochastics
-    STOCH_K = 14
-    STOCH_D = 3
+    STOCH_K_PERIOD = 5
+    STOCH_D_PERIOD = 3
     STOCH_OVER_BOUGHT = 80
-    STOCH_OVER_SOLD = 20
+    STOCH_OVER_SOLD = 40
 
         

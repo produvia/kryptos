@@ -62,6 +62,16 @@ class TAAnalysis(object):
     def rsi(self):
         return RSI(self.prices)
 
+    @property
+    def stoch(self):
+        return STOCH(self.prices)
+
+    # @property
+    # def sma(self):
+    #     return SMA(self.prices)
+    
+
+
 
 class BBANDS(object):
     def __init__(self, price, closes):
@@ -121,7 +131,7 @@ class PSAR(object):
 
     @property
     def is_bullish(self):
-        pass
+        return self.current_price > self.psar[-1]
 
     @property
     def is_bearish(self):
@@ -262,11 +272,13 @@ class RSI(object):
 
     @property
     def is_bullish(self):
+        # crosses to above oversold
         print(self.rsi[-1], self.rsi[-1])
         return self.rsi[-2] <= CONFIG.RSI_OVER_SOLD and self.rsi[-1] > CONFIG.RSI_OVER_SOLD
 
     @property
     def is_bearish(self):
+        # crosses to below overbought
         print(self.rsi[-1], self.rsi[-1])
         return self.rsi[-2] >= CONFIG.RSI_OVER_BOUGHT and self.rsi[-1] < CONFIG.RSI_OVER_BOUGHT
 
@@ -276,24 +288,112 @@ class RSI(object):
 
     @property
     def sma_fast(self):
-        close = self.get_fields('close')
-        self.results['sma_fast'] = ta.SMA(close.as_matrix(), CONFIG.SMA_FAST)
+        self.results['sma_fast'] = ta.SMA(self.prices.close.as_matrix(), CONFIG.SMA_FAST)
         return self.results['sma_fast']
 
     @property
     def sma_slow(self):
-        return ta.SMA(close.as_matrix(), CONFIG.SMA_SLOW)
+        return ta.SMA(self.pricesclose.as_matrix(), CONFIG.SMA_SLOW)
 
     @property
     def sma_test(self):
         return np.where(self.sma_fast > self.sma_slow, 1, 0)
 
 
-# def stoch(prices, df):
-#     df['stoch_k'], df['stoch_d'] = ta.STOCH(
-#         prices.high.as_matrix(), prices.low.as_matrix(),
-#         prices.close.as_matrix(), slowk_period=CONFIG.STOCH_K,
-#         slowd_period=CONFIG.STOCH_D)
+
+
+
+
+class STOCH(object):
+    """docstring for STOCH"""
+    def __init__(self, prices):
+        super(STOCH, self).__init__()
+        self.prices = prices
+        self.calculate()
+
+    def calculate(self):
+        self.stoch_k, self.stoch_d = ta.STOCH(
+            self.prices.high.as_matrix(), self.prices.low.as_matrix(),
+            self.prices.close.as_matrix(), slowk_period=CONFIG.STOCH_K_PERIOD,
+            slowd_period=CONFIG.STOCH_D_PERIOD)
+
+        print('{} - {}'.format(self.stoch_k[-1], self.stoch_d[-1]))
+    
+    def record(self):
+        record(
+            stoch_k=self.stoch_k[-1],
+            stoch_d=self.stoch_d[-1],
+            stoch_overbought=self.overbought,
+            stoch_oversold=self.oversold)
+
+    def plot(self, results, pos):
+        y_label = 'STOCH'
+        viz.plot_metric(results, 'stoch_k', pos, y_label=y_label, label='stoch_k')
+        ax = viz.plot_metric(results, 'stoch_d', pos, y_label=y_label, label='stoch_d')
+
+        overbought_line = [CONFIG.STOCH_OVER_BOUGHT for i in results.index]
+        oversold_line = [CONFIG.STOCH_OVER_SOLD for i in results.index]
+        ax.plot(results.index, overbought_line)
+        ax.plot(results.index, oversold_line)
+
+        overboughts = results[results['stoch_overbought']]
+        oversolds = results[results['stoch_oversold']]
+        viz.plot_points(overboughts, pos, y_val='stoch_k', color='red', label='overbought')
+        viz.plot_points(oversolds, pos, y_val='stoch_k', label='oversold')
+
+        plt.legend()
+
+
+    @property
+    def overbought(self):
+        return self.stoch_d[-2] > CONFIG.STOCH_OVER_BOUGHT and self.stoch_d[-1] < self.stoch_d[-2]
+
+
+    @property
+    def oversold(self):
+
+        return self.stoch_d[-2] < CONFIG.STOCH_OVER_SOLD and self.stoch_d[-1] > self.stoch_d[-2]
+
+
+    @property
+    def is_bullish(self):
+        return self.oversold
+
+    @property
+    def is_bearish(self):
+        return self.overbought
+    
+
+# class SMA(object):
+#     def __init__(self, prices):
+#         super(SMA, self).__init__()
+#         self.prices = prices
+#         self.calculate()
+
+#     def calculate(self):
+#         self.slow = ta.SMA(self.prices.close.as_matrix())
+#         self.fast = ta.SMA(self.prices.close.as_matrix(), CONFIG.SMA_FAST)
+
+#     def plot(self, results, pos):
+#         y_label = 'SMA'
+#         ax = viz.plot_metric(results, 'sma_slow', pos, y_label=y_label, label='sma_slow')
+#         viz.plot_metric(results, 'sma_fast', pos, y_label=y_label, label='sma_fast')
+#         viz.plot_metric(results, 'price', pos, y_label=y_label, label='sma_fast')
+
+#         viz.plot_buy_sells(results, pos, y_val='price' )
+
+#         plt.legend()
+
+#     def record(self):
+#         record(sma_slow=self.slow[-1], sma_fast=self.fast[-1])
+
+#     def is_bullish(self):
+#         return self.fast > self.slow
+
+#     def is_bearish(self):
+#         return self.slow 
+
+    
 
 #     # Stochastics OVER BOUGHT & Decreasing
 #     df['stoch_over_bought'] = np.where(
