@@ -8,6 +8,7 @@ from crypto_platform.config import CONFIG
 from logbook import Logger
 
 import click
+import matplotlib.pyplot as plt
 
 log = Logger('Comparison')
 
@@ -91,7 +92,8 @@ def signal_buy(context):
 
 @click.command()
 @click.option('--indicators', '-i', multiple=True)
-def run(indicators):
+@click.option('--quick_enter/--no-quick-enter', '-e', default=False)
+def run(indicators, quick_enter):
     click.secho('Executing using indicators:\n{}'.format(indicators), fg='white')
 
     def initialize(context):
@@ -111,8 +113,12 @@ def run(indicators):
 
         context.ta = TAAnalysis()
 
+        context.i = 0
+        
+     
     def handle_data(context, data):
         record_data(context, data)
+
 
         # Get price, open, high, low, close
         prices = data.history(
@@ -125,6 +131,10 @@ def run(indicators):
         context.prices = prices
         context.price = data.current(context.asset, 'price')
         log.info('handling bar {}'.format(data.current_dt))
+
+        if context.i == 0 and quick_enter:
+            signal_buy(context)
+            context.i += 1
 
         # Exit if we cannot trade
         if not data.can_trade(context.market):
@@ -152,8 +162,9 @@ def run(indicators):
 
     def analyze(context, results):
         pos = viz.get_start_geo(len(indicators) + 2)
-        viz.plot_percent_return(results, pos)
-        viz.plot_benchmark(results, pos)
+        viz.plot_percent_return(results, pos=pos)
+        viz.plot_benchmark(results, pos=pos)
+        plt.legend()
         pos += 1
         for i in indicators:
             ta_ind = getattr(context.ta, i)
