@@ -216,7 +216,7 @@ class OBV(object):
     def plot(self, results, pos):
         y_label = 'OBV'
         viz.plot_metric(results, 'obv', pos, y_label=y_label, label='obv')
-        viz.plot_buy_sells(results, pos, y_val='macd')
+        viz.plot_buy_sells(results, pos, y_val='obv')
 
         plt.legend()
 
