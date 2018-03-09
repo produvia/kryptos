@@ -5,7 +5,7 @@ from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from crypto_platform.utils import load, viz
 from crypto_platform.analysis.indicators import TAAnalysis
 from crypto_platform.config import CONFIG
-from crypto_platform.datasets.quandl.manager import QuandleDataManager
+from crypto_platform.datasets.quandl_data.manager import QuandleDataManager
 from logbook import Logger
 
 import click
@@ -57,7 +57,7 @@ def run(datasets):
         pos = viz.get_start_geo(len(datasets))
         for d in datasets:
             name = qdata.pretty_title(d)
-            viz.plot_metric(results, d, pos=pos, y_label=name)
+            viz.plot_metric(results, d, pos=pos, y_label=name, label=name)
             pos += 1
         plt.legend()
 

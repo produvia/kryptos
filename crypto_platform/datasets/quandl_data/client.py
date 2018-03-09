@@ -2,20 +2,27 @@ import os
 import csv
 import quandl
 
-from crypto_platform.config import CONFIG
-import matplotlib.pyplot as plt
-
 API_KEY = os.getenv('QUANDL_API_KEY')
 quandl.ApiConfig.api_key = API_KEY
 
 
+def code_csv():
+    path = os.path.abspath(__file__)
+    quandl_dir = os.path.dirname(path)
+    return os.path.join(quandl_dir, 'BCHAIN-datasets-codes.csv')
+
+
+def data_csv():
+    path = os.path.abspath(__file__)
+    quandl_dir = os.path.dirname(path)
+    return os.path.join(quandl_dir, 'data.csv')
+
+
 def codes_from_csv():
     codes = []
-    csv_file = os.path.join(os.curdir, 'BCHAIN-datasets-codes.csv')
-    with open(csv_file, 'r') as f:
+    with open(code_csv(), 'r') as f:
         for i in csv.reader(f):
             codes.append(i[0])
-
     return codes
 
 
@@ -43,8 +50,5 @@ def fetch_all():
     codes = codes_from_csv()
     df = fetch_datasets(codes)
     df = clean_dataframe(df)
-    df.to_csv('data.csv', mode='w')
 
-
-if __name__ == '__main__':
-    fetch_all()
+    df.to_csv(data_csv(), mode='w')

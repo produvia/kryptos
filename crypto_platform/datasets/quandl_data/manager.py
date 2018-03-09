@@ -2,7 +2,7 @@ import os
 import csv
 import pandas as pd
 
-from crypto_platform.datasets.quandl import client
+from crypto_platform.datasets.quandl_data import client
 
 from logbook import Logger
 
@@ -23,15 +23,14 @@ class QuandleDataManager(object):
 
     @property
     def csv(self):
-        f = os.path.join(os.path.dirname(__file__), 'data.csv')
+        f = client.data_csv()
         if not os.path.exists(f):
             log.info('Quandle Data not downloaded, fetching...')
             client.fetch_all()
         return f
 
     def _build_name_map(self):
-        codes_csv = os.path.join(os.path.dirname(__file__), 'BCHAIN-datasets-codes.csv')
-        with open(codes_csv, 'r') as f:
+        with open(client.code_csv(), 'r') as f:
             for i in csv.reader(f):
                 col_name = i[0].replace('BCHAIN/', '')
                 self.pretty_names[col_name] = i[1]
