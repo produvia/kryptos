@@ -46,6 +46,7 @@ setup(
         metrics=crypto_platform.scripts.run_metrics:run
         compare=crypto_platform.scripts.compare:run
         ta=crypto_platform.scripts.run_ta:run
+        bchain=crypto_platform.scripts.bchain_activity:run
     ''',
     zip_safe=False,
 )
