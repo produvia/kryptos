@@ -1,0 +1,33 @@
+BCHAIN/TOTBC,Total Bitcoins
+BCHAIN/MKTCP,Bitcoin Market Capitalization
+BCHAIN/TRFEE,Bitcoin Total Transaction Fees
+BCHAIN/TRFUS,Bitcoin Total Transaction Fees USD
+BCHAIN/NETDF,Bitcoin Network Deficit
+BCHAIN/NTRAN,Bitcoin Number of Transactions
+BCHAIN/NTRAT,Bitcoin Total Number of Transactions
+BCHAIN/NTREP,Bitcoin Number of Transactions Excluding Popular Addresses
+BCHAIN/NADDU,Bitcoin Number of Unique Bitcoin Addresses Used
+BCHAIN/NTRBL,Bitcoin Number of Transaction per Block
+BCHAIN/TOUTV,Bitcoin Total Output Volume
+BCHAIN/ETRAV,Bitcoin Estimated Transaction Volume
+BCHAIN/ETRVU,Bitcoin Estimated Transaction Volume USD
+BCHAIN/TRVOU,Bitcoin USD Exchange Trade Volume
+BCHAIN/TVTVR,Bitcoin Trade Volume vs Transaction Volume Ratio
+BCHAIN/MKPRU,Bitcoin Market Price USD
+BCHAIN/CPTRV,Bitcoin Cost % of Transaction Volume
+BCHAIN/CPTRA,Bitcoin Cost Per Transaction
+BCHAIN/HRATE,Bitcoin Hash Rate
+BCHAIN/MIREV,Bitcoin Miners Revenue
+BCHAIN/ATRCT,Bitcoin Median Transaction Confirmation Time
+BCHAIN/BCDDC,Bitcoin Days Destroyed Cumulative
+BCHAIN/BCDDE,Bitcoin Days Destroyed
+BCHAIN/BCDDW,Bitcoin Days Destroyed (Minimum Age 1 Week)
+BCHAIN/BCDDM,Bitcoin Days Destroyed (Minimum Age 1 Month)
+BCHAIN/BCDDY,Bitcoin Days Destroyed (Minimum Age 1 Year)
+BCHAIN/BLCHS,Bitcoin api.blockchain Size
+BCHAIN/AVBLS,Bitcoin Average Block Size
+BCHAIN/MWTRV,Bitcoin My Wallet Transaction Volume
+BCHAIN/MWNUS,Bitcoin My Wallet Number of Users
+BCHAIN/MWNTD,Bitcoin My Wallet Number of Transaction Per Day
+BCHAIN/MIOPM,Bitcoin Mining Operating Margin
+BCHAIN/DIFF,Bitcoin Difficulty
