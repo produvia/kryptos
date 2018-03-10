@@ -40,7 +40,7 @@ def get_algo(filename):
     except Exception as e:
         log.warn('Could not import algo {} by namespace'.format(module_name))
         log.error(e)
-        return
+        raise e
 
     return algo_module
 
@@ -55,8 +55,14 @@ def load_by_name(namespace):
 
     log.info('Searching algo files for {} namespace'.format(namespace))
     for a in load_algos():
+        log.warning(getattr(a, 'NAMESPACE', None))
         if a.NAMESPACE == namespace:
-            return a
+            algo = a
+
+    if algo is None:
+        raise FileNotFoundError('Could not import strategy with namespace: {}'.format(namespace))
+
+
 
 
 def load_algos():

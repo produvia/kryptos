@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import talib as ta
 
 class CONFIG(object):
     ASSET = 'btc_usd'
@@ -21,9 +22,9 @@ class CONFIG(object):
 
     # Optionally set metrics here instead of with the metrics "-m" option
     METRICS = [
-        'portfolio_value',
-        'algo_volatility',
+        # 'portfolio_value',
         # 'algorithm_period_return',
+        # 'algo_volatility',
         # 'alpha',
         # 'benchmark_period_return',
         # 'benchmark_volatility',
@@ -39,7 +40,7 @@ class CONFIG(object):
         # 'long_exposure',
         # 'long_value',
         # 'longs_count',
-        # 'max_drawdown',
+        'max_drawdown',
         # 'max_leverage',
         # 'net_leverage',
         'pnl',
@@ -49,10 +50,70 @@ class CONFIG(object):
         # 'short_exposure',
         # 'short_value',
         # 'shorts_count',
-        'sortino',
+        # 'sortino',
         # 'starting_cash',
         # 'starting_exposure',
         # 'starting_value',
         # 'treasury_period_return',
 
         ]
+
+
+
+class TAConfig(object):
+
+    BARS = 365
+
+    #bbands_psar
+    MATYPE = ta.MA_Type.T3
+    SAR_ACCEL = 0.02
+    SAR_MAX = 0.2
+
+     # macdfix
+    MACD_SIGNAL = 9
+    RSI_OVERSOLD = 55
+    RSI_OVERBOUGHT = 65
+
+    # mean_reversion
+    RSI_OVERSOLD = 55
+    RSI_OVERBOUGHT = 65
+    CANDLE_SIZE = '5T'
+
+    # rsi_profit_target
+    MAX_HOLDINGS = 0.2
+    RSI_OVERSOLD = 30
+    RSI_OVERSOLD_BBANDS = 45
+    RSI_OVERBOUGHT_BBANDS = 55
+
+    # rsi_ta
+    RSI_PERIOD = 7
+    RSI_OVER_BOUGHT = 70
+    RSI_OVER_SOLD = 30
+    RSI_AVG_PERIOD = 15
+
+    # sma_crossover
+    SMA_FAST = 50
+    SMA_SLOW = 100
+
+    # sma_macd
+    SMA_FAST = 50
+    SMA_SLOW = 100
+    MACD_FAST = 12
+    MACD_SLOW = 26
+    MACD_SIGNAL = 9
+
+    # stoch_rsi
+    TIMEPERIOD = 9
+    FASTK_PERIOD = 5
+    FASTD_PERIOD = 3
+    FASTD_MATYPE = 0
+    STOCH_OVER_BOUGHT = 20
+    STOCH_OVER_SOLD = 80
+
+    #stochastics
+    STOCH_K_PERIOD = 5
+    STOCH_D_PERIOD = 3
+    STOCH_OVER_BOUGHT = 80
+    STOCH_OVER_SOLD = 40
+
+        

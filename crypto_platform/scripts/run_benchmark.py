@@ -6,7 +6,6 @@ from logbook import Logger
 from crypto_platform.utils import load, outputs, viz
 from crypto_platform.config import CONFIG
 
-import matplotlib.pyplot as plt
 import click
 
 log = Logger('Benchmark Runner')
@@ -23,10 +22,12 @@ def record_data(context, data):
 @click.command()
 @click.argument('algo_name')
 def benchmark(algo_name):
+    """Plots the percent return of a given algorithm against the benchmark of bitcoin price (btc_usdt)"""
 
     algo = load.load_by_name(algo_name)
     click.echo('Benchmarking {}'.format(algo.NAMESPACE))
     algo.CONFIG = CONFIG
+
 
     def initialize(context):
         context.ASSET_NAME = CONFIG.ASSET
@@ -62,13 +63,15 @@ def benchmark(algo_name):
             end=CONFIG.END,
             output=outputs.get_output_file(algo, CONFIG) + '.p'
         )
-    except PricingDataNotLoadedError:
+    except PricingDataNotLoadedError as e:
         log.info('Ingesting required exchange bundle data')
         load.ingest_exchange(CONFIG)
-        log.info('Run completed for {}'.format(algo.NAMESPACE))
+        raise e
+        
 
     viz.add_legend()
     viz.show_plot()
+    log.info('Run completed for {}'.format(algo.NAMESPACE))
 
 
 if __name__ == '__main__':

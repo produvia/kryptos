@@ -2,79 +2,145 @@
 
 ## Installation
 
-Strongly reccomended to **create a virtual environment**
-```
-pip install virtualenv
-virtualenv crypto-platform
-source ./crypto-platform/bin/activate
-
+Clone the repo:
+```bash
+$ git clone https://github.com/produvia/cryptocurrency-trading-platform.git
+$ cd cryptocurrency-trading-platform
 ```
 
-Install dependencies (This may take a while)
+#### Install with [pipenv](https://github.com/pypa/pipenv#installation) (recommended):
+```bash
+$ pipenv install
+```
 
-`pip install -r requirements.txt`
+#### Optionally install with pip:
 
-Then install this library
+Create virtualenv
+```bash
+$ pip install virtualenv
+$ virtualenv venv
+$ source ./venv/bin/activate
+```
 
-`pip install -U -e .`
+Install package as editable
+```bash
+$ pip install -e .
+```
 
 
-## Using the library
-The libray currently contains the following CLI commands
+## Using the platform
 
-#### compare_all_strategies
-Running `compare_all_strategies` will use produce a plot comparing the portfolio value of all strategies in the *algos/* directory. The results will be saved to *scripts/performance_results_* and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
+The functionality of the paltform is exposed through various CLI commands.
+
+Each command simulates a trading strategy by running pre-built or dynamically built trading algorithms via [enigma-catalyst](https://github.com/enigmampc/catalyst). The algorithm(s) will run using global configuration values and  plot various measurements of the algorithms performance.
+
+Before running the commands, ensure your virtualenv is activated:
+
+If installed via pipenv:
+```bash
+$ pipenv shell
+```
+
+If installed via virtualenv/pip:
+```bash
+$ source ./venv/bin/activate
+```
+
+### Configuration
+Global algorithm behavior can be adjusted by modifying the values in [crypto_platform/config.py](/crypto_platform/config.py). These parameters (asset, exchange, start, end, etc...) are useful standardizng strategy performance.
 
 
-The results are not yet standardized, but instead record the data specified by each algorithim.
+## Running example (pre-built) strategies
+This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
 
 #### compare
-The `compare` command accepts one or more algo_names to compare. The resulting percent return of each strategy is plotted against the benchmark.
 
-The command also accepts metrics to compare via the `-m` flag, similar to with the `metrics` command
+Use the `compare` command to compare a select number of algos. 
 
-For example:
-`compare sma_crossover bbands -m sharpe`
+```bash
+$ compare [ALGOS]
+```
+
+The resulting percent return of each strategy is plotted against the benchmark.
+
+The command optionally accepts metrics to compare via the `-m` flag, similar to with the `metrics` command
+
+```bash
+$ compare macdfix sma_crossover -m sharpe -m pnl
+```
 
 If no metrics are given the command defaults to the metrics enabled in *config.py*
 
+#### compare_all_straegies
+Use the `compare_all_straegies` command to run all exmaple strategies.
+
+The portfolio of each strategy will be plotted against the benchmark.
+The results will be saved to a new  *performance_results/* directory and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
+
+This command does not accept any arguments.
+
 #### benchmark
 
-Running `benchmark <algo_name>` will plot the percent return of a given algorithim against the benchmark of bitcoin price (*btc_usdt*)
+The `benchmark` command will plot the percent return of a single algorithim against the benchmark of bitcoin price (*btc_usdt*)
+
+```bash
+$ benchmark ALGO_NAME
+```
+
 
 #### metrics
 
-Running `metrics <algo_name>` will plot the specified performance metrics over the trading period.
+The `metrics` command will plot performance metrics over the trading period for a given algo.
 
-Metrics are specified via *config.py* or via CLI options.
+If no metrics are specified, the metrics defined in _config.py_ will be used.
 
-For example:
+```bash
+$ metrics ALGO_NAME
+```
 
-`metrics sma_crossover -m sharpe -m sortino -m max_drawdown`
+Optionally specify performance metrics via the `-m` flag
+```bash
+$ metrics buy_and_hodl -m sharpe -m sortino -m max_drawdown
+```
 
-Available metrics can be enabled/disabled via comments in *config.py*
+## Running Dynamic Stragies
+The following commands run algorithms requiring input parameters that effect their trading logic. These strategies contain a basic skeleton to iterate through the algorithm but tradng decisions are determined by analyses specified indicators of the respective dataset.
 
-- bear_market: Sell off asset if price is more than 20% lower than highest highest closing-price over 2 month period. Invest 90% of portfolio if price is more than 20% higher than lowest closing priceover 2 month period
-- buy_and_hodl: Buy 80% of portfolio of an asset and hodl!
-- buy_low_sell_high
-- dual_moving_average
-- mean_reversion_simple
-- rsi
-- simple_loop
-- sma_crossover
-- pugilist
-- dynamic rebalance
-- - macdfix
-- obv (On-Balance Volume: Change in volume inidcates whether to buy or sell in an attempt to forecast change price)
-- bbands (Simple Bollinger Bands, based on price crossing upper or lwoer band)
-- bbands_psar (Modified BOlligner bands: PSAR determines whether to close position)
+#### Technical Analysis
+Use the `ta` command to run a strategy using Technical Analysis of specified market indicators.
 
-Most Successful Strategies:
+```bash
+$ ta -i bbands
+```
 
-1. SMA Crossover (sma_crossover)
-2. MACDFIX (macdfix)
-3. Bollinger Bands (bbands)
-4. Bollinger Bands with PSAR (bbands_psar)
+use multiple indicators
+```bash
+$ ta -i bbands -i psar
+```
+
+Optionally enter the market on the first iteration
+```bash
+$ ta -i obv -e
+```
+
+
+#### Blockchain Activity
+
+The `bchain` command is used to create a trading strategy by analyzing Quandl's [Blockchain Database](https://www.quandl.com/data/BCHAIN-Blockchain).
+
+This database is split into datasets which can be specified via their [codes](/crypto_platform/datasets/quandl_data/BCHAIN-datasets-codes.csv) using the `-s` flag.
+
+For example, to use Number of Transactions Per Day:
+```bash
+$ bchain -s NTRAN
+```
+
+To view Miners' Revenue and Bitcoin Difficulty
+```bash
+$ bchain -s MIREV -s DIFF
+```
+
+Note: `bchain` does not yet peform trade logic and only visualizes the dataset
 
 
 

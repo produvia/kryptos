@@ -115,7 +115,7 @@ def trade_logic(context, data):
         return
 
     # Exit if we cannot trade
-    if not data.can_trade(context.market):
+    if not data.can_trade(context.asset):
         return
 
     # Another powerful built-in feature of the Catalyst backtester is the

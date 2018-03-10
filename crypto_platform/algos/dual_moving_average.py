@@ -31,12 +31,12 @@ def trade_logic(context, data):
     short_mavg = data.history(context.asset,
                               'price',
                               bar_count=short_window,
-                              frequency='1m'
+                              frequency='1D'
                               ).mean()
     long_mavg = data.history(context.asset,
                              'price',
                              bar_count=long_window,
-                             frequency='1m'
+                             frequency='1D'
                              ).mean()
 
     # Let's keep the price of our asset in a more handy variable
