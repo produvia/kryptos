@@ -8,7 +8,7 @@ $ git clone https://github.com/produvia/cryptocurrency-trading-platform.git
 $ cd cryptocurrency-trading-platform
 ```
 
-#### Install with [pipenv](https://github.com/pypa/pipenv) (recommended):
+#### Install with [pipenv](https://github.com/pypa/pipenv#installation) (recommended):
 ```bash
 $ pipenv install
 ```
