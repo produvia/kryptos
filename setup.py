@@ -11,6 +11,7 @@ requires = [
     'enigma-catalyst',
     'matplotlib',
     'TA-Lib',
+    'quandl',
     'Click'
 ]
 
