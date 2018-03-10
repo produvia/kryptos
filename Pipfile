@@ -14,8 +14,11 @@ ta-lib = "*"
 quandl = "*"
 click = "*"
 "e1839a8" = {path = ".", editable = true}
+pytrends = "*"
+
 
 [dev-packages]
+
 
 
 [requires]
