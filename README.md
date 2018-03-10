@@ -128,7 +128,7 @@ $ ta -i obv -e
 
 The `bchain` command is used to create a trading strategy by analyzing Quandl's [Blockchain Database](https://www.quandl.com/data/BCHAIN-Blockchain).
 
-This database is split into datasets which can be specified via their [codes](/crypto_platform/datasets/quandle_data/BCHAIN-datasets-codes.csv) using the `-s` flag.
+This database is split into datasets which can be specified via their [codes](/crypto_platform/datasets/quandl_data/BCHAIN-datasets-codes.csv) using the `-s` flag.
 
 For example, to use Number of Transactions Per Day:
 ```bash
