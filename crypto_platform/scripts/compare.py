@@ -22,8 +22,36 @@ def record_data(context, data):
 
 @click.command()
 @click.argument('algos', nargs=-1)
-@click.option('--metrics', '-m', multiple=True, default=None)
+@click.option('--metrics', '-m', multiple=True, default=None, help='Performance metrics')
 def run(algos, metrics):
+    """Compares performance of provided algorithms
+
+    \b
+    Example:
+
+        compare macdfix sma_crossover -m sharpe -m pnl
+
+    \b
+    Available example algorithms:
+      - bbands
+      - bbands_psar
+      - bear_market
+      - buy_and_hodl
+      - buy_low_sell_high
+      - dual_moving_average
+      - dynamic_rebalance
+      - macdfix
+      - mean_reversion_simple
+      - obv
+      - pugilist
+      - rsi_profit_target
+      - rsi_ta
+      - sma_crossover
+      - sma_macd
+      - stoch_rsi
+      - stochastics
+    """
+
     click.secho('Comparing Strategies: {}\nAnalyzing Metrics: {}'.format(algos, metrics), fg='white')
     if len(metrics) > 0:
         CONFIG.METRICS = metrics

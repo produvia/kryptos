@@ -94,6 +94,22 @@ def signal_buy(context):
 @click.option('--indicators', '-i', multiple=True)
 @click.option('--quick_enter/--no-quick-enter', '-e', default=False)
 def run(indicators, quick_enter):
+    """Runs a strategy based on specified TA indicators
+
+        \b
+        Example:
+            ta -i macd -i bbands
+
+        \b
+        Available Indicators:
+          - bbands
+          - psar
+          - macd
+          - macdfix
+          - obv
+          - rsi
+          - stoch
+    """
     click.secho('Executing using indicators:\n{}'.format(indicators), fg='white')
 
     def initialize(context):

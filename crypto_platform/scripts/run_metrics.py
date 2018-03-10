@@ -25,6 +25,12 @@ def record_data(context, data):
 @click.argument('algo_name')
 @click.option('--metrics', '-m', multiple=True, default=None)
 def run(algo_name, metrics):
+    """Plots the specified algo's performance metrics
+
+    \b
+    Example:
+        metrics bbands -m sharpe -m pnl
+    """
     for a in load.load_algos():
         if a.NAMESPACE == str(algo_name):
             algo = a

@@ -22,6 +22,7 @@ def record_data(context, data):
 @click.command()
 @click.argument('algo_name')
 def benchmark(algo_name):
+    """Plots the percent return of a given algorithm against the benchmark of bitcoin price (btc_usdt)"""
 
     algo = load.load_by_name(algo_name)
     click.echo('Benchmarking {}'.format(algo.NAMESPACE))

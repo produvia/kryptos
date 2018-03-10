@@ -20,6 +20,10 @@ log = Logger('Strategy Runner')
 
 @click.command()
 def run():
+    """Runs all the example algorithms inside /crypo_platform/algos
+
+    Plots the portfolio value over time for each strategy
+    """
     for algo in load.load_algos():
         if algo is None:
             continue
