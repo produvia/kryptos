@@ -17,16 +17,19 @@ log = Logger('Blockchain Activity')
 
 @click.command()
 @click.argument('keywords', nargs=-1)
-def run(keywords):
+@click.option('--asset', '-a', is_flag=True, help='Include asset in keyword list')
+def run(keywords, asset):
     """Runs strategy using Google Search Trends
-    
+
         Example:
             trends 'btc' 'btc usd' 'btc price'
     """
 
-    click.secho('Analysis Google Trends:\n{}'.format(keywords), fg='white')
-
+    keywords = list(keywords)
+    if asset:
+        keywords.append(CONFIG.ASSET.replace('_', ' '))
     trends = GoogleTrendDataManager(keywords)
+    click.secho('Analysis Google Trends:\n{}'.format(keywords), fg='white')
 
     def initialize(context):
 
