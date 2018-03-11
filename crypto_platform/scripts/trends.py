@@ -16,12 +16,17 @@ log = Logger('Blockchain Activity')
 
 
 @click.command()
-@click.argument('keyword')
-def run(keyword):
+@click.argument('keywords', nargs=-1)
+def run(keywords):
+    """Runs strategy using Google Search Trends
+    
+        Example:
+            trends 'btc' 'btc usd' 'btc price'
+    """
 
-    click.secho('Analysis Google Trends:\n{}'.format(keyword), fg='white')
+    click.secho('Analysis Google Trends:\n{}'.format(keywords), fg='white')
 
-    trends = GoogleTrendDataManager([keyword])
+    trends = GoogleTrendDataManager(keywords)
 
     def initialize(context):
 
@@ -45,14 +50,16 @@ def run(keyword):
         record_payload = {'price': price}
 
         if date in trends.df.index:
-            current_val = trends.kw_by_date(keyword, date)
-            record_payload[keyword] = current_val
+            for k in keywords:
+                current_val = trends.kw_by_date(k, date)
+                record_payload[k] = current_val
 
         record(**record_payload)
 
     def analyze(context, results):
         viz.plot_metric(results, 'price', pos=211, label='Price')
-        viz.plot_metric(results, keyword, pos=212, y_label=keyword, label='Interest over time')
+        for k in keywords:
+            viz.plot_metric(results, k, pos=212, y_label='Google Trends', label=k)
         plt.legend()
 
     try:
