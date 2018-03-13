@@ -1,14 +1,11 @@
-from catalyst import run_algorithm
-from catalyst.api import record, set_benchmark, symbol, get_open_orders, order, cancel_order, get_dataset
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-
-from crypto_platform.utils import load, viz, algo
-from crypto_platform.config import CONFIG
-from crypto_platform.datasets.google_trends.manager import GoogleTrendDataManager
-from logbook import Logger
-
 import click
 import matplotlib.pyplot as plt
+from logbook import Logger
+
+
+from crypto_platform.utils import viz, algo
+from crypto_platform.config import CONFIG
+from crypto_platform.datasets.google_trends.manager import GoogleTrendDataManager
 
 
 log = Logger('Blockchain Activity')

@@ -1,15 +1,9 @@
-from catalyst import run_algorithm
-from catalyst.api import record, set_benchmark, symbol, get_open_orders, order, cancel_order, get_dataset
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-
-from crypto_platform.utils import load, viz, algo
-from crypto_platform.analysis.indicators import TAAnalysis
-from crypto_platform.config import CONFIG
-from crypto_platform.datasets.quandl_data.manager import QuandleDataManager
-from logbook import Logger
-
 import click
 import matplotlib.pyplot as plt
+from logbook import Logger
+
+from crypto_platform.utils import viz, algo
+from crypto_platform.datasets.quandl_data.manager import QuandleDataManager
 
 
 log = Logger('Blockchain Activity')
@@ -72,7 +66,6 @@ def run(datasets):
     def handle_data(context, data):
         algo.record_data(context, data)
         qdata.record_data(context, data, datasets)
-
 
     def analyze(context, results):
         pos = viz.get_start_geo(len(datasets))

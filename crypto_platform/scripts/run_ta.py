@@ -1,14 +1,11 @@
-from catalyst import run_algorithm
-from catalyst.api import record, set_benchmark, symbol, get_open_orders, order, order_target_percent, cancel_order
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-
-from crypto_platform.utils import load, outputs, viz, algo
-from crypto_platform.analysis.indicators import TAAnalysis
-from crypto_platform.config import CONFIG
-from logbook import Logger
-
 import click
 import matplotlib.pyplot as plt
+from logbook import Logger
+from catalyst.api import get_open_orders, order, order_target_percent, cancel_order
+
+from crypto_platform.utils import viz, algo
+from crypto_platform.analysis.indicators import TAAnalysis
+
 
 log = Logger('TA')
 
@@ -94,7 +91,6 @@ def run(indicators, quick_enter):
         algo.initialze_from_config(context)
         context.i = 0
         ta.track_indicators(list(indicators))
-
 
     def handle_data(context, data):
         algo.record_data(context, data)
