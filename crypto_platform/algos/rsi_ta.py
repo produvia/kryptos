@@ -9,15 +9,10 @@
 # in you strategy. Based loosly on
 # https://github.com/mellertson/talib-macd-example/blob/master/talib-macd-matplotlib-example.py
 
-import os
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import talib as ta
 from logbook import Logger
-from matplotlib.dates import date2num
-from matplotlib.finance import candlestick_ohlc
 
 from catalyst.api import (
     order,

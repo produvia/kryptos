@@ -14,7 +14,7 @@ class GoogleTrendDataManager(object):
 
     def __init__(self, keywords):
 
-        self.kwds = keywords
+        self.keywords = keywords
         self.trends = TrendReq(hl='en-US', tz=360)
 
         timeframe = str(CONFIG.START.date()) + ' ' + str(CONFIG.END.date())
@@ -32,4 +32,17 @@ class GoogleTrendDataManager(object):
         series = self.df.loc[date]
         val = series.get(kwd)
         return val
+
+    def record_data(self, context, data):
+        date = context.blotter.current_dt.date()
+        record_payload = {}
+
+        if date not in self.df.index:
+            return record_payload
+
+        for k in self.keywords:
+            current_val = self.kw_by_date(k, date)
+            record_payload[k] = current_val
+
+        return record_payload
 

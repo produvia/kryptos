@@ -1,7 +1,7 @@
 import os
 import csv
 import pandas as pd
-
+from catalyst.api import record
 from crypto_platform.datasets.quandl_data import client
 
 from logbook import Logger
@@ -44,3 +44,20 @@ class QuandleDataManager(object):
 
     def pretty_title(self, col):
         return self.pretty_names[col]
+
+    def record_data(self, context, data, datasets):
+        date = context.blotter.current_dt.date()
+        record_payload = {}
+
+        if date not in self.df.index:
+            return record_payload
+
+        for col in datasets:
+            current_val = self.column_by_date(col, date)
+            record_payload[col] = current_val
+            log.info('{}: {}'.format(col, current_val))
+
+        record(**record_payload)
+
+
+
