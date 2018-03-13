@@ -142,6 +142,24 @@ $ bchain -s MIREV -s DIFF
 
 Note: `bchain` does not yet peform trade logic and only visualizes the dataset
 
+#### Google Search Trends
+
+The `trends` command is used to create a strategy by analyzing interest over time in terms of Google Trends search volume.
+
+Simply provide one or more seach terms:
+
+```bash
+$ trends btc ethereum litecoin
+```
+
+Or for terms that include spaces:
+```bash
+$ trends btc litecoin 'litecoin vs bitcoin'
+```
+
+Optionally provide the `-a` to include the algorithm's asset (for example btc_usd) as a search term
+
+
 
 
 
