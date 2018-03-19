@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import talib as ta
 import matplotlib.pyplot as plt
@@ -8,127 +7,14 @@ from catalyst.api import record
 from logbook import Logger
 from crypto_platform.config import TAConfig as CONFIG
 from crypto_platform.utils import viz
+from crypto_platform.strategy.indicators import Indicator
 
 log = Logger('INDICATOR')
 
 
-class TAAnalysis(object):
-    def __init__(self):
-        self.context = None
-        self.data = None
-        self.active_indicators = []
-
-    def track_indicators(self, indicators):
-        for i in indicators:
-            obj = getattr(self, i)
-        self.active_indicators.append(obj)
-
-    def calculate(self, context, data):
-        self.context = context
-        self.data = data
-        for i in self.active_indicators:
-            i.calculate(self.prices)
-
-    def record(self):
-        for i in self.active_indicators:
-            i.record()
-
-    @property
-    def signals_buy(self):
-        """Placeholder logic"""
-        for i in self.active_indicators:
-            if i.is_bullish:
-                return True
-
-    @property
-    def signals_sell(self):
-        for i in self.active_indicators:
-            if i.is_bearish:
-                return True
-
-    @property
-    def prices(self):
-        # Get price, open, high, low, close
-        return self.data.history(
-            self.context.asset,
-            bar_count=self.context.BARS,
-            fields=['price', 'open', 'high', 'low', 'close', 'volume'],
-            frequency='1d')
-
-    @property
-    def current_price(self):
-        return self.prices.close[-1]
-        return self.data.current(self.context.asset, 'price')
-
-    @property
-    def bbands(self):
-        return BBANDS()
-
-    @property
-    def psar(self):
-        return PSAR()
-
-    @property
-    def macd(self):
-        return MACD()
-
-    @property
-    def macdfix(self):
-        return MACDFIX()
-
-    @property
-    def obv(self):
-        return OBV()
-
-    @property
-    def rsi(self):
-        return RSI()
-
-    @property
-    def stoch(self):
-        return STOCH()
-
-    # @property
-    # def sma(self):
-    #     return SMA(self.prices)
-
-
-class Indicator(object):
-    """Base class for Indicator ovjects"""
-
-    def __init__(self):
-        self.prices = None
-
-    def calculate(self, prices):
-        raise NotImplementedError
-
-    def record(self):
-        raise NotImplementedError
-
-    def plot(self):
-        raise NotImplementedError
-
-    @property
-    def current_price(self):
-        return self.prices.close[-1]
-
-    @property
-    def is_bullish(self):
-        raise NotImplementedError
-
-    @property
-    def is_bearish(self):
-        raise NotImplementedError
-
-
-class BBANDS(object):
+class BBANDS(Indicator):
     def __init__(self):
         super(BBANDS, self).__init__()
-        self.prices = None
-
-    @property
-    def current_price(self):
-        return self.prices.close[-1]
 
     def calculate(self, prices):
         self.prices = prices
@@ -146,13 +32,13 @@ class BBANDS(object):
         plt.legend()
 
     @property
-    def is_bullish(self):
+    def signals_buy(self):
         if self.current_price > self.upper[-1]:
             return True
         return False
 
     @property
-    def is_bearish(self):
+    def signals_sell(self):
         if self.current_price < self.lower[-1]:
             return True
         return False
@@ -162,10 +48,6 @@ class PSAR(object):
     def __init__(self):
         super(PSAR, self).__init__()
         self.prices = None
-
-    @property
-    def current_price(self):
-        return self.prices.close[-1]
 
     def calculate(self, prices):
         self.prices = prices
@@ -185,11 +67,11 @@ class PSAR(object):
         plt.legend()
 
     @property
-    def is_bullish(self):
+    def signals_buy(self):
         return self.current_price > self.psar[-1]
 
     @property
-    def is_bearish(self):
+    def signals_sell(self):
         if self.current_price < self.psar[-1]:
             log.info('Closing position due to PSAR')
             return True
@@ -206,8 +88,7 @@ class MACD(object):
             prices.close.as_matrix(), fastperiod=CONFIG.MACD_FAST,
             slowperiod=CONFIG.MACD_SLOW, signalperiod=CONFIG.MACD_SIGNAL)
 
-        self.macd_test = np.where((self.macd > self.macd_signal), 1, 0)
-
+        self.macd_test = self.macd[-1] > self.macd_signal[-1]
 
     def record(self):
         record(macd=self.macd[-1], macd_signal=self.macd_signal[-1],
@@ -223,12 +104,12 @@ class MACD(object):
         plt.legend()
 
     @property
-    def is_bullish(self):
-        return self.macd_test[-1] == 1
+    def signals_buy(self):
+        return self.macd[-1] > self.macd_signal[-1]
 
     @property
-    def is_bearish(self):
-        return self.macd_test[-1] == 0
+    def signals_sell(self):
+        return self.macd[-1] < self.macd_signal[-1]
 
 
 class MACDFIX(MACD):
@@ -264,13 +145,13 @@ class OBV(object):
         plt.legend()
 
     @property
-    def is_bullish(self):
+    def signals_buy(self):
         log.error('checking obv bs')
         log.error('{} > {} ??'.format(self.obv[-1], self.obv[-2]))
         return self.obv[-1] > self.obv[-2]
 
     @property
-    def is_bearish(self):
+    def signals_sell(self):
         return self.obv[-1] < self.obv[-2]
 
 
@@ -311,12 +192,12 @@ class RSI(object):
         return self.rsi[-2] <= CONFIG.RSI_OVER_SOLD and self.rsi[-1] > CONFIG.RSI_OVER_SOLD
 
     @property
-    def is_bullish(self):
+    def signals_buy(self):
         # crosses to above oversold
         return self.rsi[-2] <= CONFIG.RSI_OVER_SOLD and self.rsi[-1] > CONFIG.RSI_OVER_SOLD
 
     @property
-    def is_bearish(self):
+    def signals_sell(self):
         # crosses to below overbought
         return self.rsi[-2] >= CONFIG.RSI_OVER_BOUGHT and self.rsi[-1] < CONFIG.RSI_OVER_BOUGHT
 
@@ -349,7 +230,6 @@ class STOCH(object):
             prices.high.as_matrix(), prices.low.as_matrix(),
             prices.close.as_matrix(), slowk_period=CONFIG.STOCH_K_PERIOD,
             slowd_period=CONFIG.STOCH_D_PERIOD)
-
 
     def record(self):
         record(
@@ -385,11 +265,11 @@ class STOCH(object):
         return self.stoch_d[-2] < CONFIG.STOCH_OVER_SOLD and self.stoch_d[-1] > self.stoch_d[-2]
 
     @property
-    def is_bullish(self):
+    def signals_buy(self):
         return self.oversold
 
     @property
-    def is_bearish(self):
+    def signals_sell(self):
         return self.overbought
 
 
@@ -416,10 +296,10 @@ class STOCH(object):
 #     def record(self):
 #         record(sma_slow=self.slow[-1], sma_fast=self.fast[-1])
 
-#     def is_bullish(self):
+#     def signals_buy(self):
 #         return self.fast > self.slow
 
-#     def is_bearish(self):
+#     def signals_sell(self):
 #         return self.slow
 
 
