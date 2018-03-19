@@ -2,11 +2,11 @@ from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from logbook import Logger
+import matplotlib.pyplot as plt
 
 from crypto_platform.config import CONFIG
-from crypto_platform.utils import load
-from crypto_platform.analysis import indicators
-
+from crypto_platform.utils import load, viz
+from crypto_platform.strategy.indicators import technical
 log = Logger('Strategy')
 
 
@@ -15,8 +15,20 @@ class Strategy(object):
     def __init__(self):
         super(Strategy, self).__init__()
         self._indicators = []
+        self._extra_init = lambda context: None
+        self._extra_handle = lambda context, data: None
+        self._extra_analyze = lambda context, results: None
 
-    def setup_context(self, context, config=None):
+    def init(self, f):
+        self._extra_init = f
+
+    def handle_data(self, f):
+        self._extra_handle = f
+
+    def analyze(self, f):
+        self._extra_analyze = f
+
+    def _init_func(self, context, config=None):
         """Stores config options catalyst's context object"""
         if config is None:
             config = CONFIG
@@ -31,15 +43,14 @@ class Strategy(object):
             if '__' not in k:
                 setattr(context, k, v)
 
-    def add_indicator(self, indicator, priority=0, **kw):
-        ind_class = getattr(indicators, indicator)
-        indicator = ind_class(**kw)
-        self._indicators.insert(indicator, priority)
+        self._extra_init(context)
 
-    def process_data(self, context, data):
+    def _process_data(self, context, data):
         price = data.current(context.asset, 'price')
         cash = context.portfolio.cash
         record(price=price, cash=cash)
+
+        context.price = price
         # Get price, open, high, low, close
         context.prices = data.history(
             context.asset,
@@ -48,12 +59,46 @@ class Strategy(object):
             frequency='1d',
         )
         for i in self._indicators:
-            i.calculate(context, data)
+            i.calculate(context.prices)
             i.record()
-        self.execute_trades(context, data)
+
+        self._extra_handle(context, data)
+        self.weigh_signals(context, data)
+
+    def _analyze(self, context, results):
+        pos = viz.get_start_geo(len(self._indicators) + 2)
+        viz.plot_percent_return(results, pos=pos)
+        viz.plot_benchmark(results, pos=pos)
+        plt.legend()
+        pos += 1
+        for i in self._indicators:
+            i.plot(results, pos)
+            pos += 1
+
+        viz.plot_buy_sells(results, pos=pos)
+
+        self._extra_analyze(context, results)
+        # viz.add_legend()
+        viz.show_plot()
+
+    def add_indicator(self, indicator, priority=0, **kw):
+        ind_class = getattr(technical, indicator)
+        indicator = ind_class(**kw)
+        self._indicators.insert(priority, indicator)
 
     def weigh_signals(self, context, data):
-        raise NotImplementedError
+        sells, buys = 0, 0
+        for i in self._indicators:
+            if i.signals_buy:
+                buys += 1
+            elif i.signals_sell:
+                sells += 1
+
+        if buys > sells:
+            self.place_buy(context)
+        elif sells > buys:
+            self.place_sell(context)
+
 
     def place_buy(self, context, size=None, price=None, slippage=None):
         if context.asset not in context.portfolio.positions:
@@ -99,14 +144,15 @@ class Strategy(object):
         )
 
     # Save the prices and analysis to send to analyze
-    def run(self, initialize, handle_data, analyze):
+    def run(self):
+
         try:
             run_algorithm(
                 capital_base=CONFIG.CAPITAL_BASE,
                 data_frequency=CONFIG.DATA_FREQUENCY,
-                initialize=initialize,
-                handle_data=handle_data,
-                analyze=analyze,
+                initialize=self._init_func,
+                handle_data=self._process_data,
+                analyze=self._analyze,
                 exchange_name=CONFIG.BUY_EXCHANGE,
                 base_currency=CONFIG.BASE_CURRENCY,
                 start=CONFIG.START,
