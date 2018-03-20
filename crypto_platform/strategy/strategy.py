@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from crypto_platform.config import CONFIG
 from crypto_platform.utils import load, viz
 from crypto_platform.strategy.indicators import technical
+from crypto_platform.data.manager import get_data_manager
+
 log = Logger('Strategy')
 
 
@@ -15,6 +17,7 @@ class Strategy(object):
     def __init__(self):
         super(Strategy, self).__init__()
         self._indicators = []
+        self._datasets = []
         self._extra_init = lambda context: None
         self._extra_handle = lambda context, data: None
         self._extra_analyze = lambda context, results: None
@@ -43,6 +46,9 @@ class Strategy(object):
             if '__' not in k:
                 setattr(context, k, v)
 
+        for d in self._datasets:
+            d.fetch_data()
+
         self._extra_init(context)
 
     def _process_data(self, context, data):
@@ -58,6 +64,10 @@ class Strategy(object):
             fields=['price', 'open', 'high', 'low', 'close'],
             frequency='1d',
         )
+
+        for d in self._datasets:
+            d.record_data(context, data)
+
         for i in self._indicators:
             i.calculate(context.prices)
             i.record()
@@ -66,13 +76,18 @@ class Strategy(object):
         self.weigh_signals(context, data)
 
     def _analyze(self, context, results):
-        pos = viz.get_start_geo(len(self._indicators) + 2)
+        strat_plots = len(self._indicators) + len(self._datasets)
+        pos = viz.get_start_geo(strat_plots + 2)
         viz.plot_percent_return(results, pos=pos)
         viz.plot_benchmark(results, pos=pos)
         plt.legend()
         pos += 1
         for i in self._indicators:
             i.plot(results, pos)
+            pos += 1
+
+        for d in self._datasets:
+            d.plot(results, pos)
             pos += 1
 
         viz.plot_buy_sells(results, pos=pos)
@@ -85,6 +100,11 @@ class Strategy(object):
         ind_class = getattr(technical, indicator)
         indicator = ind_class(**kw)
         self._indicators.insert(priority, indicator)
+
+    def use_dataset(self, dataset_name, columns):
+        data_manager = get_data_manager(dataset_name)(columns=columns)
+        self._datasets.append(data_manager)
+
 
     def weigh_signals(self, context, data):
         sells, buys = 0, 0

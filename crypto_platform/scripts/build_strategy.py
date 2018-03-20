@@ -12,14 +12,26 @@ log = Logger('Blockchain Activity')
 
 
 @click.command()
-@click.argument('indicators', nargs=-1)
+@click.option('--indicators', '-i', multiple=True, help='Indicators listed in order of priority')
 @click.option('--dataset', '-d', help='Include asset in keyword list')
-def run(indicators, dataset):
+@click.option('--columns', '-c', multiple=True, help='Target columns for specified dataset')
+def run(indicators, dataset, columns):
+    click.secho('''
+        Creating Trading Strategy:
+        Indicators: {}
+        Dataset: {}
+        Dataset Columns: {}
+        '''.format(indicators, dataset, columns), fg='white')
 
     strat = Strategy()
 
+    columns = list(columns)
+
     for i in indicators:
         strat.add_indicator(i.upper())
+
+    if dataset is not None:
+        strat.use_dataset(dataset, columns)
 
     @strat.init
     def initialize(context):
@@ -34,6 +46,4 @@ def run(indicators, dataset):
         log.info('Analyzing strategy')
         # viz.plot_metric(results, 'price', pos=211, label='Price')
 
-
     strat.run()
-
