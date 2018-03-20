@@ -58,13 +58,13 @@ def plot_benchmark(results, pos=211,):
     ax.plot(bench, label='Benchmark', linestyle='--')
 
 
-def plot_metric(results, metric, pos, y_label=None, label=None, add_mean=False, **kw):
+def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, **kw):
     if y_label is None:
-        y_label = '{}'.format(metric.replace('_', '\n').title())
+        y_label = '{}'.format(column.replace('_', '\n').title())
 
     ax = plt.subplot(pos)
     ax.set_ylabel(y_label)
-    res = results.loc[:, [metric]]
+    res = results.loc[:, [column]]
     ax.plot(res, label=label, **kw)
 
     if add_mean:
@@ -92,7 +92,7 @@ def plot_buy_sells(results, pos, y_val=None):
 
     if y_val is None:
         y_val = 'price'
-        ax = plot_metric(results, 'price', pos, y_label='Buy/Sells')
+        ax = plot_column(results, 'price', pos, y_label='Buy/Sells')
 
     else:  # dont plot price if using other y_val
         ax = plt.subplot(pos)

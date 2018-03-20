@@ -39,7 +39,7 @@ def run(strategy, metrics):
         log.info('Analyzing {} with {}'.format(strat.NAMESPACE, CONFIG.METRICS))
         pos = viz.get_start_geo(len(CONFIG.METRICS) + 1)
         for m in CONFIG.METRICS:
-            viz.plot_metric(results, m, pos, label=strat.NAMESPACE)
+            viz.plot_column(results, m, pos, label=strat.NAMESPACE)
             pos += 1
 
     algo.run_algo(initialize, handle_data, analyze)

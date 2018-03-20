@@ -71,7 +71,7 @@ def run(datasets):
         pos = viz.get_start_geo(len(datasets))
         for d in datasets:
             name = qdata.pretty_title(d)
-            viz.plot_metric(results, d, pos=pos, y_label=name, label=name)
+            viz.plot_column(results, d, pos=pos, y_label=name, label=name)
             pos += 1
         plt.legend()
 

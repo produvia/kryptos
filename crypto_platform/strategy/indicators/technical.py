@@ -25,10 +25,10 @@ class BBANDS(Indicator):
 
     def plot(self, results, pos):
         y_label = 'BBands'
-        viz.plot_metric(results, 'price', pos, label='price', color='black')
-        viz.plot_metric(results, 'upper', pos, y_label=y_label, label='upper')
-        viz.plot_metric(results, 'middle', pos, y_label=y_label, label='middle')
-        viz.plot_metric(results, 'lower', pos, y_label=y_label, label='lower')
+        viz.plot_column(results, 'price', pos, label='price', color='black')
+        viz.plot_column(results, 'upper', pos, y_label=y_label, label='upper')
+        viz.plot_column(results, 'middle', pos, y_label=y_label, label='middle')
+        viz.plot_column(results, 'lower', pos, y_label=y_label, label='lower')
         plt.legend()
 
     @property
@@ -62,8 +62,8 @@ class PSAR(object):
 
     def plot(self, results, pos):
         y_label = 'PSAR'
-        viz.plot_metric(results, 'price', pos, label='price', color='black')
-        viz.plot_metric(results, 'psar', pos, y_label=y_label, label='psar')
+        viz.plot_column(results, 'price', pos, label='price', color='black')
+        viz.plot_column(results, 'psar', pos, y_label=y_label, label='psar')
         plt.legend()
 
     @property
@@ -96,9 +96,9 @@ class MACD(object):
 
     def plot(self, results, pos):
         y_label = 'MACD'
-        viz.plot_metric(results, 'macd', pos, y_label=y_label, label='macd')
-        viz.plot_metric(results, 'macd_signal', pos, y_label=y_label, label='macd_signal')
-        viz.plot_metric(results, 'macd_hist', pos, y_label=y_label, label='macd_hist')
+        viz.plot_column(results, 'macd', pos, y_label=y_label, label='macd')
+        viz.plot_column(results, 'macd_signal', pos, y_label=y_label, label='macd_signal')
+        viz.plot_column(results, 'macd_hist', pos, y_label=y_label, label='macd_hist')
         viz.plot_buy_sells(results, pos, y_val='macd')
 
         plt.legend()
@@ -139,7 +139,7 @@ class OBV(object):
 
     def plot(self, results, pos):
         y_label = 'OBV'
-        viz.plot_metric(results, 'obv', pos, y_label=y_label, label='obv')
+        viz.plot_column(results, 'obv', pos, y_label=y_label, label='obv')
         viz.plot_buy_sells(results, pos, y_val='obv')
 
         plt.legend()
@@ -167,7 +167,7 @@ class RSI(object):
 
     def plot(self, results, pos):
         y_label = 'RSI'
-        ax = viz.plot_metric(results, 'rsi', pos, y_label=y_label, label='rsi')
+        ax = viz.plot_column(results, 'rsi', pos, y_label=y_label, label='rsi')
 
         overbought_line = [CONFIG.RSI_OVER_BOUGHT for i in results.index]
         oversold_line = [CONFIG.RSI_OVER_SOLD for i in results.index]
@@ -240,8 +240,8 @@ class STOCH(object):
 
     def plot(self, results, pos):
         y_label = 'STOCH'
-        viz.plot_metric(results, 'stoch_k', pos, y_label=y_label, label='stoch_k')
-        ax = viz.plot_metric(results, 'stoch_d', pos, y_label=y_label, label='stoch_d')
+        viz.plot_column(results, 'stoch_k', pos, y_label=y_label, label='stoch_k')
+        ax = viz.plot_column(results, 'stoch_d', pos, y_label=y_label, label='stoch_d')
 
         overbought_line = [CONFIG.STOCH_OVER_BOUGHT for i in results.index]
         oversold_line = [CONFIG.STOCH_OVER_SOLD for i in results.index]
@@ -285,9 +285,9 @@ class STOCH(object):
 
 #     def plot(self, results, pos):
 #         y_label = 'SMA'
-#         ax = viz.plot_metric(results, 'sma_slow', pos, y_label=y_label, label='sma_slow')
-#         viz.plot_metric(results, 'sma_fast', pos, y_label=y_label, label='sma_fast')
-#         viz.plot_metric(results, 'price', pos, y_label=y_label, label='sma_fast')
+#         ax = viz.plot_column(results, 'sma_slow', pos, y_label=y_label, label='sma_slow')
+#         viz.plot_column(results, 'sma_fast', pos, y_label=y_label, label='sma_fast')
+#         viz.plot_column(results, 'price', pos, y_label=y_label, label='sma_fast')
 
 #         viz.plot_buy_sells(results, pos, y_val='price' )
 

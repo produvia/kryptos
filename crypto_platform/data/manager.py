@@ -16,6 +16,11 @@ from logbook import Logger
 
 DATA_DIR = os.path.dirname(os.path.abspath(csv_data.__file__))
 
+AVAILABLE_DATASETS = [
+    'google',
+    'quandl',
+]
+
 
 def get_data_manager(name):
     datasets = {
@@ -61,7 +66,7 @@ class DataManager(object):
 
     def plot(self, results, pos):
         for col in self.columns:
-            viz.plot_metric(results, col, pos, label=col, y_label=self.name)
+            viz.plot_column(results, col, pos, label=col, y_label=self.name)
         plt.legend()
 
 

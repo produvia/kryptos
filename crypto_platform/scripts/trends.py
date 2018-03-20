@@ -34,9 +34,9 @@ def run(keywords, asset):
         algo.record_data(context, data, trends)
 
     def analyze(context, results):
-        viz.plot_metric(results, 'price', pos=211, label='Price')
+        viz.plot_column(results, 'price', pos=211, label='Price')
         for k in keywords:
-            viz.plot_metric(results, k, pos=212, y_label='Google Trends', label=k)
+            viz.plot_column(results, k, pos=212, y_label='Google Trends', label=k)
         plt.legend()
 
     algo.run_algo(initialize, handle_data, analyze)
