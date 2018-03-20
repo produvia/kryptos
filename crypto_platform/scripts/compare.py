@@ -1,9 +1,9 @@
 import click
 from logbook import Logger
 
-from crypto_platform.utils import load, viz, algo
+from crypto_platform.utils import load, outputs, viz, algo
 from crypto_platform.config import CONFIG
-
+from crypto_platform.analysis import quant
 
 log = Logger('Comparison')
 
@@ -66,6 +66,12 @@ def run(strategies, metrics):
             for m in CONFIG.METRICS:
                 viz.plot_metric(results, m, pos=pos, label=strat.NAMESPACE)
                 pos += 1
+
+            output_file = outputs.get_output_file(strat, CONFIG) + '.csv'
+            log.info('Dumping result csv to {}'.format(output_file))
+            outputs.dump_to_csv(output_file, results)
+
+            quant.build_summary_table(context, results)
 
         algo.run_algo(initialize, handle_data, analyze)
 
