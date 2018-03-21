@@ -58,11 +58,14 @@ def plot_benchmark(results, pos=211,):
     ax.plot(bench, label='Benchmark', linestyle='--')
 
 
-def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, **kw):
+def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, twin=None, **kw):
     if y_label is None:
         y_label = '{}'.format(column.replace('_', '\n').title())
 
-    ax = plt.subplot(pos)
+    if twin is None:
+        ax = plt.subplot(pos)
+    else:
+        ax = twin.twinx()
     ax.set_ylabel(y_label)
     res = results.loc[:, [column]]
     ax.plot(res, label=label, **kw)
