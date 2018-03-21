@@ -16,6 +16,10 @@ class BBANDS(Indicator):
     def __init__(self):
         super(BBANDS, self).__init__()
 
+    @property
+    def current_price(self):
+        return self.prices.close[-1]
+
     def calculate(self, prices):
         self.prices = prices
         self.upper, self.middle, self.lower = ta.BBANDS(self.prices.close.as_matrix(), matype=ta.MA_Type.T3)
@@ -44,10 +48,14 @@ class BBANDS(Indicator):
         return False
 
 
-class PSAR(object):
+class PSAR(Indicator):
     def __init__(self):
         super(PSAR, self).__init__()
         self.prices = None
+
+    @property
+    def current_price(self):
+        return self.prices.close[-1]
 
     def calculate(self, prices):
         self.prices = prices
@@ -78,7 +86,7 @@ class PSAR(object):
         return False
 
 
-class MACD(object):
+class MACD(Indicator):
 
     def __init__(self):
         super(MACD, self).__init__()
@@ -124,7 +132,7 @@ class MACDFIX(MACD):
         self.macd_test = np.where((self.macd > self.macd_signal), 1, 0)
 
 
-class OBV(object):
+class OBV(Indicator):
     def __init__(self):
         super(OBV, self).__init__()
 
@@ -155,7 +163,7 @@ class OBV(object):
         return self.obv[-1] < self.obv[-2]
 
 
-class RSI(object):
+class RSI(Indicator):
     def __init__(self):
         super(RSI, self).__init__()
 
@@ -219,7 +227,7 @@ class RSI(object):
         return np.where(self.sma_fast > self.sma_slow, 1, 0)
 
 
-class STOCH(object):
+class STOCH(Indicator):
     """docstring for STOCH"""
 
     def __init__(self):

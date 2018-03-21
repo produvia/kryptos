@@ -2,9 +2,9 @@ class Indicator(object):
     """Base class for Indicator objects"""
 
     def __init__(self):
-        self.prices = None
+        self.values = None
 
-    def calculate(self, prices):
+    def calculate(self, values):
         raise NotImplementedError
 
     def record(self):
@@ -12,10 +12,6 @@ class Indicator(object):
 
     def plot(self):
         raise NotImplementedError
-
-    @property
-    def current_price(self):
-        return self.prices.close[-1]
 
     @property
     def signals_buy(self):
