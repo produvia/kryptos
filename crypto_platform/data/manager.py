@@ -11,6 +11,7 @@ from crypto_platform.config import CONFIG
 from crypto_platform.data import csv_data
 from crypto_platform.data.clients import quandl_client
 from crypto_platform.utils import viz
+from crypto_platform.strategy.indicators import basic
 
 from logbook import Logger
 
@@ -38,6 +39,8 @@ class DataManager(object):
         index = pd.date_range(start=CONFIG.START, end=CONFIG.END)
         self.df = pd.DataFrame(index=index)
 
+        self._indicator_map = {}
+
         self.log = Logger(name)
 
     def fetch_data(self):
@@ -50,7 +53,33 @@ class DataManager(object):
         series = self.df.loc[date]
         return series.get(col)
 
-    def record_data(self, context, data):
+    def df_to_date(self, date):
+        sliced_df = self.df[:date]
+        return sliced_df
+
+    def attach_indicator(self, indicator, cols=None):
+        if cols is None:
+            cols = self.columns
+
+        if indicator not in self._indicator_map:
+            self._indicator_map[indicator] = []
+
+        self._indicator_map[indicator].extend(cols)
+
+    def calculate(self, context):
+        date = context.blotter.current_dt.date()
+        for i, cols in self._indicator_map.items():
+
+            indic_obj = getattr(basic, i.upper())()
+
+            # Assuming only use of basic indicators for now
+            # Basic indicators accept a series as opposed to a df with technical indicators
+            for c in cols:
+                col_vals = self.df_to_date(date)[c]
+                indic_obj.calculate(col_vals)
+                indic_obj.record()
+
+    def record_data(self, context):
         date = context.blotter.current_dt.date()
         record_payload = {}
 
@@ -66,7 +95,11 @@ class DataManager(object):
 
     def plot(self, results, pos):
         for col in self.columns:
-            viz.plot_column(results, col, pos, label=col, y_label=self.name)
+            ax = viz.plot_column(results, col, pos, label=col, y_label=self.name)
+
+        for i in self._indicator_map:
+            indic_obj = getattr(basic, i.upper())()
+            indic_obj.plot(results, pos, twin=ax)
         plt.legend()
 
 
