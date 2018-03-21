@@ -16,8 +16,8 @@ class Strategy(object):
 
     def __init__(self):
         super(Strategy, self).__init__()
-        self._indicators = []
-        self._datasets = []
+        self._market_indicators = []
+        self._datasets = {}
         self._extra_init = lambda context: None
         self._extra_handle = lambda context, data: None
         self._extra_analyze = lambda context, results: None
@@ -46,8 +46,8 @@ class Strategy(object):
             if '__' not in k:
                 setattr(context, k, v)
 
-        for d in self._datasets:
-            d.fetch_data()
+        for dataset, manager in self._datasets.items():
+            manager.fetch_data()
 
         self._extra_init(context)
 
@@ -61,14 +61,15 @@ class Strategy(object):
         context.prices = data.history(
             context.asset,
             bar_count=context.BARS,
-            fields=['price', 'open', 'high', 'low', 'close'],
+            fields=['price', 'open', 'high', 'low', 'close', 'volume'],
             frequency='1d',
         )
 
-        for d in self._datasets:
-            d.record_data(context, data)
+        for dataset, manager in self._datasets.items():
+            manager.calculate(context)
+            manager.record_data(context)
 
-        for i in self._indicators:
+        for i in self._market_indicators:
             i.calculate(context.prices)
             i.record()
 
@@ -76,18 +77,18 @@ class Strategy(object):
         self.weigh_signals(context, data)
 
     def _analyze(self, context, results):
-        strat_plots = len(self._indicators) + len(self._datasets)
+        strat_plots = len(self._market_indicators) + len(self._datasets)
         pos = viz.get_start_geo(strat_plots + 2)
         viz.plot_percent_return(results, pos=pos)
         viz.plot_benchmark(results, pos=pos)
         plt.legend()
         pos += 1
-        for i in self._indicators:
+        for i in self._market_indicators:
             i.plot(results, pos)
             pos += 1
 
-        for d in self._datasets:
-            d.plot(results, pos)
+        for dataset, manager in self._datasets.items():
+            manager.plot(results, pos)
             pos += 1
 
         viz.plot_buy_sells(results, pos=pos)
@@ -96,19 +97,26 @@ class Strategy(object):
         # viz.add_legend()
         viz.show_plot()
 
-    def add_indicator(self, indicator, priority=0, **kw):
+    def add_market_indicator(self, indicator, priority=0, **kw):
         ind_class = getattr(technical, indicator)
         indicator = ind_class(**kw)
-        self._indicators.insert(priority, indicator)
+        self._market_indicators.insert(priority, indicator)
+
+    def add_data_indicator(self, dataset, indicator, cols=None):
+        if dataset not in self._datasets:
+            raise LookupError
+
+        data_manager = self._datasets[dataset]
+        data_manager.attach_indicator(indicator, cols)
 
     def use_dataset(self, dataset_name, columns):
         data_manager = get_data_manager(dataset_name)(columns=columns)
-        self._datasets.append(data_manager)
+        self._datasets[dataset_name] = data_manager
 
 
     def weigh_signals(self, context, data):
         sells, buys = 0, 0
-        for i in self._indicators:
+        for i in self._market_indicators:
             if i.signals_buy:
                 buys += 1
             elif i.signals_sell:
@@ -180,4 +188,5 @@ class Strategy(object):
             )
         except PricingDataNotLoadedError:
             log.info('Ingesting required exchange bundle data')
-        load.ingest_exchange(CONFIG)
+            load.ingest_exchange(CONFIG)
+            log.info('Exchange ingested, please run the command again')
