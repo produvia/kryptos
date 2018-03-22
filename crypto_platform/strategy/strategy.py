@@ -133,7 +133,7 @@ class Strategy(object):
 
     def add_market_indicator(self, indicator, priority=0, **kw):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
-        indicator = technical.indicator(indicator)
+        indicator = technical.get_indicator(indicator)
         # ind_class = getattr(technical, indicator)
         # indicator = ind_class(**kw)
         self._market_indicators.insert(priority, indicator)

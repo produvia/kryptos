@@ -1,10 +1,11 @@
-class Indicator(object):
-    """Base class for Indicator objects"""
+class AbstractIndicator(object):
+    def __init__(self, name):
+        """Abstract class defining required methods utilized by Strategy objects"""
+        self.name = name.upper()
+        self.data = None
+        self.outputs = None
 
-    def __init__(self):
-        self.values = None
-
-    def calculate(self, values):
+    def calculate(self, df):
         raise NotImplementedError
 
     def record(self):
