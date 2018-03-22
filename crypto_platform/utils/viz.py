@@ -77,6 +77,11 @@ def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, 
 
     return ax
 
+def plot_bar(results, column, pos, label=None, **kw):
+    ax = plt.subplot(pos)
+    res = results.loc[:, [column]]
+    ax.bar(res.index, res[column].values, label=label, **kw)
+
 
 def plot_points(results, pos, y_val=None, label=None, marker='o', color='green'):
     ax = plt.subplot(pos)
