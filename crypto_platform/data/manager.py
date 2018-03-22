@@ -33,6 +33,27 @@ def get_data_manager(name):
 
 class DataManager(object):
     def __init__(self, name, columns=None):
+        """Base class of Data Managers
+
+        Data Managers are responsible for all operations related to
+        to external datasets, including fetching and visualizing.
+
+        These objects are utilized by Strategy objects during algroithm execution to access
+        and integrate external data into algorithm logic.
+
+        The following three methods are to be called during algo execution
+        and utilize Catalyst's context object
+
+        `calculate` - calculates registered indicators every iteration
+        `record_data` - records external data and indicators every iteration 
+        `plot` - plots data and indicators after algo execution
+
+        Arguments:
+            name {str} -- name of the dataset
+
+        Keyword Arguments:
+            columns {list} -- The target columns to analyzed (default: {None})
+        """
 
         self.name = name
         self.columns = columns or []
@@ -47,6 +68,14 @@ class DataManager(object):
         pass
 
     def current_data(self, date):
+        """Grabs datset info for the provided data
+
+        Arguments:
+            date {pandas.tslib.Timestamp}
+
+        Returns:
+            pandas.Dataframe
+        """
         return self.df.loc[date]
 
     def column_by_date(self, col, date):
@@ -58,6 +87,18 @@ class DataManager(object):
         return sliced_df
 
     def attach_indicator(self, indicator, cols=None):
+        """Declares an indicator to be calculated for the given columns
+
+        Any registered indicators are applied to their respective columns
+        at each iteration of the algorithm.
+        This method can be called before or during algo execution.
+
+        Arguments:
+            indicator {str}
+
+        Keyword Arguments:
+            cols {list} -- Names of target columns (default: all columns)
+        """
         if cols is None:
             cols = self.columns
 
@@ -67,6 +108,15 @@ class DataManager(object):
         self._indicator_map[indicator].extend(cols)
 
     def calculate(self, context):
+        """Calls for calculation of indicators currently registered with the DataManager
+
+        This method is called by a Strategy object at every algo iteration.
+        The outputs and calculation for each indicator is handled and stored by
+        the underlying Indicator objects.
+
+        Arguments:
+            context {pd.Dataframe} -- Catalyst peristent algo context object
+        """
         date = context.blotter.current_dt.date()
         for i, cols in self._indicator_map.items():
 
@@ -80,6 +130,17 @@ class DataManager(object):
                 indic_obj.record()
 
     def record_data(self, context):
+        """Records external data for the current algo iteration 
+
+        Data from the external dataset is recorded to Catalyst's
+        persistant context object along with market data
+
+        Arguments:
+            context {pd.Dataframe} --  Catalyst peristent algo context object
+
+        Returns:
+            dict -- Dict of column keys and data recored to catalyst
+        """
         date = context.blotter.current_dt.date()
         record_payload = {}
 
@@ -94,6 +155,15 @@ class DataManager(object):
         return record_payload
 
     def plot(self, results, pos):
+        """Calls for plotting of recored external data and registered indicators
+
+        This method is called by a Strategy object once after algo execution has finished.
+        The plotting each indicator is handled by the underlying Indicator objects.
+
+        Arguments:
+            results {pandas.Dataframe} -- Catalyst algo results of all recored data
+            pos {int} -- 3 digit integer used to represent matplotlib subplot position (ex. 212)
+        """
         for col in self.columns:
             ax = viz.plot_column(results, col, pos, label=col, y_label=self.name)
 
@@ -107,6 +177,7 @@ class GoogleTrendDataManager(DataManager):
 
     def __init__(self, columns):
         super(GoogleTrendDataManager, self).__init__('GoogleTrends', columns=columns)
+        """DataManager object used to fetch and integrate Google Trends data"""
 
         self.trends = TrendReq(hl='en-US', tz=360)
         timeframe = str(CONFIG.START.date()) + ' ' + str(CONFIG.END.date())
@@ -120,6 +191,7 @@ class GoogleTrendDataManager(DataManager):
 class QuandleDataManager(DataManager):
     def __init__(self, columns):
         super(QuandleDataManager, self).__init__('QuandlData', columns=columns)
+        """DataManager object used to fetch and integrate Quandl Blockchain database"""
 
         _api_key = os.getenv('QUANDL_API_KEY')
         quandl.ApiConfig.api_key = _api_key
@@ -134,6 +206,7 @@ class QuandleDataManager(DataManager):
 
     @property
     def csv(self):
+        """Path of quandl csv file"""
         f = quandl_client.data_csv()
         if not os.path.exists(f):
             self.log.info('Quandle Data not downloaded, fetching...')

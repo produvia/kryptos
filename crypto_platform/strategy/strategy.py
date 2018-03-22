@@ -15,7 +15,28 @@ log = Logger('Strategy')
 class Strategy(object):
 
     def __init__(self):
-        super(Strategy, self).__init__()
+        """Central interface used to build and execute trading strategies
+        
+        Strategy objects represent a high level interface for constructing
+        malleable trading algroithms defined by provided inputs.
+
+        Strategies are repsonsible:
+            - applying trade strategy inputs to the catalyst algorithm context
+            - integrating external datasets
+            - declaring and calculating indicators
+            - making trade decisions based on signals
+
+        Three decorators are provided to perform other logic,
+        such as modifying Strategy objects, throghout algo execution.
+
+            @init - before algo starts
+            @handle_data - at each algo iteration
+            @analyze - after algo has completed
+
+        The underlying logic of algorithm execution (market data, making orders,
+        persisting data, and iterating through timeseries data) is handled by catalyst.
+        """
+
         self._market_indicators = []
         self._datasets = {}
         self._extra_init = lambda context: None
@@ -23,16 +44,19 @@ class Strategy(object):
         self._extra_analyze = lambda context, results: None
 
     def init(self, f):
+        """Calls the wrapped function before catalyst algo begins"""
         self._extra_init = f
 
     def handle_data(self, f):
+        """Calls the wrapped function at each algo iteration"""
         self._extra_handle = f
 
     def analyze(self, f):
+        """Calls the wrapped function after algo has finished"""
         self._extra_analyze = f
 
     def _init_func(self, context, config=None):
-        """Stores config options catalyst's context object"""
+        """Sets up catalyst's context object and fetches external data"""
         if config is None:
             config = CONFIG
         context.asset = symbol(CONFIG.ASSET)
@@ -52,6 +76,15 @@ class Strategy(object):
         self._extra_init(context)
 
     def _process_data(self, context, data):
+        """Called at each algo iteration
+
+        Calculates indicators, processes signals, and
+        records market and external data
+
+        Arguments:
+            context {pandas.Dataframe} -- Catalyst context object
+            data {pandas.Datframe} -- Catalyst data object
+        """
         price = data.current(context.asset, 'price')
         cash = context.portfolio.cash
         record(price=price, cash=cash)
@@ -77,6 +110,7 @@ class Strategy(object):
         self.weigh_signals(context, data)
 
     def _analyze(self, context, results):
+        """Plots results of algo performance, external data, and indicators"""
         strat_plots = len(self._market_indicators) + len(self._datasets)
         pos = viz.get_start_geo(strat_plots + 2)
         viz.plot_percent_return(results, pos=pos)
@@ -98,11 +132,14 @@ class Strategy(object):
         viz.show_plot()
 
     def add_market_indicator(self, indicator, priority=0, **kw):
-        ind_class = getattr(technical, indicator)
-        indicator = ind_class(**kw)
+        """Registers an indicator to be applied to standard OHLCV exchange data"""
+        indicator = technical.indicator(indicator)
+        # ind_class = getattr(technical, indicator)
+        # indicator = ind_class(**kw)
         self._market_indicators.insert(priority, indicator)
 
     def add_data_indicator(self, dataset, indicator, cols=None):
+        """Registers an indicator to be called on external data"""
         if dataset not in self._datasets:
             raise LookupError
 
@@ -110,11 +147,12 @@ class Strategy(object):
         data_manager.attach_indicator(indicator, cols)
 
     def use_dataset(self, dataset_name, columns):
+        """Registers an external dataset to be integrated into algo"""
         data_manager = get_data_manager(dataset_name)(columns=columns)
         self._datasets[dataset_name] = data_manager
 
-
     def weigh_signals(self, context, data):
+        """Processes indicator to determine buy/sell opportunities"""
         sells, buys = 0, 0
         for i in self._market_indicators:
             if i.signals_buy:
@@ -126,7 +164,6 @@ class Strategy(object):
             self.place_buy(context)
         elif sells > buys:
             self.place_sell(context)
-
 
     def place_buy(self, context, size=None, price=None, slippage=None):
         if context.asset not in context.portfolio.positions:
@@ -173,7 +210,11 @@ class Strategy(object):
 
     # Save the prices and analysis to send to analyze
     def run(self):
+        """Executes the trade strategy as a catalyst algorithm
 
+        Basic algorithm behavior is defined cia the config object, while
+        iterative logic is managed by the Strategy object.
+        """
         try:
             run_algorithm(
                 capital_base=CONFIG.CAPITAL_BASE,
