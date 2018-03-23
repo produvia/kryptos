@@ -75,6 +75,8 @@ class TAIndicator(AbstractIndicator):
     def plot(self, results, pos, ignore=None):
         """Plots the indicators outputs"""
         y_label = self.name
+        if ignore is None:
+            ignore = []
         for col in [c for c in list(self.outputs) if c not in ignore]:
             log.error(col)
             viz.plot_column(results, col, pos, y_label=y_label, label=col)
@@ -148,7 +150,7 @@ class MACD(TAIndicator):
 
     def plot(self, results, pos):
         super().plot(results, pos, ignore=['macdhist'])
-        viz.plot_hist(results, 'macdhist', pos)
+        viz.plot_bar(results, 'macdhist', pos)
 
     @property
     def signals_buy(self):
