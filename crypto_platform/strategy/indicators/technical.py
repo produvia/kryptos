@@ -10,6 +10,7 @@ from logbook import Logger
 from crypto_platform.config import TAConfig as CONFIG
 from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import AbstractIndicator
+from crypto_platform.strategy.signals import utils
 
 log = Logger('INDICATOR')
 
@@ -109,20 +110,20 @@ class BBANDS(TAIndicator):
 
     @property
     def signals_buy(self):
-        if self.current_price > self.outputs.upperband[-1]:
-            return True
-        return False
+        return utils.cross_above(self.data.close, self.outputs.upperband)
 
     @property
     def signals_sell(self):
-        if self.current_price < self.outputs.lowerband[-1]:
-            return True
-        return False
+        return utils.cross_below(self.data.close, self.outputs.lowerband)
 
 
 class SAR(TAIndicator):
     def __init__(self):
         super(SAR, self).__init__('SAR')
+
+    def plot(self, results, pos):
+        viz.plot_column(results, 'price', pos)
+        viz.plot_dots(results, self.name, pos, y_val='SAR', label='price', color='black')
 
     @property
     def current_price(self):
@@ -130,14 +131,14 @@ class SAR(TAIndicator):
 
     @property
     def signals_buy(self):
-        return self.current_price > self.outputs.SAR[-1]
+        return self.outputs.SAR[-1] == self.data.low[-2]
 
     @property
     def signals_sell(self):
-        if self.current_price < self.outputs.SAR[-1]:
+        bearish = utils.cross_below(self.data.close, self.outputs.SAR)
+        if bearish:
             log.info('Closing position due to PSAR')
-            return True
-        return False
+        return bearish
 
 
 class MACD(TAIndicator):
@@ -151,11 +152,11 @@ class MACD(TAIndicator):
 
     @property
     def signals_buy(self):
-        return self.outputs.macd[-1] > self.outputs.macdsignal[-1]
+        return utils.cross_above(self.outputs.macd, self.outputs.macdsignal)
 
     @property
     def signals_sell(self):
-        return self.outputs.macd[-1] < self.outputs.macdsignal[-1]
+        return utils.cross_below(self.outputs.macd, self.outputs.macdsignal)
 
 
 class MACDFIX(TAIndicator):
@@ -169,11 +170,11 @@ class MACDFIX(TAIndicator):
 
     @property
     def signals_buy(self):
-        return self.outputs.macd[-1] > self.outputs.macdsignal[-1]
+        return utils.cross_above(self.outputs.macd, self.outputs.macdsignal)
 
     @property
     def signals_sell(self):
-        return self.outputs.macd[-1] < self.outputs.macdsignal[-1]
+        return utils.cross_below(self.outputs.macd, self.outputs.macdsignal)
 
 
 class OBV(TAIndicator):
@@ -182,13 +183,11 @@ class OBV(TAIndicator):
 
     @property
     def signals_buy(self):
-        log.error('checking obv bs')
-        log.error('{} > {} ??'.format(self.outputs.OBV[-1], self.outputs.OBV[-2]))
-        return self.outputs.OBV[-1] > self.outputs.OBV[-2]
+        return utils.increasing(self.outputs.OBV)
 
     @property
     def signals_sell(self):
-        return self.outputs.OBV[-1] < self.outputs.OBV[-2]
+        return utils.decreasing(self.outputs.OBV)
 
 
 class RSI(TAIndicator):
@@ -203,8 +202,8 @@ class RSI(TAIndicator):
         y_label = 'RSI'
         ax = viz.plot_column(results, 'RSI', pos, y_label=y_label, label='RSI')
 
-        overbought_line = [CONFIG.RSI_OVER_BOUGHT for i in results.index]
-        oversold_line = [CONFIG.RSI_OVER_SOLD for i in results.index]
+        overbought_line = [CONFIG.RSI_OVERBOUGHT for i in results.index]
+        oversold_line = [CONFIG.RSI_OVERSOLD for i in results.index]
         ax.plot(results.index, overbought_line)
         ax.plot(results.index, oversold_line)
 
@@ -217,29 +216,25 @@ class RSI(TAIndicator):
 
     @property
     def overbought(self):
-        # RSI OVER BOUGHT & Decreasing
-        return self.outputs.RSI[-2] >= CONFIG.RSI_OVER_BOUGHT and self.outputs.RSI[-1] < CONFIG.RSI_OVER_BOUGHT
+        return utils.cross_above(self.outputs.RSI, CONFIG.RSI_OVERBOUGHT)
 
     @property
     def oversold(self):
-        # RSI OVER SOLD & Increasing
-        return self.outputs.RSI[-2] <= CONFIG.RSI_OVER_SOLD and self.outputs.RSI[-1] > CONFIG.RSI_OVER_SOLD
+        return utils.cross_below(self.outputs.RSI, CONFIG.RSI_OVERSOLD)
 
     @property
     def signals_buy(self):
-        # crosses to above oversold
         return self.oversold
 
     @property
     def signals_sell(self):
-        # crosses to below overbought
         return self.overbought
 
 
 class STOCH(TAIndicator):
     """docstring for STOCH"""
 
-    def __init__(self, rsi_period):
+    def __init__(self):
         super(STOCH, self).__init__('STOCH')
 
     def record(self):
@@ -249,8 +244,8 @@ class STOCH(TAIndicator):
     def plot(self, results, pos):
         ax = super().plot(results, pos)
 
-        overbought_line = [CONFIG.STOCH_OVER_BOUGHT for i in results.index]
-        oversold_line = [CONFIG.STOCH_OVER_SOLD for i in results.index]
+        overbought_line = [CONFIG.STOCH_OVERBOUGHT for i in results.index]
+        oversold_line = [CONFIG.STOCH_OVERSOLD for i in results.index]
 
         ax.plot(results.index, overbought_line)
         ax.plot(results.index, oversold_line)
@@ -264,11 +259,11 @@ class STOCH(TAIndicator):
 
     @property
     def overbought(self):
-        return self.outputs.slowd[-2] > CONFIG.STOCH_OVER_BOUGHT and self.outputs.slowd[-1] < self.outputs.slowd[-2]
+        return utils.cross_above(self.outputs.slowd, CONFIG.STOCH_OVERBOUGHT)
 
     @property
     def oversold(self):
-        return self.outputs.slowd[-2] < CONFIG.STOCH_OVER_SOLD and self.outputs.slowd[-1] > self.outputs.slowd[-2]
+        return self.outputs.slowd[-1] < CONFIG.STOCH_OVERSOLD and utils.increasing(self.outputs.slowd, 2)
 
     @property
     def signals_buy(self):
@@ -277,7 +272,6 @@ class STOCH(TAIndicator):
     @property
     def signals_sell(self):
         return self.overbought
-
 
 # class SMA(TAIndicator):
 #     def __init__(self, timeperiod=30):
@@ -292,4 +286,3 @@ class STOCH(TAIndicator):
 
     # def signals_sell(self):
     #     return self.slow
-
