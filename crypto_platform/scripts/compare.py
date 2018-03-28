@@ -71,7 +71,7 @@ def run(strategies, metrics):
             log.info('Dumping result csv to {}'.format(output_file))
             outputs.dump_to_csv(output_file, results)
 
-            quant.build_summary_table(context, results)
+            quant.build_summary_table(strat, CONFIG, context, results)
 
         algo.run_algo(initialize, handle_data, analyze)
 
