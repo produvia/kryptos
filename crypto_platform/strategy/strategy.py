@@ -1,5 +1,5 @@
 from catalyst import run_algorithm
-from catalyst.api import symbol, set_benchmark, record, order, order_target_percent
+from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, get_open_orders, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from logbook import Logger
 import matplotlib.pyplot as plt
@@ -85,6 +85,9 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
+        for i in get_open_orders(context.asset):
+            cancel_order(i)
+
         price = data.current(context.asset, 'price')
         cash = context.portfolio.cash
         record(price=price, cash=cash)
