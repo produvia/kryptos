@@ -4,8 +4,8 @@ from os.path import basename
 
 
 def dump_to_csv(filename, results, context=None):
-    results.to_csv(filename)
-
+    results.rename_axis('date').to_csv(filename + '.csv')
+    results.rename_axis('date').to_pickle(filename + '.p')
 
 def get_output_file(algo, config):
     # perf_dir = CONFIG.PERF_DIR

@@ -67,8 +67,8 @@ def run(strategies, metrics):
                 viz.plot_metric(results, m, pos=pos, label=strat.NAMESPACE)
                 pos += 1
 
-            output_file = outputs.get_output_file(strat, CONFIG) + '.csv'
-            log.info('Dumping result csv to {}'.format(output_file))
+            output_file = outputs.get_output_file(strat, CONFIG)
+            log.info('Dumping result csv and pkl to {}'.format(output_file))
             outputs.dump_to_csv(output_file, results)
 
             quant.build_summary_table(strat, CONFIG, context, results)
