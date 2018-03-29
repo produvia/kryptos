@@ -123,7 +123,7 @@ class SAR(TAIndicator):
 
     def plot(self, results, pos):
         viz.plot_column(results, 'price', pos)
-        viz.plot_dots(results, self.name, pos, y_val='SAR', label='price', color='black')
+        viz.plot_as_points(results, self.name, pos, y_val='SAR', color='black')
 
     @property
     def current_price(self):
@@ -209,8 +209,8 @@ class RSI(TAIndicator):
 
         overboughts = results[results['overbought']]
         oversolds = results[results['oversold']]
-        viz.plot_points(overboughts, pos, y_val='RSI', color='red', label='overbought')
-        viz.plot_points(oversolds, pos, y_val='RSI', label='oversold')
+        viz.mark_on_line(results, pos, y_val='RSI', color='red', label='overbought')
+        viz.mark_on_line(oversolds, pos, y_val='RSI', label='oversold')
 
         plt.legend()
 
@@ -252,8 +252,8 @@ class STOCH(TAIndicator):
 
         overboughts = results[results['stoch_overbought']]
         oversolds = results[results['stoch_oversold']]
-        viz.plot_points(overboughts, pos, y_val='slowd', color='red', label='overbought')
-        viz.plot_points(oversolds, pos, y_val='slowk', label='oversold')
+        viz.mark_on_line(overboughts, pos, y_val='slowd', color='red', label='overbought')
+        viz.mark_on_line(oversolds, pos, y_val='slowk', label='oversold')
 
         plt.legend()
 
@@ -263,6 +263,7 @@ class STOCH(TAIndicator):
 
     @property
     def oversold(self):
+        return utils.cross_below(self.outputs.slowd, CONFIG.STOCH_OVERSOLD)
         return self.outputs.slowd[-1] < CONFIG.STOCH_OVERSOLD and utils.increasing(self.outputs.slowd, 2)
 
     @property

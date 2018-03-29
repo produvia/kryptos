@@ -58,6 +58,21 @@ def plot_benchmark(results, pos=211,):
     ax.plot(bench, label='Benchmark', linestyle='--')
 
 
+def plot_as_points(results, column, pos, y_val=None, label=None, marker='o', color='green'):
+    ax = plt.subplot(pos)
+
+    res = results.loc[:, [column]]
+
+    ax.scatter(
+        results.index.to_pydatetime(),
+        res,
+        marker=marker,
+        s=5,
+        c=color,
+        label=label
+    )
+
+
 def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, twin=None, **kw):
     if y_label is None:
         y_label = '{}'.format(column.replace('_', '\n').title())
@@ -77,19 +92,20 @@ def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, 
 
     return ax
 
+
 def plot_bar(results, column, pos, label=None, **kw):
     ax = plt.subplot(pos)
     res = results.loc[:, [column]]
     ax.bar(res.index, res[column].values, label=label, **kw)
 
 
-def plot_points(results, pos, y_val=None, label=None, marker='o', color='green'):
+def mark_on_line(results, pos, y_val=None, label=None, marker='o', color='green'):
     ax = plt.subplot(pos)
     ax.scatter(
         results.index.to_pydatetime(),
         results.loc[results.index, y_val],
         marker=marker,
-        s=100,
+        s=50,
         c=color,
         label=label
     )
