@@ -56,6 +56,7 @@ def plot_benchmark(results, pos=211,):
     ax = plt.subplot(pos)
     bench = results.loc[:, ['benchmark_period_return']]
     ax.plot(bench, label='Benchmark', linestyle='--')
+    return ax
 
 
 def plot_as_points(results, column, pos, y_val=None, label=None, marker='o', color='green'):
@@ -93,8 +94,12 @@ def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, 
     return ax
 
 
-def plot_bar(results, column, pos, label=None, **kw):
-    ax = plt.subplot(pos)
+def plot_bar(results, column, pos, label=None, twin=None, **kw):
+    if twin is None:
+        ax = plt.subplot(pos)
+    else:
+        ax = twin.twinx()
+
     res = results.loc[:, [column]]
     ax.bar(res.index, res[column].values, label=label, **kw)
 

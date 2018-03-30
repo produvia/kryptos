@@ -16,7 +16,7 @@ class Strategy(object):
 
     def __init__(self):
         """Central interface used to build and execute trading strategies
-        
+
         Strategy objects represent a high level interface for constructing
         malleable trading algroithms defined by provided inputs.
 
@@ -89,8 +89,9 @@ class Strategy(object):
             cancel_order(i)
 
         price = data.current(context.asset, 'price')
+        volume = data.current(context.asset, 'volume')
         cash = context.portfolio.cash
-        record(price=price, cash=cash)
+        record(price=price, cash=cash, volume=volume)
 
         context.price = price
         # Get price, open, high, low, close
@@ -117,7 +118,8 @@ class Strategy(object):
         strat_plots = len(self._market_indicators) + len(self._datasets)
         pos = viz.get_start_geo(strat_plots + 2)
         viz.plot_percent_return(results, pos=pos)
-        viz.plot_benchmark(results, pos=pos)
+        ax = viz.plot_benchmark(results, pos=pos)
+        viz.plot_bar(results, 'volume', pos=pos, label='volume', twin=ax)
         plt.legend()
         pos += 1
         for i in self._market_indicators:
