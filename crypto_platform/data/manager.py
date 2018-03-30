@@ -1,7 +1,11 @@
 import os
 import csv
+import datetime
+from dateutil.rrule import rrule, MONTHLY, WEEKLY, DAILY
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 from catalyst.api import record
 from pytrends.request import TrendReq
@@ -121,10 +125,11 @@ class DataManager(object):
         for i, cols in self._indicator_map.items():
 
             indic_obj = getattr(basic, i.upper())()
-
             # Assuming only use of basic indicators for now
             # Basic indicators accept a series as opposed to a df with technical indicators
             for c in cols:
+                # import pdb; pdb.set_trace()
+                self.log.info('Calculating {} for {}'.format(i, c))
                 col_vals = self.df_to_date(date)[c]
                 indic_obj.calculate(col_vals)
                 indic_obj.record()
@@ -149,12 +154,16 @@ class DataManager(object):
 
         for k in self.columns:
             current_val = self.column_by_date(k, date)
+            # TODO: some dates are doubled due to smaller date steps
+            if isinstance(current_val, pd.Series):
+                current_val = current_val.mean()
             record_payload[k] = current_val
 
+        self.log.debug('Recording {}'.format(record_payload))
         record(**record_payload)
         return record_payload
 
-    def plot(self, results, pos):
+    def plot(self, results, pos, skip_indicators=False, **kw):
         """Calls for plotting of recored external data and registered indicators
 
         This method is called by a Strategy object once after algo execution has finished.
@@ -165,11 +174,16 @@ class DataManager(object):
             pos {int} -- 3 digit integer used to represent matplotlib subplot position (ex. 212)
         """
         for col in self.columns:
-            ax = viz.plot_column(results, col, pos, label=col, y_label=self.name)
+            ax = viz.plot_column(results, col, pos, label=col, y_label=self.name, **kw)
 
+        if not skip_indicators:
+            self.plot_dataset_indicators(results, pos, twin=ax, **kw)
+        plt.legend()
+
+    def plot_dataset_indicators(self, results, pos, **kw):
         for i in self._indicator_map:
             indic_obj = getattr(basic, i.upper())()
-            indic_obj.plot(results, pos, twin=ax)
+            indic_obj.plot(results, pos, **kw)
         plt.legend()
 
 
@@ -180,12 +194,93 @@ class GoogleTrendDataManager(DataManager):
         """DataManager object used to fetch and integrate Google Trends data"""
 
         self.trends = TrendReq(hl='en-US', tz=360)
-        timeframe = str(CONFIG.START.date()) + ' ' + str(CONFIG.END.date())
 
-        self.trends.build_payload(self.columns, cat=0, timeframe=timeframe, geo='', gprop='')
-        df = self.trends.interest_over_time()
-        df.index = pd.to_datetime(df.index, unit='s')
+        self.df = pd.DataFrame()
+        # self.fetch_data()
+
+    def date_steps(self):
+        start, end = CONFIG.START.date(), CONFIG.END.date()
+        dates = [dt for dt in rrule(freq=MONTHLY, interval=6, dtstart=start, until=end)]
+        last_date = dates[-1].date()
+        if last_date < end:
+            dates.append(CONFIG.END)
+
+            # TODO: Determine best method of normalizing trend values for daily data
+            # while last_date + relativedelta(months=+1) < end:
+            #     self.log.debug('Building remainer MONTH steps')
+            #     final_steps = [dt for dt in rrule(freq=MONTHLY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
+            #     dates.extend(final_steps)
+            #     last_date = dates[-1].date()
+
+            # while last_date + relativedelta(weeks=+1) < end:
+            #     self.log.debug('Building remainer WEEKLY steps')
+
+            #     final_steps = [dt for dt in rrule(freq=WEEKLY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
+            #     dates.extend(final_steps)
+            #     last_date = dates[-1].date()
+
+            # while last_date + relativedelta(days=+1) < end:
+            #     self.log.debug('Building remainer DAILY steps')
+
+            #     final_steps = [dt for dt in rrule(freq=DAILY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
+            #     dates.extend(final_steps)
+            #     last_date = dates[-1].date()
+
+        return dates
+
+    @property
+    def datetime_pairs(self):
+        date_pairs = []
+        steps = self.date_steps()
+        for i, date in enumerate(steps):
+            if i < len(steps) - 1:
+                date_pairs.append((date, steps[i + 1]))
+        return date_pairs
+
+    @property
+    def timeframes(self):
+        timeframes = []
+        for pair in self.datetime_pairs:
+            as_str = str(pair[0].date()) + ' ' + str(pair[1].date())
+            timeframes.append(as_str)
+        return timeframes
+
+    def fetch_data(self):
+        trend_data = []
+        for t in self.timeframes:
+            self.log.info('Fetching trend data for {}'.format(t))
+            self.trends.build_payload(self.columns, cat=0, timeframe=t, geo='', gprop='')
+            d = self.trends.interest_over_time()
+            trend_data.append(d)
+
+        df = pd.concat(trend_data)
+        df.index = pd.to_datetime(df.index)
+
         self.df = df
+        self.df = self.normalize_data(trend_data)
+
+    def normalize_data(self, trend_data):
+        df = pd.DataFrame(index=pd.date_range(CONFIG.START, CONFIG.END))
+        # https://github.com/anyuzx/bitcoin-google-trend-strategy/blob/master/bitcoin_google_trend_strategy.py
+        renorm_factor = 1.0
+        for c in self.columns:
+            last_entry = None
+            trend_array = []
+            for index, item in enumerate(trend_data[::-1]):
+                if index > 0.0:
+                    first_entry = item[c].values[0]
+                    renorm_factor *= float(last_entry) / float(first_entry)
+                    renorm_array = item[c].values * renorm_factor
+                    trend_array.extend(list(renorm_array[1:]))
+                else:
+                    trend_array = list(item[c].values)
+                last_entry = item[c].values[-1]
+
+            trend_array = np.array(trend_array)
+            trend_array = 100.0 * trend_array / trend_array.max()
+            df[c] = trend_array
+
+        return df
 
 
 class QuandleDataManager(DataManager):
@@ -197,6 +292,7 @@ class QuandleDataManager(DataManager):
         quandl.ApiConfig.api_key = _api_key
         self.data_dir = os.path.join(DATA_DIR, 'quandle', )
 
+    def fetch_data(self):
         df = pd.read_csv(self.csv, index_col=[0])
         df.index = pd.to_datetime(df.index)
         self.df = df
