@@ -1,11 +1,13 @@
 import talib as ta
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 from catalyst.api import record
 
 from logbook import Logger
 from crypto_platform.utils import viz
-from crypto_platform.strategy.indicators import Indicator
+from crypto_platform.strategy.indicators import AbstractIndicator
 
 log = Logger('BASICINDICATOR')
 
@@ -25,7 +27,38 @@ MA_TYPE_MAP = {
 }
 
 
-class MA(Indicator):
+class RELCHANGE(AbstractIndicator):
+    def __init__(self, delta_t=4):
+        super().__init__('RELCHANGE')
+        self.delta_t = delta_t
+
+    def calculate(self, trend_series):
+
+        df = trend_series.to_frame(name='val')
+        df['mean'] = df['val'].rolling(self.delta_t).mean()
+        df['rel_change'] = df['val'] - df['mean'].shift(1, self.delta_t)
+        df['rel_change_ratio'] = df['rel_change'] / df['mean'].shift(1, self.delta_t)
+
+        self.outputs = df
+
+    def record(self):
+        record(rel_change=self.outputs.rel_change[-1], rel_change_ratio=self.outputs.rel_change_ratio[-1])
+
+
+    def plot(self, results, pos, **kw):
+        viz.plot_column(results, 'rel_change', pos, label=self.name, **kw)
+        viz.plot_column(results, 'rel_change_ratio', pos, label=self.name, **kw)
+
+        plt.legend()
+
+    def signals_sell(self):
+        return self.outputs.rel_change_ratio[-1] > 0
+
+    def signals_buy(self):
+        return self.outputs.rel_change_ratio[-1] < 0
+
+
+class MA(AbstractIndicator):
     """Base Moving Avergae class
 
         Moving Avergae indicators can be created by initializing this class
@@ -45,7 +78,7 @@ class MA(Indicator):
     """
 
     def __init__(self, ma_type, timeperiod):
-        super(MA, self).__init__()
+        super(MA, self).__init__(ma_type.upper())
         self.ma_type = ma_type.upper()
         self.timeperiod = timeperiod
 
@@ -85,6 +118,3 @@ class MA(Indicator):
 class SMA(MA):
     def __init__(self, timeperiod=30):
         super(SMA, self).__init__('SMA', timeperiod)
-
-
-
