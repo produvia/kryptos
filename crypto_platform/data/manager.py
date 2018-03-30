@@ -64,6 +64,7 @@ class DataManager(object):
         index = pd.date_range(start=CONFIG.START, end=CONFIG.END)
         self.df = pd.DataFrame(index=index)
 
+        self._indicators = []
         self._indicator_map = {}
 
         self.log = Logger(name)
@@ -106,10 +107,14 @@ class DataManager(object):
         if cols is None:
             cols = self.columns
 
+        if indicator not in self._indicators:
+            ind_obj = getattr(basic, indicator.upper())()
+            self._indicators.append(ind_obj)
+
         if indicator not in self._indicator_map:
             self._indicator_map[indicator] = []
 
-        self._indicator_map[indicator].extend(cols)
+        self._indicator_map[ind_obj.name].extend(list(cols))
 
     def calculate(self, context):
         """Calls for calculation of indicators currently registered with the DataManager
@@ -122,17 +127,15 @@ class DataManager(object):
             context {pd.Dataframe} -- Catalyst peristent algo context object
         """
         date = context.blotter.current_dt.date()
-        for i, cols in self._indicator_map.items():
 
-            indic_obj = getattr(basic, i.upper())()
-            # Assuming only use of basic indicators for now
-            # Basic indicators accept a series as opposed to a df with technical indicators
-            for c in cols:
-                # import pdb; pdb.set_trace()
-                self.log.info('Calculating {} for {}'.format(i, c))
-                col_vals = self.df_to_date(date)[c]
-                indic_obj.calculate(col_vals)
-                indic_obj.record()
+        # Assuming only use of basic indicators for now
+        # Basic indicators accept a series as opposed to a df with technical indicators
+        for i in self._indicators:
+            for col in self._indicator_map[i.name]:
+                self.log.info('Calculating {} for {}'.format(i, col))
+                col_vals = self.df_to_date(date)[col]
+                i.calculate(col_vals)
+                i.record()
 
     def record_data(self, context):
         """Records external data for the current algo iteration 
@@ -177,13 +180,12 @@ class DataManager(object):
             ax = viz.plot_column(results, col, pos, label=col, y_label=self.name, **kw)
 
         if not skip_indicators:
-            self.plot_dataset_indicators(results, pos, twin=ax, **kw)
+            self.plot_dataset_indicators(results, pos)
         plt.legend()
 
     def plot_dataset_indicators(self, results, pos, **kw):
-        for i in self._indicator_map:
-            indic_obj = getattr(basic, i.upper())()
-            indic_obj.plot(results, pos, **kw)
+        for i in self._indicators:
+            i.plot(results, pos, **kw)
         plt.legend()
 
 
@@ -196,7 +198,6 @@ class GoogleTrendDataManager(DataManager):
         self.trends = TrendReq(hl='en-US', tz=360)
 
         self.df = pd.DataFrame()
-        # self.fetch_data()
 
     def date_steps(self):
         start, end = CONFIG.START.date(), CONFIG.END.date()
@@ -253,11 +254,8 @@ class GoogleTrendDataManager(DataManager):
             d = self.trends.interest_over_time()
             trend_data.append(d)
 
-        df = pd.concat(trend_data)
-        df.index = pd.to_datetime(df.index)
-
-        self.df = df
         self.df = self.normalize_data(trend_data)
+
 
     def normalize_data(self, trend_data):
         df = pd.DataFrame(index=pd.date_range(CONFIG.START, CONFIG.END))
@@ -294,7 +292,8 @@ class QuandleDataManager(DataManager):
 
     def fetch_data(self):
         df = pd.read_csv(self.csv, index_col=[0])
-        df.index = pd.to_datetime(df.index)
+        df.index = pd.date_range(start=df.iloc[0].name, end=df.iloc[-1].name, freq='D')
+
         self.df = df
 
         self.pretty_names = {}
