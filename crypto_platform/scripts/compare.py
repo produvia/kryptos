@@ -44,6 +44,7 @@ def run(strategies, metrics):
     if len(metrics) > 0:
         CONFIG.METRICS = metrics
 
+    all_results = []
     for s in strategies:
         strat = load.load_by_name(s)
         strat.CONFIG = CONFIG
@@ -67,16 +68,22 @@ def run(strategies, metrics):
                 viz.plot_metric(results, m, pos=pos, label=strat.NAMESPACE)
                 pos += 1
 
-            output_file = outputs.get_output_file(strat, CONFIG)
-            log.info('Dumping result csv and pkl to {}'.format(output_file))
-            outputs.dump_to_csv(output_file, results)
-
-            quant.build_summary_table(strat, CONFIG, context, results)
+            all_results.append((strat, context, results))
 
         algo.run_algo(initialize, handle_data, analyze)
 
     viz.add_legend()
+    viz.save_plot(strat, CONFIG)
     viz.show_plot()
+
+    for strat, context, results in all_results:
+        output_file = outputs.get_output_file(strat, CONFIG)
+        log.info('Dumping result csv and pkl to {}'.format(output_file))
+        outputs.dump_to_csv(output_file, results)
+
+        quant.dump_summary_table(strat, CONFIG, context, results)
+        # Must be done outside of loop above to avoid matplotlib conflict
+        quant.dump_plots_to_file(strat, CONFIG, results)
 
 
 if __name__ == '__main__':

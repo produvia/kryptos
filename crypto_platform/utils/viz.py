@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
 from logbook import Logger
 
@@ -14,6 +15,16 @@ def show_plot():
         except UnicodeDecodeError:
             continue
         break
+
+
+def save_plot(algo, config):
+    # ALGO_DIR = os.path.join(config.PERF_DIR, algo.NAMESPACE)
+    # FIG_PATH = os.path.join(ALGO_DIR, 'figures')
+    FIG_PATH = os.path.join(config.PERF_DIR, 'figures')
+    if not os.path.exists(FIG_PATH):
+        os.makedirs(FIG_PATH)
+    f_path = os.path.join(FIG_PATH, 'backtest-compare.png')
+    plt.savefig(f_path, bbox_inches='tight', dpi=300)
 
 
 def get_start_geo(num_plots, cols=1):
