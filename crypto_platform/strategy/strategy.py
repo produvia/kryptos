@@ -113,13 +113,22 @@ class Strategy(object):
         self._extra_handle(context, data)
         self.weigh_signals(context, data)
 
+    @property
+    def total_plots(self):
+        dataset_inds = 0
+        for d, m in self._datasets.items():
+            dataset_inds += len(m._indicators)
+
+        return len(self._market_indicators) + len(self._datasets) + dataset_inds
+
+
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
-        strat_plots = len(self._market_indicators) + len(self._datasets)
-        pos = viz.get_start_geo(strat_plots + 2)
+        # strat_plots = len(self._market_indicators) + len(self._datasets)
+        pos = viz.get_start_geo(self.total_plots + 2)
         viz.plot_percent_return(results, pos=pos)
         ax = viz.plot_benchmark(results, pos=pos)
-        viz.plot_bar(results, 'volume', pos=pos, label='volume', twin=ax)
+        # viz.plot_bar(results, 'volume', pos=pos, label='volume', twin=ax)
         plt.legend()
         pos += 1
         for i in self._market_indicators:
@@ -127,8 +136,11 @@ class Strategy(object):
             pos += 1
 
         for dataset, manager in self._datasets.items():
-            manager.plot(results, pos)
+            manager.plot(results, pos, skip_indicators=True)
             pos += 1
+            for i in manager._indicators:
+                i.plot(results, pos)
+                pos += 1
 
         viz.plot_buy_sells(results, pos=pos)
 
@@ -164,6 +176,16 @@ class Strategy(object):
                 buys += 1
             elif i.signals_sell:
                 sells += 1
+
+        for d, manager in self._datasets.items():
+            for i in manager._indicators:
+                if i.signals_buy:
+                    # import pdb; pdb.set_trace()
+                    buys += 1
+                elif i.signals_sell:
+                    # import pdb; pdb.set_trace()
+                    sells += 1
+
 
         if buys > sells:
             self.place_buy(context)
