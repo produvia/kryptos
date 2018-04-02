@@ -28,6 +28,7 @@ def save_plot(algo, config):
 
 
 def get_start_geo(num_plots, cols=1):
+    fig = plt.figure(figsize=(6, 14))
     start = int(str(num_plots) + str(cols) + '1')
     return start
 
