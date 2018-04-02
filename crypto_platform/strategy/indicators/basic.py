@@ -33,12 +33,13 @@ class RELCHANGE(AbstractIndicator):
         self.delta_t = delta_t
 
     def calculate(self, trend_series):
+        self.data = trend_series
 
         df = trend_series.to_frame(name='val')
         df['mean'] = df['val'].rolling(self.delta_t).mean()
-        df['rel_change'] = df['val'] - df['mean'].shift(1, self.delta_t)
-        df['rel_change_ratio'] = df['rel_change'] / df['mean'].shift(1, self.delta_t)
 
+        df['rel_change'] = df['val'] - df['mean'].shift(periods=1, freq=self.delta_t)
+        df['rel_change_ratio'] = df['rel_change'] / df['mean'].shift(periods=1, freq=self.delta_t)
         self.outputs = df
 
     def record(self):
@@ -46,16 +47,17 @@ class RELCHANGE(AbstractIndicator):
 
 
     def plot(self, results, pos, **kw):
-        viz.plot_column(results, 'rel_change', pos, label=self.name, **kw)
-        viz.plot_column(results, 'rel_change_ratio', pos, label=self.name, **kw)
+        ax = viz.plot_column(results, 'rel_change', pos, label='Relative Change', color='r', **kw)
+        ax2 = viz.plot_column(results, 'rel_change_ratio', pos, label='Relative Change Ratio', color='g', twin=ax, **kw)
 
-        plt.legend()
+        viz.add_twin_legends([ax, ax2])
 
+    @property
     def signals_sell(self):
-        return self.outputs.rel_change_ratio[-1] > 0
-
+        return self.outputs.rel_change[-1] < 0.0
+    @property
     def signals_buy(self):
-        return self.outputs.rel_change_ratio[-1] < 0
+        return self.outputs.rel_change[-1] > 0.0
 
 
 class MA(AbstractIndicator):

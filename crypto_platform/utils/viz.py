@@ -26,6 +26,14 @@ def add_legend():
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
 
 
+def add_twin_legends(axes):
+    lines = []
+    for ax in axes:
+        lines.extend(ax.get_lines())
+
+    plt.legend(lines, [line.get_label() for line in lines])
+
+
 def plot_portfolio(context, results, name=None, pos=211):
     # Get the base_currency that was passed as a parameter to the simulation
     exchange = list(context.exchanges.values())[0]
