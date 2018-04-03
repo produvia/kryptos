@@ -116,4 +116,13 @@ class TAConfig(object):
     STOCH_OVER_BOUGHT = 80
     STOCH_OVER_SOLD = 40
 
+
+
+    RSI_OVERSOLD = 40
+    RSI_OVERBOUGHT = 80
+
+    STOCH_OVERBOUGHT = 80
+    STOCH_OVERSOLD = 30
+
+
         

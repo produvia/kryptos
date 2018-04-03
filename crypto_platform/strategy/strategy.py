@@ -3,6 +3,7 @@ from catalyst.api import symbol, set_benchmark, record, order, order_target_perc
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from logbook import Logger
 import matplotlib.pyplot as plt
+import json
 
 from crypto_platform.config import CONFIG
 from crypto_platform.utils import load, viz
@@ -54,6 +55,20 @@ class Strategy(object):
     def analyze(self, f):
         """Calls the wrapped function after algo has finished"""
         self._extra_analyze = f
+
+    def load_from_json(self, json_file):
+        with open(json_file, 'r') as f:
+            d = json.load(f)
+
+        for i in d['indicators']:
+            if i.get('dataset') == 'market':
+                name = i['name']
+                self.add_market_indicator(name)
+
+            elif i.get('dataset') is not None:
+                cols, dataset, name = i['cols'], i['dataset'], i['name']
+
+                self.add_data_indicator(dataset, name, cols=cols)
 
     def _init_func(self, context, config=None):
         """Sets up catalyst's context object and fetches external data"""
@@ -125,9 +140,11 @@ class Strategy(object):
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
         # strat_plots = len(self._market_indicators) + len(self._datasets)
-        pos = viz.get_start_geo(self.total_plots + 2)
+        pos = viz.get_start_geo(self.total_plots + 3)
         viz.plot_percent_return(results, pos=pos)
-        ax = viz.plot_benchmark(results, pos=pos)
+        viz.plot_benchmark(results, pos=pos)
+        pos += 1
+        viz.plot_column(results, 'cash', pos=pos)
         # viz.plot_bar(results, 'volume', pos=pos, label='volume', twin=ax)
         plt.legend()
         pos += 1
@@ -158,7 +175,7 @@ class Strategy(object):
     def add_data_indicator(self, dataset, indicator, cols=None):
         """Registers an indicator to be called on external data"""
         if dataset not in self._datasets:
-            raise LookupError
+            self.use_dataset(dataset, cols)
 
         data_manager = self._datasets[dataset]
         data_manager.attach_indicator(indicator, cols)

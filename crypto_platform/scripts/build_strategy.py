@@ -10,13 +10,14 @@ log = Logger('Blockchain Activity')
 
 
 @click.command()
-@click.option('--market-indicators', '-t', multiple=True, help='Market Indicators listed in order of priority')
+@click.option('--market-indicators', '-ta', multiple=True, help='Market Indicators listed in order of priority')
 @click.option('--dataset', '-d', type=click.Choice(AVAILABLE_DATASETS), help='Include asset in keyword list')
 @click.option('--columns', '-c', multiple=True, help='Target columns for specified dataset')
 @click.option('--data-indicators', '-i', multiple=True, help='Dataset indicators')
+@click.option('--json-file', '-f')
 
 
-def run(market_indicators, dataset, columns, data_indicators):
+def run(market_indicators, dataset, columns, data_indicators, json_file):
     click.secho('''
         Creating Trading Strategy:
         Market Indicators: {}
@@ -35,18 +36,24 @@ def run(market_indicators, dataset, columns, data_indicators):
     if dataset is not None:
         strat.use_dataset(dataset, columns)
         for i in data_indicators:
-            strat.add_data_indicator(dataset, i.upper())
+            strat.add_data_indicator(dataset, i.upper(), cols=columns)
+
+    if json_file is not None:
+        strat.load_from_json(json_file)
 
     @strat.init
     def initialize(context):
-        log.info('Initializing strategy')
+        # log.info('Initializing strategy')
+        pass
 
     @strat.handle_data
     def handle_data(context, data):
-        log.info('Doing extra stuff for handling data')
+        # log.info('Doing extra stuff for handling data')
+        pass
 
     @strat.analyze
     def analyze(context, results):
-        log.info('Analyzing strategy')
+        # log.info('Analyzing strategy')
+        pass
 
     strat.run()

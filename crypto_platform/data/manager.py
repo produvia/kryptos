@@ -112,7 +112,7 @@ class DataManager(object):
             self._indicators.append(ind_obj)
 
         if indicator not in self._indicator_map:
-            self._indicator_map[indicator] = []
+            self._indicator_map[indicator.upper()] = []
 
         self._indicator_map[ind_obj.name].extend(list(cols))
 

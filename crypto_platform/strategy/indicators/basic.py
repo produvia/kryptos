@@ -28,8 +28,8 @@ MA_TYPE_MAP = {
 
 
 class RELCHANGE(AbstractIndicator):
-    def __init__(self, delta_t=4):
-        super().__init__('RELCHANGE')
+    def __init__(self, delta_t=4, **kw):
+        super().__init__('RELCHANGE', **kw)
         self.delta_t = delta_t
 
     def calculate(self, trend_series):

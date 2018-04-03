@@ -15,12 +15,12 @@ from crypto_platform.strategy.signals import utils
 log = Logger('INDICATOR')
 
 
-def get_indicator(name):
+def get_indicator(name, **kw):
     subclass = globals().get(name)
     if subclass is not None:
         return subclass()
 
-    return TAIndicator(name)
+    return TAIndicator(name, **kw)
 
 
 class TAIndicator(AbstractIndicator):
