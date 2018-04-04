@@ -1,9 +1,10 @@
 class AbstractIndicator(object):
-    def __init__(self, name, symbol=None, period_length=None, min_history_period=None, num_periods=None, **kw):
+    def __init__(self, name, label=None, **kw):
         """Abstract class defining required methods utilized by Strategy objects"""
         self.name = name.upper()
         self.data = None
         self.outputs = None
+        self.label = label or self.name
 
     def calculate(self, df):
         raise NotImplementedError

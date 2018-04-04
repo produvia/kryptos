@@ -25,6 +25,7 @@ def get_indicator(name, **kw):
 
 class TAIndicator(AbstractIndicator):
     def __init__(self, name, **kw):
+        super().__init__(name, **kw)
         """Factory for creating an indicator using the ta-lib library
 
         The costructor is passed the name of the indicator.
@@ -62,9 +63,11 @@ class TAIndicator(AbstractIndicator):
         """
         self.data = df
         self.outputs = self.func(df, **self.kw)
+        if len(self.outputs) == 1 and self.label is not None:
+            self.outputs.columns = [self.label]
 
         if isinstance(self.outputs, pd.Series):
-            self.outputs = self.outputs.to_frame(self.name)
+            self.outputs = self.outputs.to_frame(self.label)
 
     def record(self):
         """Records indicator's output to catalyst results"""
@@ -98,8 +101,8 @@ class TAIndicator(AbstractIndicator):
 
 
 class BBANDS(TAIndicator):
-    def __init__(self, matype=ta.MA_Type.T3):
-        super(BBANDS, self).__init__('BBANDS', matype=matype)
+    def __init__(self, matype=ta.MA_Type.T3, **kw):
+        super(BBANDS, self).__init__('BBANDS', matype=matype, **kw)
 
     def plot(self, results, pos):
         super().plot(results, pos)
@@ -118,8 +121,8 @@ class BBANDS(TAIndicator):
 
 
 class SAR(TAIndicator):
-    def __init__(self):
-        super(SAR, self).__init__('SAR')
+    def __init__(self, **kw):
+        super(SAR, self).__init__('SAR', **kw)
 
     def plot(self, results, pos):
         viz.plot_column(results, 'price', pos)
@@ -143,8 +146,8 @@ class SAR(TAIndicator):
 
 class MACD(TAIndicator):
 
-    def __init__(self):
-        super(MACD, self).__init__('MACD')
+    def __init__(self, **kw):
+        super(MACD, self).__init__('MACD', **kw)
 
     def plot(self, results, pos):
         super().plot(results, pos, ignore=['macdhist'])
@@ -161,8 +164,8 @@ class MACD(TAIndicator):
 
 class MACDFIX(TAIndicator):
 
-    def __init__(self):
-        super(MACDFIX, self).__init__('MACDFIX')
+    def __init__(self, **kw):
+        super(MACDFIX, self).__init__('MACDFIX', **kw)
 
     def plot(self, results, pos):
         super().plot(results, pos, ignore=['macdhist'])
@@ -178,8 +181,8 @@ class MACDFIX(TAIndicator):
 
 
 class OBV(TAIndicator):
-    def __init__(self):
-        super(OBV, self).__init__('OBV')
+    def __init__(self, **kw):
+        super(OBV, self).__init__('OBV', **kw)
 
     @property
     def signals_buy(self):
@@ -191,8 +194,8 @@ class OBV(TAIndicator):
 
 
 class RSI(TAIndicator):
-    def __init__(self, timeperiod=14):
-        super(RSI, self).__init__('RSI', timeperiod=timeperiod)
+    def __init__(self, timeperiod=14, **kw):
+        super(RSI, self).__init__('RSI', timeperiod=timeperiod, **kw)
 
     def record(self):
         super().record()
@@ -234,8 +237,8 @@ class RSI(TAIndicator):
 class STOCH(TAIndicator):
     """docstring for STOCH"""
 
-    def __init__(self):
-        super(STOCH, self).__init__('STOCH')
+    def __init__(self, **kw):
+        super(STOCH, self).__init__('STOCH', **kw)
 
     def record(self):
         super().record()
@@ -275,15 +278,18 @@ class STOCH(TAIndicator):
         return self.overbought
 
 # class SMA(TAIndicator):
-#     def __init__(self, timeperiod=30):
-#         super(SMA, self).__init__('SMA', timeperiod=timeperiod)
+#     def __init__(self, timeperiod=30, **kw):
+#         super(SMA, self).__init__('SMA', timeperiod=timeperiod, **kw)
+
 
 #     def plot(self, results, pos):
 #         viz.plot_column(results, 'price', pos)
 #         super().plot(results, pos)
 
+    # @property
     # def signals_buy(self):
-    #     return self.fast > self.slow
+    #     return self.outputs.fast > self.outputs.slow
 
+    # @property
     # def signals_sell(self):
-    #     return self.slow
+    #     return self.outputs.slow < self.outputs.slow
