@@ -44,6 +44,9 @@ class Strategy(object):
         self._extra_handle = lambda context, data: None
         self._extra_analyze = lambda context, results: None
 
+        self._buy_func = None
+        self._sell_func = None
+
     def init(self, f):
         """Calls the wrapped function before catalyst algo begins"""
         self._extra_init = f
@@ -55,6 +58,15 @@ class Strategy(object):
     def analyze(self, f):
         """Calls the wrapped function after algo has finished"""
         self._extra_analyze = f
+
+    def buy_order(self, f):
+        """Calls the wrapped function if indicators signal to buy"""
+        self._buy_func = f
+
+    def sell_order(self, f):
+        """Calls the wrapped function if indicators signal to sell"""
+        self._sell_func = f
+
 
     def load_from_json(self, json_file):
         with open(json_file, 'r') as f:
@@ -89,6 +101,7 @@ class Strategy(object):
             manager.fetch_data()
 
         self._extra_init(context)
+        log.info('Initilized Strategy')
 
     def _process_data(self, context, data):
         """Called at each algo iteration
@@ -100,7 +113,9 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
+        log.debug('Processing algo iteration')
         for i in get_open_orders(context.asset):
+            log.warn('Canceling unfilled open order')
             cancel_order(i)
 
         price = data.current(context.asset, 'price')
@@ -197,19 +212,31 @@ class Strategy(object):
         for d, manager in self._datasets.items():
             for i in manager._indicators:
                 if i.signals_buy:
-                    # import pdb; pdb.set_trace()
                     buys += 1
                 elif i.signals_sell:
-                    # import pdb; pdb.set_trace()
                     sells += 1
 
 
         if buys > sells:
-            self.place_buy(context)
+            log.info('Signaling to buy')
+            self.make_buy(context)
         elif sells > buys:
-            self.place_sell(context)
+            log.info('Signaling to sell')
+            self.make_sell(context)
 
-    def place_buy(self, context, size=None, price=None, slippage=None):
+
+    def make_buy(self, context):
+        if self._buy_func is None:
+            return self._default_buy(context)
+        self._buy_func(context)
+
+    def make_sell(self, context):
+        if self._sell_func is None:
+            return self._default_sell(context)
+        self._sell_func(context)
+
+
+    def _default_buy(self, context, size=None, price=None, slippage=None):
         if context.asset not in context.portfolio.positions:
             order(
                 asset=context.asset,
@@ -222,7 +249,7 @@ class Strategy(object):
                 )
             )
 
-    def place_sell(self, context, size=None, price=None, slippage=None):
+    def _default_sell(self, context, size=None, price=None, slippage=None):
         # Current position
         if context.asset not in context.portfolio.positions:
             return
