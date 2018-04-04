@@ -13,6 +13,7 @@ from crypto_platform.data.manager import get_data_manager
 log = Logger('Strategy')
 
 
+
 class Strategy(object):
 
     def __init__(self):
@@ -44,6 +45,9 @@ class Strategy(object):
         self._extra_handle = lambda context, data: None
         self._extra_analyze = lambda context, results: None
 
+        self._signal_buy_func = lambda context, data: None
+        self._signal_sell_func = lambda context, data: None
+
         self._buy_func = None
         self._sell_func = None
 
@@ -67,6 +71,13 @@ class Strategy(object):
         """Calls the wrapped function if indicators signal to sell"""
         self._sell_func = f
 
+    def signal_sell(self, f):
+        """Calls the wrapped function when weighing signals to define extra signal logic"""
+        self._signal_sell_func = f
+
+    def signal_buy(self, f):
+        """Calls the wrapped function when weighing signals to define extra signal logic"""
+        self._signal_buy_func = f
 
     def load_from_json(self, json_file):
         with open(json_file, 'r') as f:
@@ -182,7 +193,8 @@ class Strategy(object):
 
     def add_market_indicator(self, indicator, priority=0, **kw):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
-        indicator = technical.get_indicator(indicator)
+        if isinstance(indicator, str):
+            indicator = technical.get_indicator(indicator, **kw)
         # ind_class = getattr(technical, indicator)
         # indicator = ind_class(**kw)
         self._market_indicators.insert(priority, indicator)
@@ -215,6 +227,11 @@ class Strategy(object):
                     buys += 1
                 elif i.signals_sell:
                     sells += 1
+
+        if self._signal_buy_func(context, data):
+            buy += 1
+        elif self._signal_sell_func(context, data):
+            sell += 1
 
 
         if buys > sells:
