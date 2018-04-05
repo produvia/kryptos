@@ -4,7 +4,7 @@
       "ASSET": "btc_usd",
       "DATA_FREQ": "daily",
       "HISTORY_FREQ": "1d",
-      "CAPITAL_BASE": 5000,
+      "CAPITAL_BASE": 10000,
       "BASE_CURRENCY": "usd",
       "START": "2017-10-10",
       "END": "2018-3-28"
@@ -39,7 +39,13 @@
          "symbol": "btc_usd",
          "dataset": null,
          "label": "STOCH",
-         "params": {}
+         "params": {
+            "fastk_period": 5,
+            "slowk_period": 3,
+            "slowk_matype": "SMA",
+            "slowd_matype": "EMA"
+
+         }
       },
       {
          "name": "BBANDS",
