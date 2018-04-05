@@ -1,9 +1,13 @@
+import os
+import json
+
+import logbook
+import matplotlib.pyplot as plt
+import pandas as pd
+
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, get_open_orders, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-import logbook
-import matplotlib.pyplot as plt
-import json
 
 from crypto_platform.config import CONFIG
 from crypto_platform.utils import load, viz
@@ -13,10 +17,13 @@ from crypto_platform.data.manager import get_data_manager
 log = logbook.Logger('Strategy')
 log.level = logbook.INFO
 
+CURRENT_DIR = os.path.dirname(__file__)
+DEFAULT_CONFIG_FILE = os.path.abspath(os.path.join(CURRENT_DIR, './config.json'))
+
 
 class Strategy(object):
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, data_frequency='daily', exchange=None, start=None, end=None):
         """Central interface used to build and execute trading strategies
 
         Strategy objects represent a high level interface for constructing
@@ -40,6 +47,7 @@ class Strategy(object):
         """
 
         self.name = name
+        self.trading_info = {}
         self._market_indicators = []
         self._datasets = {}
         self._extra_init = lambda context: None
@@ -52,9 +60,15 @@ class Strategy(object):
         self._buy_func = None
         self._sell_func = None
 
+        with open(DEFAULT_CONFIG_FILE, 'r') as f:
+            config = json.load(f)
+            self.trading_info.update(config)
+
+
     def serialize(self):
         d = {
-        'indicators': self.indicators,
+            'trading': self.trading_info,
+            'indicators': self.indicators,
         }
         return json.dumps(d, indent=3)
 
@@ -64,7 +78,6 @@ class Strategy(object):
         for i in self._market_indicators:
             inds.append(i.serialize())
         return inds
-
 
     def init(self, f):
         """Calls the wrapped function before catalyst algo begins"""
@@ -108,18 +121,18 @@ class Strategy(object):
 
                 self.add_data_indicator(dataset, name, cols=cols)
 
-    def _init_func(self, context, config=None):
+        self.trading_info.update(d['trading'])
+
+    def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
-        if config is None:
-            config = CONFIG
-        context.asset = symbol(CONFIG.ASSET)
-        context.market = symbol(CONFIG.ASSET)
+        context.asset = symbol(self.trading_info['ASSET'])
+        context.market = symbol(self.trading_info['ASSET'])
         set_benchmark(context.asset)
         context.ORDER_SIZE = 0.5
         context.SLIPPAGE_ALLOWED = 0.05
         context.BARS = 365
         context.errors = []
-        for k, v in CONFIG.__dict__.items():
+        for k, v in self.trading_info.items():
             if '__' not in k:
                 setattr(context, k, v)
 
@@ -155,7 +168,7 @@ class Strategy(object):
             context.asset,
             bar_count=context.BARS,
             fields=['price', 'open', 'high', 'low', 'close', 'volume'],
-            frequency='1d',
+            frequency=context.HISTORY_FREQ,
         )
 
         for dataset, manager in self._datasets.items():
@@ -176,7 +189,6 @@ class Strategy(object):
             dataset_inds += len(m._indicators)
 
         return len(self._market_indicators) + len(self._datasets) + dataset_inds
-
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
@@ -257,10 +269,10 @@ class Strategy(object):
             log.info('Signaling to sell')
             self.make_sell(context)
 
-
     def make_buy(self, context):
         if context.portfolio.cash < context.price * context.ORDER_SIZE:
-            log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(context.portfolio.cash, (context.price * context.ORDER_SIZE)))
+            log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             return
         if self._buy_func is None:
             return self._default_buy(context)
@@ -270,7 +282,6 @@ class Strategy(object):
         if self._sell_func is None:
             return self._default_sell(context)
         self._sell_func(context)
-
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
         if context.asset not in context.portfolio.positions:
@@ -331,8 +342,8 @@ class Strategy(object):
                 analyze=self._analyze,
                 exchange_name=CONFIG.BUY_EXCHANGE,
                 base_currency=CONFIG.BASE_CURRENCY,
-                start=CONFIG.START,
-                end=CONFIG.END,
+                start=pd.to_datetime(CONFIG.START, utc=True),
+                end=pd.to_datetime(CONFIG.END, utc=True)
             )
         except PricingDataNotLoadedError:
             log.info('Ingesting required exchange bundle data')
