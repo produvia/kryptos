@@ -113,14 +113,16 @@ class Strategy(object):
         with open(json_file, 'r') as f:
             d = json.load(f)
 
-        self.trading_info.update(d['trading'])
+        trade_config = d.get('trading', {})
+        self.trading_info.update(trade_config)
 
         for i in d['indicators']:
             if i.get('dataset') in [None, 'market']:
                 ind = technical.get_indicator(**i)
                 self.add_market_indicator(ind)
 
-        for ds in d['datasets']:
+        datasets = d.get('datasets', {})
+        for ds in datasets:
             self.use_dataset(ds['name'], ds['columns'])
             for i in ds['indicators']:
                 self.add_data_indicator(ds['name'], i['name'], col=i['symbol'])
@@ -243,27 +245,38 @@ class Strategy(object):
 
     def weigh_signals(self, context, data):
         """Processes indicator to determine buy/sell opportunities"""
-        sells, buys = 0, 0
+        sells, buys, neutrals = 0, 0, 0
         for i in self._market_indicators:
             if i.signals_buy:
+                log.debug('{}: BUY'.format(i.name))
                 buys += 1
             elif i.signals_sell:
+                log.debug('{}: SELL'.format(i.name))
                 sells += 1
+            else:
+                neutrals += 1
 
         for d, manager in self._datasets.items():
             for i in manager._indicators:
                 if i.signals_buy:
+                    log.debug('{}: BUY'.format(i.name))
                     buys += 1
                 elif i.signals_sell:
+                    log.debug('{}: SELL'.format(i.name))
                     sells += 1
+                else:
+                    neutrals += 1
 
         if self._signal_buy_func(context, data):
-            log.info('Custom signal to buy')
+            log.debug('Custom: BUY')
             buys += 1
         elif self._signal_sell_func(context, data):
-            log.info('Custom signal to buy')
+            log.debug('Custom:buy')
             sells += 1
+        else:
+            neutrals += 1
 
+        log.info('Buy signals: {}, Sell signals: {}, Neutral Signals: {}'.format(buys, sells, neutrals))
         if buys > sells:
             log.info('Signaling to buy')
             self.make_buy(context)
