@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 import datetime
 from dateutil.rrule import rrule, MONTHLY, WEEKLY, DAILY
 from dateutil.relativedelta import relativedelta
@@ -11,11 +12,12 @@ from catalyst.api import record
 from pytrends.request import TrendReq
 import quandl
 
-from crypto_platform.config import CONFIG
+# from crypto_platform.config import self.config
 from crypto_platform.data import csv_data
 from crypto_platform.data.clients import quandl_client
 from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import basic
+from crypto_platform.strategy import DEFAULT_CONFIG
 
 from logbook import Logger
 
@@ -27,16 +29,19 @@ AVAILABLE_DATASETS = [
 ]
 
 
-def get_data_manager(name):
+def get_data_manager(name, cols=None, config=None):
     datasets = {
         'google': GoogleTrendDataManager,
         'quandl': QuandleDataManager,
     }
-    return datasets.get(name, DataManager)
+    try:
+        return datasets[name](columns=cols, config=config)
+    except KeyError as e:
+        raise e('No dataset available with name {}.\nAvailable Datasets: {}'.format(name, AVAILABLE_DATASETS))
 
 
 class DataManager(object):
-    def __init__(self, name, columns=None):
+    def __init__(self, name, columns=None, config=None):
         """Base class of Data Managers
 
         Data Managers are responsible for all operations related to
@@ -61,7 +66,14 @@ class DataManager(object):
 
         self.name = name
         self.columns = columns or []
-        index = pd.date_range(start=CONFIG.START, end=CONFIG.END)
+
+        if config is None:
+            config = DEFAULT_CONFIG
+
+        self.START = pd.to_datetime(config['START'], utc=True)
+        self.END = pd.to_datetime(config['END'], utc=True)
+
+        index = pd.date_range(start=self.START, end=self.END)
         self.df = pd.DataFrame(index=index)
 
         self._indicators = []
@@ -71,6 +83,13 @@ class DataManager(object):
 
     def fetch_data(self):
         pass
+
+    def serialize(self):
+        return {
+            'name': self.name,
+            'columns': self.columns,
+            'indicators': [i.serialize() for i in self._indicators]
+        }
 
     def current_data(self, date):
         """Grabs datset info for the provided data
@@ -91,7 +110,7 @@ class DataManager(object):
         sliced_df = self.df[:date]
         return sliced_df
 
-    def attach_indicator(self, indicator, cols=None):
+    def attach_indicator(self, indicator, col=None):
         """Declares an indicator to be calculated for the given columns
 
         Any registered indicators are applied to their respective columns
@@ -104,17 +123,18 @@ class DataManager(object):
         Keyword Arguments:
             cols {list} -- Names of target columns (default: all columns)
         """
-        if cols is None:
-            cols = self.columns
+        if col is None:
+            col = self.columns
 
         if indicator not in self._indicators:
-            ind_obj = getattr(basic, indicator.upper())()
+            ind_obj = basic.get_indicator(indicator, symbol=col, dataset=self.name)
+            # ind_obj = getattr(basic, indicator.upper())(dataset=self.name)
             self._indicators.append(ind_obj)
 
         if indicator not in self._indicator_map:
             self._indicator_map[indicator.upper()] = []
 
-        self._indicator_map[ind_obj.name].extend(list(cols))
+        self._indicator_map[ind_obj.name].append(col)
 
     def calculate(self, context):
         """Calls for calculation of indicators currently registered with the DataManager
@@ -191,8 +211,8 @@ class DataManager(object):
 
 class GoogleTrendDataManager(DataManager):
 
-    def __init__(self, columns):
-        super(GoogleTrendDataManager, self).__init__('GoogleTrends', columns=columns)
+    def __init__(self, columns, config=None):
+        super(GoogleTrendDataManager, self).__init__('google', columns, config)
         """DataManager object used to fetch and integrate Google Trends data"""
 
         self.trends = TrendReq(hl='en-US', tz=360)
@@ -200,11 +220,12 @@ class GoogleTrendDataManager(DataManager):
         self.df = pd.DataFrame()
 
     def date_steps(self):
-        start, end = CONFIG.START.date(), CONFIG.END.date()
+
+        start, end = self.START.date(), self.END.date()
         dates = [dt for dt in rrule(freq=MONTHLY, interval=6, dtstart=start, until=end)]
         last_date = dates[-1].date()
         if last_date < end:
-            dates.append(CONFIG.END)
+            dates.append(self.END)
 
             # TODO: Determine best method of normalizing trend values for daily data
             # while last_date + relativedelta(months=+1) < end:
@@ -252,19 +273,20 @@ class GoogleTrendDataManager(DataManager):
             self.log.info('Fetching trend data for {}'.format(t))
             self.trends.build_payload(self.columns, cat=0, timeframe=t, geo='', gprop='')
             d = self.trends.interest_over_time()
+            self.log.error('Retrieved {} days of trend data'.format(len(d)))
             trend_data.append(d)
 
         self.df = self.normalize_data(trend_data)
 
-
     def normalize_data(self, trend_data):
-        df = pd.DataFrame(index=pd.date_range(CONFIG.START, CONFIG.END))
+        df = pd.DataFrame(index=pd.date_range(self.START, self.END))
         # https://github.com/anyuzx/bitcoin-google-trend-strategy/blob/master/bitcoin_google_trend_strategy.py
         renorm_factor = 1.0
         for c in self.columns:
             last_entry = None
             trend_array = []
             for index, item in enumerate(trend_data[::-1]):
+                # first_entry = [i for i in item[c].values if i != 0][0]
                 if index > 0.0:
                     first_entry = item[c].values[0]
                     renorm_factor *= float(last_entry) / float(first_entry)
@@ -282,8 +304,8 @@ class GoogleTrendDataManager(DataManager):
 
 
 class QuandleDataManager(DataManager):
-    def __init__(self, columns):
-        super(QuandleDataManager, self).__init__('QuandlData', columns=columns)
+    def __init__(self, columns, config=None):
+        super(QuandleDataManager, self).__init__('quandl', columns, config)
         """DataManager object used to fetch and integrate Quandl Blockchain database"""
 
         _api_key = os.getenv('QUANDL_API_KEY')

@@ -9,16 +9,13 @@ from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, get_open_orders, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
-from crypto_platform.config import CONFIG
 from crypto_platform.utils import load, viz
 from crypto_platform.strategy.indicators import technical
 from crypto_platform.data.manager import get_data_manager
+from crypto_platform.strategy import DEFAULT_CONFIG
 
 log = logbook.Logger('Strategy')
 log.level = logbook.INFO
-
-CURRENT_DIR = os.path.dirname(__file__)
-DEFAULT_CONFIG_FILE = os.path.abspath(os.path.join(CURRENT_DIR, './config.json'))
 
 
 class Strategy(object):
@@ -47,8 +44,9 @@ class Strategy(object):
         """
 
         self.name = name
-        self.trading_info = {}
+        self.trading_info = DEFAULT_CONFIG
         self._market_indicators = []
+        self.signals = {}
         self._datasets = {}
         self._extra_init = lambda context: None
         self._extra_handle = lambda context, data: None
@@ -60,15 +58,12 @@ class Strategy(object):
         self._buy_func = None
         self._sell_func = None
 
-        with open(DEFAULT_CONFIG_FILE, 'r') as f:
-            config = json.load(f)
-            self.trading_info.update(config)
-
-
     def serialize(self):
         d = {
             'trading': self.trading_info,
+            'datasets': self.dataset_info,
             'indicators': self.indicators,
+            'signals': self.signals
         }
         return json.dumps(d, indent=3)
 
@@ -78,6 +73,13 @@ class Strategy(object):
         for i in self._market_indicators:
             inds.append(i.serialize())
         return inds
+
+    @property
+    def dataset_info(self):
+        info = []
+        for dataset, manag in self._datasets.items():
+            info.append(manag.serialize())
+        return info
 
     def init(self, f):
         """Calls the wrapped function before catalyst algo begins"""
@@ -111,17 +113,17 @@ class Strategy(object):
         with open(json_file, 'r') as f:
             d = json.load(f)
 
+        self.trading_info.update(d['trading'])
+
         for i in d['indicators']:
             if i.get('dataset') in [None, 'market']:
                 ind = technical.get_indicator(**i)
                 self.add_market_indicator(ind)
 
-            elif i.get('dataset') is not None:
-                cols, dataset, name = i['cols'], i['dataset'], i['name']
-
-                self.add_data_indicator(dataset, name, cols=cols)
-
-        self.trading_info.update(d['trading'])
+        for ds in d['datasets']:
+            self.use_dataset(ds['name'], ds['columns'])
+            for i in ds['indicators']:
+                self.add_data_indicator(ds['name'], i['name'], col=i['symbol'])
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
@@ -226,17 +228,17 @@ class Strategy(object):
         # indicator = ind_class(**kw)
         self._market_indicators.insert(priority, indicator)
 
-    def add_data_indicator(self, dataset, indicator, cols=None):
+    def add_data_indicator(self, dataset, indicator, col=None):
         """Registers an indicator to be called on external data"""
         if dataset not in self._datasets:
-            self.use_dataset(dataset, cols)
+            raise LookupError('{} dataset not registered, register with .use_dataset() before adding indicators')
 
         data_manager = self._datasets[dataset]
-        data_manager.attach_indicator(indicator, cols)
+        data_manager.attach_indicator(indicator, col)
 
     def use_dataset(self, dataset_name, columns):
         """Registers an external dataset to be integrated into algo"""
-        data_manager = get_data_manager(dataset_name)(columns=columns)
+        data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
         self._datasets[dataset_name] = data_manager
 
     def weigh_signals(self, context, data):
@@ -335,17 +337,17 @@ class Strategy(object):
         """
         try:
             run_algorithm(
-                capital_base=CONFIG.CAPITAL_BASE,
-                data_frequency=CONFIG.DATA_FREQUENCY,
+                capital_base=self.trading_info['CAPITAL_BASE'],
+                data_frequency=self.trading_info['DATA_FREQ'],
                 initialize=self._init_func,
                 handle_data=self._process_data,
                 analyze=self._analyze,
-                exchange_name=CONFIG.BUY_EXCHANGE,
-                base_currency=CONFIG.BASE_CURRENCY,
-                start=pd.to_datetime(CONFIG.START, utc=True),
-                end=pd.to_datetime(CONFIG.END, utc=True)
+                exchange_name=self.trading_info['EXCHANGE'],
+                base_currency=self.trading_info['BASE_CURRENCY'],
+                start=pd.to_datetime(self.trading_info['START'], utc=True),
+                end=pd.to_datetime(self.trading_info['END'], utc=True)
             )
         except PricingDataNotLoadedError:
             log.info('Ingesting required exchange bundle data')
-            load.ingest_exchange(CONFIG)
+            load.ingest_exchange(self.trading_info)
             log.info('Exchange ingested, please run the command again')
