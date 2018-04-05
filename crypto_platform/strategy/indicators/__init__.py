@@ -46,7 +46,7 @@ class AbstractIndicator(object):
 
     def _parse_params(self, func_params):
         for k, v in func_params.items():
-            if k == 'matype' and isinstance(v, str):
+            if 'matype' in k and isinstance(v, str):
                 v = MA_TYPE_MAP[v]
             self.params[k] = v
 
