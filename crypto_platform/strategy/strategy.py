@@ -17,6 +17,7 @@ from crypto_platform import logger_group
 log = logbook.Logger('Strategy')
 logger_group.add_logger(log)
 
+
 class Strategy(object):
 
     def __init__(self, name=None, data_frequency='daily', exchange=None, start=None, end=None):
@@ -61,17 +62,22 @@ class Strategy(object):
         d = {
             'trading': self.trading_info,
             'datasets': self.dataset_info,
-            'indicators': self.indicators,
+            'indicators': self.indicator_info,
             'signals': self.signals
         }
         return json.dumps(d, indent=3)
 
     @property
-    def indicators(self):
+    def indicator_info(self):
         inds = []
         for i in self._market_indicators:
             inds.append(i.serialize())
         return inds
+
+    def indicator(self, label):
+        for i in self._market_indicators:
+            if i.label == label.upper():
+                return i
 
     @property
     def dataset_info(self):
@@ -115,10 +121,12 @@ class Strategy(object):
         trade_config = d.get('trading', {})
         self.trading_info.update(trade_config)
 
-        for i in d['indicators']:
+        indicators = d.get('indicators', {})
+        for i in indicators:
             if i.get('dataset') in [None, 'market']:
                 ind = technical.get_indicator(**i)
-                self.add_market_indicator(ind)
+                if ind not in self._market_indicators:
+                    self.add_market_indicator(ind)
 
         datasets = d.get('datasets', {})
         for ds in datasets:
@@ -357,7 +365,7 @@ class Strategy(object):
                 exchange_name=self.trading_info['EXCHANGE'],
                 base_currency=self.trading_info['BASE_CURRENCY'],
                 start=pd.to_datetime(self.trading_info['START'], utc=True),
-                end=pd.to_datetime(self.trading_info['END'], utc=True)
+                end=pd.to_datetime(self.trading_info['END'], utc=True),
             )
         except PricingDataNotLoadedError:
             log.info('Ingesting required exchange bundle data')
