@@ -14,7 +14,6 @@ from catalyst.api import (
 )
 from catalyst.utils.run_algo import run_algorithm
 
-CONFIG = None
 NAMESPACE = 'rsi'
 log = Logger(NAMESPACE)
 

@@ -12,7 +12,6 @@ from catalyst.api import symbol, record, order_target_percent, get_open_orders
 
 
 
-CONFIG = None
 NAMESPACE = 'mean_reversion_simple'
 log = Logger(NAMESPACE)
 
@@ -27,7 +26,6 @@ def initialize(context):
     # parameters or values you're going to use.
 
     # In our example, we're looking at Neo in Ether.
-    context.market = symbol(CONFIG.ASSET)
     context.base_price = None
     context.current_day = None
 

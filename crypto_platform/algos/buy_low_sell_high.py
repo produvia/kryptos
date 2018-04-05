@@ -10,7 +10,6 @@ from catalyst.api import (
 )
 
 
-CONFIG = None
 NAMESPACE = 'buy_low_sell_high'
 log = Logger(NAMESPACE)
 

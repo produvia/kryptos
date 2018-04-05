@@ -23,7 +23,6 @@ from catalyst.api import (order_target_value, record,
 
 
 NAMESPACE = 'buy_and_hodl'
-CONFIG = None
 
 
 def initialize(context):

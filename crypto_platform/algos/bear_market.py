@@ -4,7 +4,6 @@
 from catalyst.api import order_target_percent, record
 from logbook import Logger
 
-CONFIG = None
 NAMESPACE = 'bear_market'
 log = Logger(NAMESPACE)
 

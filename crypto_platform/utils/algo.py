@@ -2,16 +2,17 @@ from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from logbook import Logger
+import pandas as pd
 
-from crypto_platform.config import CONFIG
+from crypto_platform.strategy import DEFAULT_CONFIG as CONFIG
 from crypto_platform.utils import load
 
 log = Logger('AlgoFactory')
 
 
 def initialze_from_config(context):
-    context.asset = symbol(CONFIG.ASSET)
-    context.market = symbol(CONFIG.ASSET)
+    context.asset = symbol(CONFIG['ASSET'])
+    context.market = symbol(CONFIG['ASSET'])
     set_benchmark(context.asset)
 
     context.ORDER_SIZE = 10
@@ -20,7 +21,7 @@ def initialze_from_config(context):
 
     context.errors = []
 
-    for k, v in CONFIG.__dict__.items():
+    for k, v in CONFIG.items():
         if '__' not in k:
             setattr(context, k, v)
 
@@ -52,15 +53,15 @@ def record_data(context, data, data_manager=None):
 def run_algo(initialize, handle_data, analyze):
     try:
         run_algorithm(
-            capital_base=CONFIG.CAPITAL_BASE,
-            data_frequency=CONFIG.DATA_FREQUENCY,
+            capital_base=CONFIG['CAPITAL_BASE'],
+            data_frequency=CONFIG['DATA_FREQ'],
             initialize=initialize,
             handle_data=handle_data,
             analyze=analyze,
-            exchange_name=CONFIG.BUY_EXCHANGE,
-            base_currency=CONFIG.BASE_CURRENCY,
-            start=CONFIG.START,
-            end=CONFIG.END,
+            exchange_name=CONFIG['EXCHANGE'],
+            base_currency=CONFIG['BASE_CURRENCY'],
+            start=pd.to_datetime(CONFIG['START'], utc=True),
+            end=pd.to_datetime(CONFIG['END'], utc=True),
         )
     except PricingDataNotLoadedError:
         log.info('Ingesting required exchange bundle data')

@@ -1,7 +1,7 @@
 from catalyst.api import order_target_percent, record, symbol, cancel_order, get_open_orders
 from logbook import Logger
 
-CONFIG = None
+
 NAMESPACE = 'dynamic_rebalance'
 log = Logger(NAMESPACE)
 
