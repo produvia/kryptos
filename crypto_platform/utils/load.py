@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from logbook import Logger
 from catalyst.exchange.exchange_bundle import ExchangeBundle
 
@@ -81,18 +82,18 @@ def ingest_exchange(config):
     Ingest data for the given exchange.
     """
 
-    if config.BUY_EXCHANGE is None:
+    if config.get('EXCHANGE') is None:
         log.error("must specify an exchange name")
 
-    exchange_bundle = ExchangeBundle(config.BUY_EXCHANGE)
+    exchange_bundle = ExchangeBundle(config['EXCHANGE'])
 
-    log.info('Ingesting exchange bundle {}...'.format(config.BUY_EXCHANGE))
+    log.info('Ingesting exchange bundle {}...'.format(config['EXCHANGE']))
     exchange_bundle.ingest(
-        data_frequency=config.DATA_FREQUENCY,
-        include_symbols=config.ASSET,
+        data_frequency=config['DATA_FREQ'],
+        include_symbols=config['ASSET'],
         exclude_symbols=None,
-        start=config.START,
-        end=config.END,
+        start=pd.to_datetime(config['START'], utc=True),
+        end=pd.to_datetime(config['END'], utc=True),
         show_progress=True,
         show_breakdown=False,
         show_report=False,
