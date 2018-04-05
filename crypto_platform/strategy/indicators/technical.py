@@ -16,9 +16,9 @@ log = Logger('INDICATOR')
 
 
 def get_indicator(name, **kw):
-    subclass = globals().get(name)
+    subclass = globals().get(name.upper())
     if subclass is not None:
-        return subclass()
+        return subclass(**kw)
 
     return TAIndicator(name, **kw)
 
@@ -38,10 +38,7 @@ class TAIndicator(AbstractIndicator):
         Extends:
             Indicator): def __init__(self, name
         """
-        self.name = name.upper()
-        self.data = None
-        self.outputs = None
-        self.kw = kw
+
 
     @property
     def func(self):
@@ -62,7 +59,7 @@ class TAIndicator(AbstractIndicator):
             **kw {[type]} -- [description]
         """
         self.data = df
-        self.outputs = self.func(df, **self.kw)
+        self.outputs = self.func(df, **self.params)
         if len(self.outputs) == 1 and self.label is not None:
             self.outputs.columns = [self.label]
 
@@ -84,7 +81,6 @@ class TAIndicator(AbstractIndicator):
         if ignore is None:
             ignore = []
         for col in [c for c in list(self.outputs) if c not in ignore]:
-            log.error(col)
             ax = viz.plot_column(results, col, pos, y_label=y_label, label=col)
         plt.legend()
         return ax
@@ -101,8 +97,8 @@ class TAIndicator(AbstractIndicator):
 
 
 class BBANDS(TAIndicator):
-    def __init__(self, matype=ta.MA_Type.T3, **kw):
-        super(BBANDS, self).__init__('BBANDS', matype=matype, **kw)
+    def __init__(self, **kw):
+        super().__init__('BBANDS', **kw)
 
     def plot(self, results, pos):
         super().plot(results, pos)
@@ -164,7 +160,7 @@ class MACD(TAIndicator):
 
 class MACDFIX(TAIndicator):
 
-    def __init__(self, **kw):
+    def __init__(self, **kw,):
         super(MACDFIX, self).__init__('MACDFIX', **kw)
 
     def plot(self, results, pos):
@@ -277,19 +273,14 @@ class STOCH(TAIndicator):
     def signals_sell(self):
         return self.overbought
 
-# class SMA(TAIndicator):
-#     def __init__(self, timeperiod=30, **kw):
-#         super(SMA, self).__init__('SMA', timeperiod=timeperiod, **kw)
+class SMA(TAIndicator):
+    def __init__(self, **kw):
+        super(SMA, self).__init__('SMA', **kw)
 
+    @property
+    def signals_buy(self):
+        return utils.increasing(self.outputs.get(self.label))
 
-#     def plot(self, results, pos):
-#         viz.plot_column(results, 'price', pos)
-#         super().plot(results, pos)
-
-    # @property
-    # def signals_buy(self):
-    #     return self.outputs.fast > self.outputs.slow
-
-    # @property
-    # def signals_sell(self):
-    #     return self.outputs.slow < self.outputs.slow
+    @property
+    def signals_sell(self):
+        return utils.decreasing(self.outputs.get(self.label))

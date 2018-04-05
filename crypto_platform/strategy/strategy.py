@@ -1,7 +1,7 @@
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, get_open_orders, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-from logbook import Logger
+import logbook
 import matplotlib.pyplot as plt
 import json
 
@@ -10,13 +10,13 @@ from crypto_platform.utils import load, viz
 from crypto_platform.strategy.indicators import technical
 from crypto_platform.data.manager import get_data_manager
 
-log = Logger('Strategy')
-
+log = logbook.Logger('Strategy')
+log.level = logbook.INFO
 
 
 class Strategy(object):
 
-    def __init__(self):
+    def __init__(self, name=None):
         """Central interface used to build and execute trading strategies
 
         Strategy objects represent a high level interface for constructing
@@ -39,6 +39,7 @@ class Strategy(object):
         persisting data, and iterating through timeseries data) is handled by catalyst.
         """
 
+        self.name = name
         self._market_indicators = []
         self._datasets = {}
         self._extra_init = lambda context: None
@@ -50,6 +51,20 @@ class Strategy(object):
 
         self._buy_func = None
         self._sell_func = None
+
+    def serialize(self):
+        d = {
+        'indicators': self.indicators,
+        }
+        return json.dumps(d, indent=3)
+
+    @property
+    def indicators(self):
+        inds = []
+        for i in self._market_indicators:
+            inds.append(i.serialize())
+        return inds
+
 
     def init(self, f):
         """Calls the wrapped function before catalyst algo begins"""
@@ -84,9 +99,9 @@ class Strategy(object):
             d = json.load(f)
 
         for i in d['indicators']:
-            if i.get('dataset') == 'market':
-                name = i['name']
-                self.add_market_indicator(name)
+            if i.get('dataset') in [None, 'market']:
+                ind = technical.get_indicator(**i)
+                self.add_market_indicator(ind)
 
             elif i.get('dataset') is not None:
                 cols, dataset, name = i['cols'], i['dataset'], i['name']
@@ -191,10 +206,10 @@ class Strategy(object):
         # viz.add_legend()
         viz.show_plot()
 
-    def add_market_indicator(self, indicator, priority=0, **kw):
+    def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
         if isinstance(indicator, str):
-            indicator = technical.get_indicator(indicator, **kw)
+            indicator = technical.get_indicator(indicator, **params)
         # ind_class = getattr(technical, indicator)
         # indicator = ind_class(**kw)
         self._market_indicators.insert(priority, indicator)
@@ -229,10 +244,11 @@ class Strategy(object):
                     sells += 1
 
         if self._signal_buy_func(context, data):
-            buy += 1
+            log.info('Custom signal to buy')
+            buys += 1
         elif self._signal_sell_func(context, data):
-            sell += 1
-
+            log.info('Custom signal to buy')
+            sells += 1
 
         if buys > sells:
             log.info('Signaling to buy')
