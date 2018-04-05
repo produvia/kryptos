@@ -1,6 +1,5 @@
 import os
 import csv
-import json
 import datetime
 from dateutil.rrule import rrule, MONTHLY, WEEKLY, DAILY
 from dateutil.relativedelta import relativedelta
@@ -16,10 +15,12 @@ import quandl
 from crypto_platform.data import csv_data
 from crypto_platform.data.clients import quandl_client
 from crypto_platform.utils import viz
-from crypto_platform.strategy.indicators import basic
+from crypto_platform.strategy.indicators import basic, technical
 from crypto_platform.strategy import DEFAULT_CONFIG
+from crypto_platform import logger_group
 
 from logbook import Logger
+
 
 DATA_DIR = os.path.dirname(os.path.abspath(csv_data.__file__))
 
@@ -80,6 +81,7 @@ class DataManager(object):
         self._indicator_map = {}
 
         self.log = Logger(name)
+        logger_group.add_logger(self.log)
 
     def fetch_data(self):
         pass
@@ -127,7 +129,10 @@ class DataManager(object):
             col = self.columns
 
         if indicator not in self._indicators:
-            ind_obj = basic.get_indicator(indicator, symbol=col, dataset=self.name)
+            try:
+                ind_obj = basic.get_indicator(indicator, symbol=col, dataset=self.name)
+            except LookupError:
+                ind_obj = technical.get_indicator(indicator, symbol=col, dataset=self.name)
             # ind_obj = getattr(basic, indicator.upper())(dataset=self.name)
             self._indicators.append(ind_obj)
 

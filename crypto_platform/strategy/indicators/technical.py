@@ -1,5 +1,3 @@
-import numpy as np
-import talib as ta
 import talib.abstract as ab
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,8 +9,10 @@ from crypto_platform.config import TAConfig as CONFIG
 from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import AbstractIndicator
 from crypto_platform.strategy.signals import utils
+from crypto_platform import logger_group
 
-log = Logger('INDICATOR')
+log = Logger('TechnicalIndicator')
+logger_group.add_logger(log)
 
 
 def get_indicator(name, **kw):

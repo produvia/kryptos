@@ -1,11 +1,13 @@
 import click
-from logbook import Logger
+import logbook
 
 from crypto_platform.strategy import Strategy
 from crypto_platform.data.manager import AVAILABLE_DATASETS
+from crypto_platform import logger_group
 
 
-log = Logger('Blockchain Activity')
+log = logbook.Logger('Platform')
+logger_group.add_logger(log)
 
 
 
@@ -33,27 +35,30 @@ def run(market_indicators, dataset, columns, data_indicators, json_file):
     for i in market_indicators:
         strat.add_market_indicator(i.upper())
 
+    # currently assigns -i indicator to the column provided at the same index
     if dataset is not None:
         strat.use_dataset(dataset, columns)
-        for i in data_indicators:
-            strat.add_data_indicator(dataset, i.upper(), cols=columns)
+        for i, ind in enumerate(data_indicators):
+            strat.add_data_indicator(dataset, ind.upper(), col=columns[i])
 
     if json_file is not None:
         strat.load_from_json(json_file)
 
     @strat.init
     def initialize(context):
-        # log.info('Initializing strategy')
+        log.info('Initializing strategy')
         pass
 
     @strat.handle_data
     def handle_data(context, data):
-        # log.info('Doing extra stuff for handling data')
+        log.debug('Doing extra stuff for handling data')
         pass
 
     @strat.analyze
     def analyze(context, results):
-        # log.info('Analyzing strategy')
+        log.info('Analyzing strategy')
         pass
+
+    click.secho(strat.serialize(), fg='white')
 
     strat.run()

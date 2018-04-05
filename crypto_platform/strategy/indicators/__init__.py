@@ -1,4 +1,4 @@
-from crypto_platform.config import CONFIG
+from crypto_platform.strategy import DEFAULT_CONFIG
 
 MA_TYPE_MAP = {
     'SMA': 0,    # Simple Moving Average
@@ -14,12 +14,12 @@ MA_TYPE_MAP = {
 
 
 class AbstractIndicator(object):
-    def __init__(self, name, label=None, symbol=CONFIG.ASSET, dataset=None, **kw):
+    def __init__(self, name, label=None, symbol=None, dataset=None, **kw):
         """Abstract class defining required methods utilized by Strategy objects"""
 
         self.name = name.upper()
         self.label = label or self.name
-        self.symbol = symbol
+        self.symbol = symbol or DEFAULT_CONFIG['ASSET']
         self.dataset = dataset
 
         self.params = {}
@@ -30,6 +30,9 @@ class AbstractIndicator(object):
 
         self.data = None
         self.outputs = None
+
+    def update_param(self, param, val):
+        self._parse_params({param: val})
 
     def serialize(self):
         d = {

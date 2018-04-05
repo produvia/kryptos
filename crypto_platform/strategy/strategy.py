@@ -1,4 +1,3 @@
-import os
 import json
 
 import logbook
@@ -13,10 +12,10 @@ from crypto_platform.utils import load, viz
 from crypto_platform.strategy.indicators import technical
 from crypto_platform.data.manager import get_data_manager
 from crypto_platform.strategy import DEFAULT_CONFIG
+from crypto_platform import logger_group
 
 log = logbook.Logger('Strategy')
-log.level = logbook.INFO
-
+logger_group.add_logger(log)
 
 class Strategy(object):
 
@@ -276,7 +275,7 @@ class Strategy(object):
         else:
             neutrals += 1
 
-        log.info('Buy signals: {}, Sell signals: {}, Neutral Signals: {}'.format(buys, sells, neutrals))
+        log.debug('Buy signals: {}, Sell signals: {}, Neutral Signals: {}'.format(buys, sells, neutrals))
         if buys > sells:
             log.info('Signaling to buy')
             self.make_buy(context)
@@ -294,6 +293,10 @@ class Strategy(object):
         self._buy_func(context)
 
     def make_sell(self, context):
+        if context.asset not in context.portfolio.positions:
+            log.warn('Skipping signaled sell due b/c no position')
+            return
+
         if self._sell_func is None:
             return self._default_sell(context)
         self._sell_func(context)
@@ -312,10 +315,6 @@ class Strategy(object):
             )
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
-        # Current position
-        if context.asset not in context.portfolio.positions:
-            return
-
         position = context.portfolio.positions.get(context.asset)
         if position == 0:
             log.info('Position Zero')

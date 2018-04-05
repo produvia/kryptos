@@ -3,8 +3,10 @@ from logbook import Logger
 
 from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import AbstractIndicator
+from crypto_platform import logger_group
 
-log = Logger('BASICINDICATOR')
+log = Logger('BasicIndicator')
+logger_group.add_logger(log)
 
 
 def get_indicator(name, **kw):
