@@ -157,7 +157,7 @@ class DataManager(object):
         # Basic indicators accept a series as opposed to a df with technical indicators
         for i in self._indicators:
             for col in self._indicator_map[i.name]:
-                self.log.info('Calculating {} for {}'.format(i, col))
+                self.log.debug('Calculating {} for {}'.format(i.name, col))
                 col_vals = self.df_to_date(date)[col]
                 i.calculate(col_vals)
                 i.record()
@@ -331,7 +331,7 @@ class QuandleDataManager(DataManager):
         """Path of quandl csv file"""
         f = quandl_client.data_csv()
         if not os.path.exists(f):
-            self.log.info('Quandle Data not downloaded, fetching...')
+            self.log.warn('Quandle Data not downloaded, fetching...')
             quandl_client.fetch_all()
         return f
 
