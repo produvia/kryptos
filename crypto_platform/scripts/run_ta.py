@@ -84,6 +84,10 @@ def run(indicators, quick_enter):
     @strat.buy_order
     def buy(context):
         log.info('Making Buy Order')
+        if context.portfolio.cash < context.price * context.ORDER_SIZE:
+            log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                context.portfolio.cash, (context.price * context.ORDER_SIZE)))
+
         if context.asset not in context.portfolio.positions:
             order(
                 asset=context.asset,

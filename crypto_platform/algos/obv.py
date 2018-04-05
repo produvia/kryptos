@@ -47,7 +47,6 @@ def trade_logic(context, data):
         log.info('the errors:\n{}'.format(context.errors))
 
 
-
 def perform_ta(context, data):
     # Get price, open, high, low, close
     prices = data.history(
@@ -65,7 +64,6 @@ def perform_ta(context, data):
         prices.close.as_matrix(),
         prices.volume.as_matrix()
     )
-
 
     # Save the prices and analysis to send to analyze
     context.prices = prices
@@ -86,8 +84,6 @@ def perform_ta(context, data):
 
     # Log the values of this bar
     logAnalysis(analysis)
-
-
 
 
 def makeOrders(context, analysis):
@@ -131,6 +127,9 @@ def makeOrders(context, analysis):
     else:
         # Buy when not holding and got buy signal
         if isBuy(context, analysis):
+            if context.portfolio.cash < context.price * context.ORDER_SIZE:
+                log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,

@@ -31,6 +31,7 @@ def initialize(context):
 
     pass
 
+
 def perform_ta(context, data):
     # Get price, open, high, low, close
     prices = data.history(
@@ -39,8 +40,7 @@ def perform_ta(context, data):
         fields=['price', 'open', 'high', 'low', 'close'],
         frequency='1d')
 
-
-     # Create a analysis data frame
+    # Create a analysis data frame
     analysis = pd.DataFrame(index=prices.index)
 
     # MACD, MACD Signal, MACD Histogram
@@ -49,7 +49,6 @@ def perform_ta(context, data):
 
     # MACD over Signal Crossover
     analysis['macd_test'] = np.where((analysis.macd > analysis.macdSignal), 1, 0)
-
 
     # Save the prices and analysis to send to analyze
     context.prices = prices
@@ -77,7 +76,6 @@ def trade_logic(context, data):
 
     if len(context.errors) > 0:
         log.info('the errors:\n{}'.format(context.errors))
-
 
 
 def makeOrders(context, analysis):
@@ -121,6 +119,9 @@ def makeOrders(context, analysis):
     else:
         # Buy when not holding and got buy signal
         if isBuy(context, analysis):
+            if context.portfolio.cash < context.price * context.ORDER_SIZE:
+                log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
@@ -142,14 +143,12 @@ def isBuy(context, analysis):
     return False
 
 
-
 def isSell(context, analysis):
     # Bearish MACD
     if (getLast(analysis, 'macd_test') == 0):
         return True
 
     return False
-
 
 
 def logAnalysis(analysis):
@@ -159,8 +158,6 @@ def logAnalysis(analysis):
     log.info(
         '- macdSignal:     {:.2f}'.format(getLast(analysis, 'macdSignal')))
     log.info('- macdHist:       {:.2f}'.format(getLast(analysis, 'macdHist')))
-
-
 
 
 def getLast(arr, name):

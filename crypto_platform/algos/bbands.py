@@ -59,7 +59,6 @@ def perform_ta(context, data):
     analysis['bb_upper'], analysis['bb_middle'], analysis['bb_lower'] = ta.BBANDS(
         prices.close.as_matrix(), matype=ta.MA_Type.T3)
 
-
     # Save the prices and analysis to send to analyze
     context.prices = prices
     context.analysis = analysis
@@ -139,6 +138,9 @@ def makeOrders(context, analysis):
     else:
         # Buy when not holding and got buy signal
         if isBuy(context, analysis):
+            if context.portfolio.cash < context.price * context.ORDER_SIZE:
+                log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,

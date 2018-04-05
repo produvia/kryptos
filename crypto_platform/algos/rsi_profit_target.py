@@ -87,6 +87,9 @@ def _handle_buy_sell_decision(context, data, signal, price):
         if signal == 'long':
             log.info('opening position')
             buy_amount = context.MAX_HOLDINGS / price
+            if context.portfolio.cash < context.price * buy_amount:
+                log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                    context.portfolio.cash, (context.price * buy_amount)))
             order(
                 asset=context.asset,
                 amount=buy_amount,
@@ -171,9 +174,6 @@ def trade_logic(context, data):
 
     if len(context.errors) > 0:
         log.info('the errors:\n{}'.format(context.errors))
-
-
-
 
 
 if __name__ == '__main__':

@@ -60,11 +60,10 @@ def perform_ta(context, data):
         prices.close.as_matrix(), matype=ta.MA_Type.T3)
 
     analysis['psar'] = ta.SAR(
-            prices.high.as_matrix(),
-            prices.low.as_matrix(),
-            acceleration=context.SAR_ACCEL,
-            maximum=context.SAR_MAX)
-
+        prices.high.as_matrix(),
+        prices.low.as_matrix(),
+        acceleration=context.SAR_ACCEL,
+        maximum=context.SAR_MAX)
 
     # Save the prices and analysis to send to analyze
     context.prices = prices
@@ -147,6 +146,9 @@ def makeOrders(context, analysis):
     else:
         # Buy when not holding and got buy signal
         if isBuy(context, analysis):
+            if context.portfolio.cash < context.price * context.ORDER_SIZE:
+                log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
@@ -158,8 +160,6 @@ def makeOrders(context, analysis):
                     price=context.price
                 )
             )
-
-
 
 
 def isBuy(context, analysis):

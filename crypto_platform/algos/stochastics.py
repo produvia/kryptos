@@ -145,6 +145,9 @@ def makeOrders(context, analysis):
     else:
         # Buy when not holding and got buy signal
         if isBuy(context, analysis):
+            if context.portfolio.cash < context.price * context.ORDER_SIZE:
+                log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
