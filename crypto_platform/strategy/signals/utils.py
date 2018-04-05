@@ -24,3 +24,9 @@ def increasing(series, period=4):
 def decreasing(series, period=4):
     arr = series[period * -1:]
     return np.all(np.diff(arr) < 0)
+
+def greater_than(series_1, series_2):
+    return series_1[-1] > series_2[-1]
+
+def less_than(series_1, series_2):
+    return series_1[-1] < series_2[-1]
