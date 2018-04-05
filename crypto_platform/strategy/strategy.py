@@ -115,7 +115,7 @@ class Strategy(object):
         context.asset = symbol(CONFIG.ASSET)
         context.market = symbol(CONFIG.ASSET)
         set_benchmark(context.asset)
-        context.ORDER_SIZE = 10
+        context.ORDER_SIZE = 0.5
         context.SLIPPAGE_ALLOWED = 0.05
         context.BARS = 365
         context.errors = []
@@ -259,6 +259,9 @@ class Strategy(object):
 
 
     def make_buy(self, context):
+        if context.portfolio.cash < context.price * context.ORDER_SIZE:
+            log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(context.portfolio.cash, (context.price * context.ORDER_SIZE)))
+            return
         if self._buy_func is None:
             return self._default_buy(context)
         self._buy_func(context)
