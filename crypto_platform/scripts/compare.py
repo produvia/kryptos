@@ -65,7 +65,7 @@ def run(strategies, metrics):
             pos += 1
 
             for m in CONFIG.METRICS:
-                viz.plot_metric(results, m, pos=pos, label=strat.NAMESPACE)
+                viz.plot_column(results, m, pos=pos, label=strat.NAMESPACE)
                 pos += 1
 
             all_results.append((strat, context, results))

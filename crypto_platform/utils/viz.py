@@ -38,6 +38,14 @@ def add_legend():
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=True, shadow=True, ncol=5)
 
 
+def add_twin_legends(axes):
+    lines = []
+    for ax in axes:
+        lines.extend(ax.get_lines())
+
+    plt.legend(lines, [line.get_label() for line in lines])
+
+
 def plot_portfolio(context, results, name=None, pos=211):
     # Get the base_currency that was passed as a parameter to the simulation
     exchange = list(context.exchanges.values())[0]
@@ -68,15 +76,34 @@ def plot_benchmark(results, pos=211,):
     ax = plt.subplot(pos)
     bench = results.loc[:, ['benchmark_period_return']]
     ax.plot(bench, label='Benchmark', linestyle='--')
+    return ax
 
 
-def plot_metric(results, metric, pos, y_label=None, label=None, add_mean=False, **kw):
-    if y_label is None:
-        y_label = '{}'.format(metric.replace('_', '\n').title())
-
+def plot_as_points(results, column, pos, y_val=None, label=None, marker='o', color='green'):
     ax = plt.subplot(pos)
+
+    res = results.loc[:, [column]]
+
+    ax.scatter(
+        results.index.to_pydatetime(),
+        res,
+        marker=marker,
+        s=5,
+        c=color,
+        label=label
+    )
+
+
+def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, twin=None, **kw):
+    if y_label is None:
+        y_label = '{}'.format(column.replace('_', '\n').title())
+
+    if twin is None:
+        ax = plt.subplot(pos)
+    else:
+        ax = twin.twinx()
     ax.set_ylabel(y_label)
-    res = results.loc[:, [metric]]
+    res = results.loc[:, [column]]
     ax.plot(res, label=label, **kw)
 
     if add_mean:
@@ -87,13 +114,23 @@ def plot_metric(results, metric, pos, y_label=None, label=None, add_mean=False, 
     return ax
 
 
-def plot_points(results, pos, y_val=None, label=None, marker='o', color='green'):
+def plot_bar(results, column, pos, label=None, twin=None, **kw):
+    if twin is None:
+        ax = plt.subplot(pos)
+    else:
+        ax = twin.twinx()
+
+    res = results.loc[:, [column]]
+    ax.bar(res.index, res[column].values, label=label, **kw)
+
+
+def mark_on_line(results, pos, y_val=None, label=None, marker='o', color='green'):
     ax = plt.subplot(pos)
     ax.scatter(
         results.index.to_pydatetime(),
         results.loc[results.index, y_val],
         marker=marker,
-        s=100,
+        s=50,
         c=color,
         label=label
     )
@@ -104,7 +141,7 @@ def plot_buy_sells(results, pos, y_val=None):
 
     if y_val is None:
         y_val = 'price'
-        ax = plot_metric(results, 'price', pos, y_label='Buy/Sells')
+        ax = plot_column(results, 'price', pos, y_label='Buy/Sells')
 
     else:  # dont plot price if using other y_val
         ax = plt.subplot(pos)

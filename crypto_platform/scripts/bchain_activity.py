@@ -1,15 +1,17 @@
 import click
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from logbook import Logger
 
-from crypto_platform.utils import viz, algo
-from crypto_platform.datasets.quandl_data.manager import QuandleDataManager
+# from crypto_platform.utils import viz, algo
+# from crypto_platform.datasets.quandl_data.manager import QuandleDataManager
+
+from crypto_platform.strategy import Strategy
 
 
 log = Logger('Blockchain Activity')
 
 
-qdata = QuandleDataManager()
+# qdata = QuandleDataManager()
 
 
 @click.command()
@@ -60,25 +62,12 @@ def run(datasets):
 
     click.secho('Executing using datasets:\n{}'.format(datasets), fg='white')
 
-    def initialize(context):
-        algo.initialze_from_config(context)
 
-    def handle_data(context, data):
-        algo.record_data(context, data)
-        qdata.record_data(context, data, datasets)
+    strat = Strategy()
 
-    def analyze(context, results):
-        pos = viz.get_start_geo(len(datasets))
-        for d in datasets:
-            name = qdata.pretty_title(d)
-            viz.plot_metric(results, d, pos=pos, y_label=name, label=name)
-            pos += 1
-        plt.legend()
+    strat.use_dataset('quandl', columns=list(datasets))
+    strat.run()
 
-    algo.run_algo(initialize, handle_data, analyze)
-
-    viz.add_legend()
-    viz.show_plot()
 
 
 if __name__ == '__main__':

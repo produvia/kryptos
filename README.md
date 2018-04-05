@@ -47,7 +47,108 @@ $ source ./venv/bin/activate
 ```
 
 ### Configuration
-Global algorithm behavior can be adjusted by modifying the values in [crypto_platform/config.py](/crypto_platform/config.py). These parameters (asset, exchange, start, end, etc...) are useful standardizng strategy performance.
+Global algorithm behavior can be adjusted by modifying the values in [crypto_platform/config.json](/crypto_platform/config.py). These parameters (asset, exchange, start, end, etc...) are useful standardizng strategy performance.
+
+## Strategies
+The `Strategy` class acts as the interface for creating and running trading strategies as catalyst algorithms.
+
+#### Running Stratgies from the CLI
+```bash
+Usage: strat [OPTIONS]
+
+Options:
+  -ta, --market-indicators TEXT  Market Indicators listed in order of priority
+  -d, --dataset [google|quandl]  Include asset in keyword list
+  -c, --columns TEXT             Target columns for specified dataset
+  -i, --data-indicators TEXT     Dataset indicators
+  -f, --json-file TEXT
+  --help                         Show this message and exit.
+```
+
+To create a strategy using TA indicators:
+```bash
+$ strat -ta bbands -ta rsi
+```
+
+To use an external dataset:
+
+Google Trends
+```bash
+$ strat -d google -c 'bitcoin futures'
+```
+
+
+Quandle
+```bash
+$ strat -d quandl -c 'MKTCP' -c 'NTRAN'
+```
+
+Calculate a basic indicator for external data
+```bash
+$ strat -d google -c 'btc usd' -i 'relchange'
+```
+
+#### JSON Format
+The `strat` command also accepts a JSON file. The JSON object represents all the inputs used to create a strategy. The JSON representation is displayed anytime the `strat` command is run, so you can use save it as a file and fine tune inputs such as indicator parameters.
+
+For example:
+```json
+{
+   "trading": {
+      "EXCHANGE": "bitfinex",
+      "ASSET": "btc_usd",
+      "DATA_FREQ": "daily",
+      "HISTORY_FREQ": "1d",
+      "CAPITAL_BASE": 5000,
+      "BASE_CURRENCY": "usd",
+      "START": "2017-10-10",
+      "END": "2018-3-28"
+   },
+   "datasets": [
+      {
+         "name": "google",
+         "columns": [
+            "bitcoin futures"
+         ],
+         "indicators": [
+            {
+               "name": "RELCHANGE",
+               "symbol": "bitcoin futures",
+               "dataset": "google",
+               "label": "RELCHANGE",
+               "params": {}
+            }
+         ]
+      }
+   ],
+   "indicators": [
+      {
+         "name": "STOCH",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "STOCH",
+         "params": {
+     }
+      },
+      {
+         "name": "BBANDS",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "BBANDS",
+         "params": {
+            "matype": "DEMA",
+            "timeperiod": 30
+         }
+      }
+   ]
+}
+```
+
+To run a strategy from the file:
+```bash
+$ strat -f api_example.json
+```
+
 
 
 ## Running example (pre-built) strategies

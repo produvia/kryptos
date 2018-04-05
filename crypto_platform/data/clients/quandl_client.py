@@ -2,20 +2,21 @@ import os
 import csv
 import quandl
 
+from crypto_platform.data import csv_data
+
 API_KEY = os.getenv('QUANDL_API_KEY')
+DATA_DIR = os.path.dirname(os.path.abspath(csv_data.__file__))
+QUANDL_DIR = os.path.join(DATA_DIR, 'quandl', )
+
 quandl.ApiConfig.api_key = API_KEY
 
 
 def code_csv():
-    path = os.path.abspath(__file__)
-    quandl_dir = os.path.dirname(path)
-    return os.path.join(quandl_dir, 'BCHAIN-datasets-codes.csv')
+    return os.path.join(QUANDL_DIR, 'BCHAIN-datasets-codes.csv')
 
 
 def data_csv():
-    path = os.path.abspath(__file__)
-    quandl_dir = os.path.dirname(path)
-    return os.path.join(quandl_dir, 'data.csv')
+    return os.path.join(QUANDL_DIR, 'data.csv')
 
 
 def codes_from_csv():
