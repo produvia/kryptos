@@ -7,7 +7,7 @@
       "CAPITAL_BASE": 15000,
       "BASE_CURRENCY": "usd",
       "START": "2017-12-10",
-      "END": "2017-12-11"
+      "END": "2017-12-12"
    },
    "datasets": [],
    "indicators": [
@@ -17,7 +17,7 @@
          "dataset": null,
          "label": "SMA_FAST",
          "params": {
-            "timeperiod": 20
+            "timeperiod": 50
          }
       },
       {
@@ -26,7 +26,7 @@
          "dataset": null,
          "label": "SMA_SLOW",
          "params": {
-            "timeperiod": 40
+            "timeperiod": 100
          }
       }
    ],

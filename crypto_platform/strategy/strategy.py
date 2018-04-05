@@ -51,6 +51,7 @@ class Strategy(object):
         self._extra_init = lambda context: None
         self._extra_handle = lambda context, data: None
         self._extra_analyze = lambda context, results: None
+        self._extra_plots = 0
 
         self._signal_buy_func = lambda context, data: None
         self._signal_sell_func = lambda context, data: None
@@ -94,9 +95,13 @@ class Strategy(object):
         """Calls the wrapped function at each algo iteration"""
         self._extra_handle = f
 
-    def analyze(self, f):
+    def analyze(self, num_plots=0):
         """Calls the wrapped function after algo has finished"""
-        self._extra_analyze = f
+        self._extra_plots += num_plots
+        def decorator(f):
+            self._extra_analyze = f
+            return f
+        return decorator
 
     def buy_order(self, f):
         """Calls the wrapped function if indicators signal to buy"""
@@ -199,7 +204,7 @@ class Strategy(object):
         for d, m in self._datasets.items():
             dataset_inds += len(m._indicators)
 
-        return len(self._market_indicators) + len(self._datasets) + dataset_inds
+        return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
@@ -223,9 +228,10 @@ class Strategy(object):
                 i.plot(results, pos)
                 pos += 1
 
-        viz.plot_buy_sells(results, pos=pos)
+        self._extra_analyze(context, results, pos)
+        pos += self._extra_plots
 
-        self._extra_analyze(context, results)
+        viz.plot_buy_sells(results, pos=pos)
         # viz.add_legend()
         viz.show_plot()
 
