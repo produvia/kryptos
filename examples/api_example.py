@@ -43,7 +43,7 @@ def handle_data(context, data):
     context.i += 1
 
 
-@strat.analyze(num_plots=0)
+@strat.analyze()
 def analyze(context, results, pos):
     ending_cash = results.cash[-1]
     log.info('Ending cash: ${}'.format(ending_cash))
