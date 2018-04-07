@@ -1,0 +1,13 @@
+{
+   "trading": {
+       "EXCHANGE": "bittrex",
+       "ASSET": "btc_usdt",
+       "DATA_FREQ": "minute",
+       "HISTORY_FREQ": "30T",
+       "CAPITAL_BASE": 5000,
+       "BASE_CURRENCY": "usd",
+       "BARS": 50,
+       "START": "2017-10-12",
+       "END": "2017-10-13"
+   }
+}

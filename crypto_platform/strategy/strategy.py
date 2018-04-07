@@ -182,8 +182,8 @@ class Strategy(object):
             data {pandas.Datframe} -- Catalyst data object
         """
         log.debug('Processing algo iteration')
-        for i in get_open_orders(context.asset):
-            log.warn('Canceling unfilled open order')
+        for i in context.blotter.open_orders:
+            log.warn('Canceling unfilled open order {}'.format(i))
             cancel_order(i)
 
         price = data.current(context.asset, 'price')
@@ -415,7 +415,7 @@ class Strategy(object):
             live=True,
             algo_namespace=self.name,
             base_currency=self.trading_info['BASE_CURRENCY'],
-            live_graph=True,
+            live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,
         )
