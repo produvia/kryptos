@@ -1,4 +1,5 @@
 import json
+import uuid
 
 import logbook
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ logger_group.add_logger(log)
 
 class Strategy(object):
 
-    def __init__(self, name=None, data_frequency='daily', exchange=None, start=None, end=None):
+    def __init__(self, name=None, **kw):
         """Central interface used to build and execute trading strategies
 
         Strategy objects represent a high level interface for constructing
@@ -43,6 +44,10 @@ class Strategy(object):
         persisting data, and iterating through timeseries data) is handled by catalyst.
         """
 
+        # name required for storing live algos
+        if name is None:
+            name = 'Strat-' + str(uuid.uuid1())
+
         self.name = name
         self.trading_info = DEFAULT_CONFIG
         self._market_indicators = []
@@ -58,6 +63,8 @@ class Strategy(object):
 
         self._buy_func = None
         self._sell_func = None
+
+        self.trading_info.update(kw)
 
     def serialize(self):
         d = {
@@ -98,6 +105,7 @@ class Strategy(object):
     def analyze(self, num_plots=0):
         """Calls the wrapped function after algo has finished"""
         self._extra_plots += num_plots
+
         def decorator(f):
             self._extra_analyze = f
             return f
@@ -125,6 +133,11 @@ class Strategy(object):
 
         trade_config = d.get('trading', {})
         self.trading_info.update(trade_config)
+        # For all trading pairs in the poloniex bundle, the default denomination
+        # currently supported by Catalyst is 1/1000th of a full coin. Use this
+        # constant to scale the price of up to that of a full coin if desired.
+        if self.trading_info['EXCHANGE'] == 'poloniex':
+            self.trading_info['TICK_SIZE'] = 1000.0
 
         indicators = d.get('indicators', {})
         for i in indicators:
@@ -179,7 +192,11 @@ class Strategy(object):
         record(price=price, cash=cash, volume=volume)
 
         context.price = price
+
         # Get price, open, high, low, close
+        # The frequency attribute determine the bar size. We use this convention
+        # for the frequency alias:
+        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         context.prices = data.history(
             context.asset,
             bar_count=context.BARS,
@@ -355,25 +372,50 @@ class Strategy(object):
         )
 
     # Save the prices and analysis to send to analyze
-    def run(self):
+    def run(self, live=False, simulate_orders=True):
         """Executes the trade strategy as a catalyst algorithm
 
         Basic algorithm behavior is defined cia the config object, while
         iterative logic is managed by the Strategy object.
         """
         try:
-            run_algorithm(
-                capital_base=self.trading_info['CAPITAL_BASE'],
-                data_frequency=self.trading_info['DATA_FREQ'],
-                initialize=self._init_func,
-                handle_data=self._process_data,
-                analyze=self._analyze,
-                exchange_name=self.trading_info['EXCHANGE'],
-                base_currency=self.trading_info['BASE_CURRENCY'],
-                start=pd.to_datetime(self.trading_info['START'], utc=True),
-                end=pd.to_datetime(self.trading_info['END'], utc=True),
-            )
+            if live or self.trading_info.get('LIVE', False):
+                self.run_live(simulate_orders=simulate_orders)
+            else:
+                self.run_backtest()
+
         except PricingDataNotLoadedError:
-            log.info('Ingesting required exchange bundle data')
+            log.warn('Ingesting required exchange bundle data')
             load.ingest_exchange(self.trading_info)
-            log.info('Exchange ingested, please run the command again')
+            log.warn('Exchange ingested, please run the command again')
+
+    def run_backtest(self):
+        run_algorithm(
+            algo_namespace=self.name,
+            capital_base=self.trading_info['CAPITAL_BASE'],
+            data_frequency=self.trading_info['DATA_FREQ'],
+            initialize=self._init_func,
+            handle_data=self._process_data,
+            analyze=self._analyze,
+            exchange_name=self.trading_info['EXCHANGE'],
+            base_currency=self.trading_info['BASE_CURRENCY'],
+            start=pd.to_datetime(self.trading_info['START'], utc=True),
+            end=pd.to_datetime(self.trading_info['END'], utc=True),
+
+        )
+
+    def run_live(self, simulate_orders=True):
+        # import pdb; pdb.set_trace()
+        run_algorithm(
+            capital_base=self.trading_info['CAPITAL_BASE'],
+            initialize=self._init_func,
+            handle_data=self._process_data,
+            analyze=self._analyze,
+            exchange_name=self.trading_info['EXCHANGE'],
+            live=True,
+            algo_namespace=self.name,
+            base_currency=self.trading_info['BASE_CURRENCY'],
+            live_graph=True,
+            simulate_orders=simulate_orders,
+            stats_output=None,
+        )
