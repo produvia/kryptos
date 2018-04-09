@@ -149,7 +149,7 @@ class Strategy(object):
         datasets = d.get('datasets', {})
         for ds in datasets:
             self.use_dataset(ds['name'], ds['columns'])
-            for i in ds['indicators']:
+            for i in ds.get('indicators', []):
                 self.add_data_indicator(ds['name'], i['name'], col=i['symbol'])
 
     def _init_func(self, context):
