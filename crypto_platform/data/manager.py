@@ -178,7 +178,7 @@ class DataManager(object):
         record_payload = {}
 
         if date not in self.df.index:
-            return record_payload
+            raise ValueError('No {} data found for {}'.format(self.name, date))
 
         for k in self.columns:
             current_val = self.column_by_date(k, date)
@@ -313,14 +313,21 @@ class QuandleDataManager(DataManager):
         super(QuandleDataManager, self).__init__('quandl', columns, config)
         """DataManager object used to fetch and integrate Quandl Blockchain database"""
 
+        self.config = config
         _api_key = os.getenv('QUANDL_API_KEY')
         quandl.ApiConfig.api_key = _api_key
         self.data_dir = os.path.join(DATA_DIR, 'quandle', )
 
+
     def fetch_data(self):
         df = pd.read_csv(self.csv, index_col=[0])
-        df.index = pd.date_range(start=df.iloc[0].name, end=df.iloc[-1].name, freq='D')
 
+        df_start, df_end = df.iloc[0].name, df.iloc[-1].name
+        if self.config['START'] < df_start or self.config['END'] > df_end:
+            self.log.warn('Fetching missing quandl data')
+            quandl_client.fetch_all()
+
+        df.index = pd.date_range(start=df.iloc[0].name, end=df.iloc[-1].name, freq='D')
         self.df = df
 
         self.pretty_names = {}
