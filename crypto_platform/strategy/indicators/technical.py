@@ -57,7 +57,7 @@ class TAIndicator(AbstractIndicator):
         self.current_date = df.iloc[-1].name
         self.data = df
         self.outputs = self.func(df, **self.params)
-        if len(self.outputs) == 1 and self.label is not None:
+        if len(self.outputs.columns) == 1 and self.label is not None:
             self.outputs.columns = [self.label]
 
         if isinstance(self.outputs, pd.Series):
