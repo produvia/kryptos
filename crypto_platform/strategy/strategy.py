@@ -194,6 +194,7 @@ class Strategy(object):
             data {pandas.Datframe} -- Catalyst data object
         """
         # set date first for logging purposes
+        import pdb; pdb.set_trace()
         self.current_date = context.blotter.current_dt.date()
 
         self.log.debug('Processing algo iteration')
@@ -407,20 +408,27 @@ class Strategy(object):
             load.ingest_exchange(self.trading_info)
             self.log.warn('Exchange ingested, please run the command again')
 
-    def run_backtest(self):
-        run_algorithm(
-            algo_namespace=self.name,
-            capital_base=self.trading_info['CAPITAL_BASE'],
-            data_frequency=self.trading_info['DATA_FREQ'],
-            initialize=self._init_func,
-            handle_data=self._process_data,
-            analyze=self._analyze,
-            exchange_name=self.trading_info['EXCHANGE'],
-            base_currency=self.trading_info['BASE_CURRENCY'],
-            start=pd.to_datetime(self.trading_info['START'], utc=True),
-            end=pd.to_datetime(self.trading_info['END'], utc=True),
+        except Exception as e:
+            self.log.exception('Error', e)
 
-        )
+    def run_backtest(self):
+        try:
+            run_algorithm(
+                algo_namespace=self.name,
+                capital_base=self.trading_info['CAPITAL_BASE'],
+                data_frequency=self.trading_info['DATA_FREQ'],
+                initialize=self._init_func,
+                handle_data=self._process_data,
+                analyze=self._analyze,
+                exchange_name=self.trading_info['EXCHANGE'],
+                base_currency=self.trading_info['BASE_CURRENCY'],
+                start=pd.to_datetime(self.trading_info['START'], utc=True),
+                end=pd.to_datetime(self.trading_info['END'], utc=True),
+
+            )
+        except KeyError as e:
+            self.log.error('The configured timeframe seems to be causing an error. Consider adjusting the start date', e)
+
 
     def run_live(self, simulate_orders=True):
         # import pdb; pdb.set_trace()
