@@ -323,8 +323,7 @@ class GoogleTrendDataManager(DataManager):
             d = self.trends.interest_over_time()
 
             if d.empty:
-                self.log.error('No Trend Data for {} on {}\n Filling with blank data'.format(self.columns, t))
-                # self.log.warn('Filling data as zero')
+                self.log.warn('No Trend Data for {} on {}\n Filling with blank data'.format(self.columns, t))
                 date_pair = self.datetime_pairs[i]
                 delta = date_pair[1].date() - date_pair[0].date()
                 empty_data = [0] * (delta.days + 1)
@@ -332,7 +331,7 @@ class GoogleTrendDataManager(DataManager):
                 for c in self.columns:
                     d[c] = empty_data
 
-            self.log.info('Retrieved {} days of trend data'.format(len(d)))
+            self.log.debug('Retrieved {} days of trend data'.format(len(d)))
             trend_data.append(d)
 
         self.df = self.normalize_data(trend_data)
@@ -350,12 +349,16 @@ class GoogleTrendDataManager(DataManager):
             trend_array = []
             for i, frame in enumerate(trend_data[:: -1]):
                 if frame.empty:
-                    self.log.critical('Trend Dataframe empty for {}: {}-{}'.format(c,
-                                                                                   self.START.date(), self.END.date()))
+                    self.log.critical('Trend Dataframe empty for {}: {}-{}'.format(c, self.START.date(), self.END.date()))
                     raise ValueError("Incomplete trend data, can't normalize")
 
                 if i == 0:
                     trend_array = list(frame[c].values)
+                    last_entry = frame[c].values[-1]
+
+                elif all([v == 0 for v in frame[c].values]):
+                    self.log.debug('Skipping normalization for all 0 dataframe')
+                    trend_array.extend(list(frame[c][1:]))
                     last_entry = frame[c].values[-1]
 
                 else:
