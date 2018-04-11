@@ -1,5 +1,6 @@
 import os
 import csv
+import json
 import datetime
 from dateutil.rrule import rrule, MONTHLY, WEEKLY, DAILY
 from dateutil.relativedelta import relativedelta
@@ -19,6 +20,7 @@ from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import basic, technical
 from crypto_platform.strategy import DEFAULT_CONFIG
 from crypto_platform import logger_group
+from crypto_platform import errors
 
 from logbook import Logger
 
@@ -66,7 +68,7 @@ class DataManager(object):
         and utilize Catalyst's context object
 
         `calculate` - calculates registered indicators every iteration
-        `record_data` - records external data and indicators every iteration 
+        `record_data` - records external data and indicators every iteration
         `plot` - plots data and indicators after algo execution
 
         Arguments:
@@ -170,12 +172,21 @@ class DataManager(object):
         for i in self._indicators:
             for col in self._indicator_map[i.name]:
                 self.log.debug('Calculating {} for {}'.format(i.name, col))
-                col_vals = self.df_to_date(self.current_date)[col]
-                i.calculate(col_vals)
-                i.record()
+                try:
+                    col_vals = self.df_to_date(self.current_date)[col]
+                    i.calculate(col_vals)
+                    i.record()
+                except KeyError:
+                    msg = """{} is set as the column for {}, but it is not found in the dataset.
+                    Does the config look right?:
+                    {}
+                        """.format(col, i.name, json.dumps(self.serialize(), indent=2))
+                    e = Exception(msg)
+                    self.log.exception(e)
+                    raise e
 
     def record_data(self, context):
-        """Records external data for the current algo iteration 
+        """Records external data for the current algo iteration
 
         Data from the external dataset is recorded to Catalyst's
         persistant context object along with market data
@@ -233,13 +244,28 @@ class GoogleTrendDataManager(DataManager):
         """DataManager object used to fetch and integrate Google Trends data"""
 
         self.trends = TrendReq(hl='en-US', tz=360)
-
         self.df = pd.DataFrame()
 
     def date_steps(self):
-
+        dates = []
         start, end = self.START.date(), self.END.date()
-        dates = [dt for dt in rrule(freq=MONTHLY, interval=6, dtstart=start, until=end)]
+
+        if start + relativedelta(weeks=+1) >= end:
+            self.log.debug('Using daily steps for {} - {}'.format(start, end))
+            dates = [dt for dt in rrule(freq=DAILY, interval=1, dtstart=start, until=end)]
+
+        elif start + relativedelta(months=+6) >= end:
+            self.log.debug('Using weekly steps for {} - {}'.format(start, end))
+            dates = [dt for dt in rrule(freq=WEEKLY, interval=1, dtstart=start, until=end)]
+
+        elif start + relativedelta(months=+6) >= end:
+            self.log.debug('Using monthly steps for {} - {}'.format(start, end))
+            dates = [dt for dt in rrule(freq=MONTHLY, interval=1, dtstart=start, until=end)]
+
+        else:
+            dates = [dt for dt in rrule(freq=MONTHLY, interval=6, dtstart=start, until=end)]
+            self.log.debug('Using 6 month steps for {} - {}'.format(start, end))
+
         last_date = dates[-1].date()
         if last_date < end:
             dates.append(self.END)
@@ -274,6 +300,7 @@ class GoogleTrendDataManager(DataManager):
         for i, date in enumerate(steps):
             if i < len(steps) - 1:
                 date_pairs.append((date, steps[i + 1]))
+        self.log.debug('Date Pairs: {}'.format(date_pairs))
         return date_pairs
 
     @property
@@ -285,6 +312,10 @@ class GoogleTrendDataManager(DataManager):
         return timeframes
 
     def fetch_data(self):
+        self.log.warn("""
+            The GoogleTrend Dataset is not yet reliable for obtaining daily data over large timespans.
+            This may result in innacurate peaks in trend volume
+            """)
         trend_data = []
         for i, t in enumerate(self.timeframes):
             self.log.info('Fetching trend data for {}'.format(t))
@@ -309,7 +340,7 @@ class GoogleTrendDataManager(DataManager):
     def normalize_data(self, trend_data):
         df = pd.DataFrame(index=pd.date_range(self.START, self.END))
         if len(trend_data) == 0:
-            self.log.error('No trend data found for {}'.format(self.columns))
+            self.log.critical('No trend data found for {}'.format(self.columns))
             raise ValueError('No trend data to normalize')
 
         # https://github.com/anyuzx/bitcoin-google-trend-strategy/blob/master/bitcoin_google_trend_strategy.py
@@ -317,9 +348,10 @@ class GoogleTrendDataManager(DataManager):
         for c in self.columns:
             last_entry = 0
             trend_array = []
-            for i, frame in enumerate(trend_data[::-1]):
+            for i, frame in enumerate(trend_data[:: -1]):
                 if frame.empty:
-                    self.log.error('Trend Dataframe empty for {}: {}-{}'.format(c, self.START.date(), self.END.date()))
+                    self.log.critical('Trend Dataframe empty for {}: {}-{}'.format(c,
+                                                                                   self.START.date(), self.END.date()))
                     raise ValueError("Incomplete trend data, can't normalize")
 
                 if i == 0:
