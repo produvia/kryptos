@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from catalyst import run_algorithm
-from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, get_open_orders, cancel_order
+from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
 from crypto_platform.utils import load, viz
@@ -15,8 +15,15 @@ from crypto_platform.data.manager import get_data_manager
 from crypto_platform.strategy import DEFAULT_CONFIG
 from crypto_platform import logger_group
 
-log = logbook.Logger('Strategy')
-logger_group.add_logger(log)
+
+class StratLogger(logbook.Logger):
+    def __init__(self, strat):
+        self.strat = strat
+        super().__init__(name='STRATEGY')
+
+    def process_record(self, record):
+        logbook.Logger.process_record(self, record)
+        record.extra['trade_date'] = self.strat.current_date
 
 
 class Strategy(object):
@@ -55,7 +62,7 @@ class Strategy(object):
         self._datasets = {}
         self._extra_init = lambda context: None
         self._extra_handle = lambda context, data: None
-        self._extra_analyze = lambda context, results: None
+        self._extra_analyze = lambda context, results, pos: None
         self._extra_plots = 0
 
         self._signal_buy_func = lambda context, data: None
@@ -65,6 +72,11 @@ class Strategy(object):
         self._sell_func = None
 
         self.trading_info.update(kw)
+
+        self.log = StratLogger(self)
+        logger_group.add_logger(self.log)
+
+        self.current_date = None
 
     def serialize(self):
         d = {
@@ -169,7 +181,7 @@ class Strategy(object):
             manager.fetch_data()
 
         self._extra_init(context)
-        log.info('Initilized Strategy')
+        self.log.info('Initilized Strategy')
 
     def _process_data(self, context, data):
         """Called at each algo iteration
@@ -181,9 +193,12 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
-        log.debug('Processing algo iteration')
+        # set date first for logging purposes
+        self.current_date = context.blotter.current_dt.date()
+
+        self.log.debug('Processing algo iteration')
         for i in context.blotter.open_orders:
-            log.warn('Canceling unfilled open order {}'.format(i))
+            self.log.debug('Canceling unfilled open order {}'.format(i))
             cancel_order(i)
 
         price = data.current(context.asset, 'price')
@@ -278,10 +293,10 @@ class Strategy(object):
         sells, buys, neutrals = 0, 0, 0
         for i in self._market_indicators:
             if i.signals_buy:
-                log.debug('{}: BUY'.format(i.name))
+                self.log.debug('{}: BUY'.format(i.name))
                 buys += 1
             elif i.signals_sell:
-                log.debug('{}: SELL'.format(i.name))
+                self.log.debug('{}: SELL'.format(i.name))
                 sells += 1
             else:
                 neutrals += 1
@@ -289,45 +304,46 @@ class Strategy(object):
         for d, manager in self._datasets.items():
             for i in manager._indicators:
                 if i.signals_buy:
-                    log.debug('{}: BUY'.format(i.name))
+                    self.log.debug('{}: BUY'.format(i.name))
                     buys += 1
                 elif i.signals_sell:
-                    log.debug('{}: SELL'.format(i.name))
+                    self.log.debug('{}: SELL'.format(i.name))
                     sells += 1
                 else:
                     neutrals += 1
 
         if self._signal_buy_func(context, data):
-            log.debug('Custom: BUY')
+            self.log.debug('Custom: BUY')
             buys += 1
         elif self._signal_sell_func(context, data):
-            log.debug('Custom:buy')
+            self.log.debug('Custom: SELL')
             sells += 1
         else:
             neutrals += 1
 
-        log.debug('Buy signals: {}, Sell signals: {}, Neutral Signals: {}'.format(buys, sells, neutrals))
+        self.log.debug('Buy signals: {}, Sell signals: {}, Neutral Signals: {}'.format(buys, sells, neutrals))
         if buys > sells:
-            log.info('Signaling to buy')
+            self.log.debug('Signaling to buy')
             self.make_buy(context)
         elif sells > buys:
-            log.info('Signaling to sell')
+            self.log.debug('Signaling to sell')
             self.make_sell(context)
 
     def make_buy(self, context):
         if context.portfolio.cash < context.price * context.ORDER_SIZE:
-            log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
+            self.log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
                 context.portfolio.cash, (context.price * context.ORDER_SIZE)))
             return
+        self.log.info('Making Buy Order')
         if self._buy_func is None:
             return self._default_buy(context)
         self._buy_func(context)
 
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
-            log.warn('Skipping signaled sell due b/c no position')
+            self.log.debug('Skipping signaled sell due b/c no position')
             return
-
+        self.log.info('Making Sell Order')
         if self._sell_func is None:
             return self._default_sell(context)
         self._sell_func(context)
@@ -339,7 +355,7 @@ class Strategy(object):
                 amount=context.ORDER_SIZE,
                 limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED),
             )
-            log.info(
+            self.log.info(
                 'Bought {amount} @ {price}'.format(
                     amount=context.ORDER_SIZE, price=context.price
                 )
@@ -348,12 +364,12 @@ class Strategy(object):
     def _default_sell(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(context.asset)
         if position == 0:
-            log.info('Position Zero')
+            self.log.debug('Position Zero')
             return
 
         # Cost Basis
         cost_basis = position.cost_basis
-        log.info(
+        self.log.info(
             'Holdings: {amount} @ {cost_basis}'.format(
                 amount=position.amount, cost_basis=cost_basis
             )
@@ -365,7 +381,7 @@ class Strategy(object):
             target=0,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
-        log.info(
+        self.log.info(
             'Sold {amount} @ {price} Profit: {profit}'.format(
                 amount=position.amount, price=context.price, profit=profit
             )
@@ -385,9 +401,9 @@ class Strategy(object):
                 self.run_backtest()
 
         except PricingDataNotLoadedError:
-            log.warn('Ingesting required exchange bundle data')
+            self.log.warn('Ingesting required exchange bundle data')
             load.ingest_exchange(self.trading_info)
-            log.warn('Exchange ingested, please run the command again')
+            self.log.warn('Exchange ingested, please run the command again')
 
     def run_backtest(self):
         run_algorithm(

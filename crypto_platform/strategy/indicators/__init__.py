@@ -1,4 +1,8 @@
+import logbook
+
+from crypto_platform import logger_group
 from crypto_platform.strategy import DEFAULT_CONFIG
+
 
 MA_TYPE_MAP = {
     'SMA': 0,    # Simple Moving Average
@@ -11,6 +15,19 @@ MA_TYPE_MAP = {
     'MAMA': 7,   # MESA Adaptive Moving Average
     'T3': 8,     # Triple Generalized Double Exponential Moving Average
 }
+
+
+
+class IndicatorLogger(logbook.Logger):
+    def __init__(self, indicator):
+        self.indicator = indicator
+        super().__init__(name='INDICATOR:{}'.format(self.indicator.name))
+
+    def process_record(self, record):
+        logbook.Logger.process_record(self, record)
+        record.extra['trade_date'] = self.indicator.current_date
+        record.extra['ind_data'] = self.indicator.data
+        record.extra['ind_outputs'] = self.indicator.outputs
 
 
 class AbstractIndicator(object):
@@ -30,6 +47,11 @@ class AbstractIndicator(object):
 
         self.data = None
         self.outputs = None
+        self.current_date = None
+
+        self.log = IndicatorLogger(self)
+        logger_group.add_logger(self.log)
+        self.log.info('Attached {} indicator'.format(self.name))
 
     def update_param(self, param, val):
         self._parse_params({param: val})

@@ -1,14 +1,12 @@
 import click
 import logbook
-import uuid
 
 from crypto_platform.strategy import Strategy
 from crypto_platform.data.manager import AVAILABLE_DATASETS
-from crypto_platform import logger_group
-
+from crypto_platform import setup_logging
 
 log = logbook.Logger('Platform')
-logger_group.add_logger(log)
+setup_logging()
 
 
 @click.command()
@@ -43,7 +41,7 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper):
 
     @strat.handle_data
     def handle_data(context, data):
-        log.debug('Doing extra stuff for handling data')
+        # log.debug('Doing extra stuff for handling data')
         pass
 
     @strat.analyze()

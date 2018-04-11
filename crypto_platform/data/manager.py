@@ -80,7 +80,7 @@ class DataManager(object):
         self._indicators = []
         self._indicator_map = {}
 
-        self.log = Logger(name)
+        self.log = Logger(name.upper())
         logger_group.add_logger(self.log)
 
     def fetch_data(self):
@@ -278,7 +278,7 @@ class GoogleTrendDataManager(DataManager):
             self.log.info('Fetching trend data for {}'.format(t))
             self.trends.build_payload(self.columns, cat=0, timeframe=t, geo='', gprop='')
             d = self.trends.interest_over_time()
-            self.log.error('Retrieved {} days of trend data'.format(len(d)))
+            self.log.info('Retrieved {} days of trend data'.format(len(d)))
             trend_data.append(d)
 
         self.df = self.normalize_data(trend_data)
@@ -317,7 +317,6 @@ class QuandleDataManager(DataManager):
         _api_key = os.getenv('QUANDL_API_KEY')
         quandl.ApiConfig.api_key = _api_key
         self.data_dir = os.path.join(DATA_DIR, 'quandle', )
-
 
     def fetch_data(self):
         df = pd.read_csv(self.csv, index_col=[0])

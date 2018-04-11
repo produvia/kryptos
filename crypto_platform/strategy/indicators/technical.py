@@ -4,15 +4,11 @@ import pandas as pd
 
 from catalyst.api import record
 
-from logbook import Logger
+
 from crypto_platform.config import TAConfig as CONFIG
 from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import AbstractIndicator
 from crypto_platform.strategy.signals import utils
-from crypto_platform import logger_group
-
-log = Logger('TechnicalIndicator')
-logger_group.add_logger(log)
 
 
 def get_indicator(name, **kw):
@@ -39,7 +35,6 @@ class TAIndicator(AbstractIndicator):
             Indicator): def __init__(self, name
         """
 
-
     @property
     def func(self):
         """References the underlying ta-lib function"""
@@ -58,6 +53,8 @@ class TAIndicator(AbstractIndicator):
             df {pandas.Dataframe} -- OHLCV dataframe
             **kw {[type]} -- [description]
         """
+
+        self.current_date = df.iloc[-1].name
         self.data = df
         self.outputs = self.func(df, **self.params)
         if len(self.outputs) == 1 and self.label is not None:
@@ -66,6 +63,11 @@ class TAIndicator(AbstractIndicator):
         if isinstance(self.outputs, pd.Series):
             self.outputs = self.outputs.to_frame(self.label)
 
+        if self.signals_buy:
+            self.log.debug('Signals BUY')
+        elif self.signals_sell:
+            self.log.debug('Signals SELL')
+
     def record(self):
         """Records indicator's output to catalyst results"""
         payload = {}
@@ -73,6 +75,7 @@ class TAIndicator(AbstractIndicator):
             val = self.outputs[out].iloc[-1]
             payload[out] = val
 
+        self.log.debug(payload)
         record(**payload)
 
     def plot(self, results, pos, ignore=None):
@@ -136,7 +139,7 @@ class SAR(TAIndicator):
     def signals_sell(self):
         bearish = utils.cross_below(self.data.close, self.outputs.SAR)
         if bearish:
-            log.info('Closing position due to PSAR')
+            self.log.info('Closing position due to PSAR')
         return bearish
 
 
@@ -272,6 +275,7 @@ class STOCH(TAIndicator):
     @property
     def signals_sell(self):
         return self.overbought
+
 
 class SMA(TAIndicator):
     def __init__(self, **kw):
