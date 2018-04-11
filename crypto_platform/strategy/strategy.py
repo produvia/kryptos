@@ -244,10 +244,12 @@ class Strategy(object):
         pos = viz.get_start_geo(self.total_plots + 3)
         viz.plot_percent_return(results, pos=pos)
         viz.plot_benchmark(results, pos=pos)
+        plt.legend()
         pos += 1
+
         viz.plot_column(results, 'cash', pos=pos)
         # viz.plot_bar(results, 'volume', pos=pos, label='volume', twin=ax)
-        plt.legend()
+
         pos += 1
         for i in self._market_indicators:
             i.plot(results, pos)
