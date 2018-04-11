@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+import logbook
 from catalyst.api import record
 from pytrends.request import TrendReq
 import quandl
@@ -39,6 +40,16 @@ def get_data_manager(name, cols=None, config=None):
         return datasets[name](columns=cols, config=config)
     except KeyError as e:
         raise e('No dataset available with name {}.\nAvailable Datasets: {}'.format(name, AVAILABLE_DATASETS))
+
+
+class DataManagerLogger(logbook.Logger):
+    def __init__(self, manager):
+        self.manager = manager
+        super().__init__(name=self.manager.name.upper())
+
+    def process_record(self, record):
+        logbook.Logger.process_record(self, record)
+        record.extra['trade_date'] = self.manager.current_date
 
 
 class DataManager(object):
@@ -80,7 +91,8 @@ class DataManager(object):
         self._indicators = []
         self._indicator_map = {}
 
-        self.log = Logger(name.upper())
+        self.current_date = None
+        self.log = DataManagerLogger(self)
         logger_group.add_logger(self.log)
 
     def fetch_data(self):
@@ -151,14 +163,14 @@ class DataManager(object):
         Arguments:
             context {pd.Dataframe} -- Catalyst peristent algo context object
         """
-        date = context.blotter.current_dt.date()
+        self.current_date = context.blotter.current_dt.date()
 
         # Assuming only use of basic indicators for now
         # Basic indicators accept a series as opposed to a df with technical indicators
         for i in self._indicators:
             for col in self._indicator_map[i.name]:
                 self.log.debug('Calculating {} for {}'.format(i.name, col))
-                col_vals = self.df_to_date(date)[col]
+                col_vals = self.df_to_date(self.current_date)[col]
                 i.calculate(col_vals)
                 i.record()
 
@@ -274,10 +286,21 @@ class GoogleTrendDataManager(DataManager):
 
     def fetch_data(self):
         trend_data = []
-        for t in self.timeframes:
+        for i, t in enumerate(self.timeframes):
             self.log.info('Fetching trend data for {}'.format(t))
             self.trends.build_payload(self.columns, cat=0, timeframe=t, geo='', gprop='')
             d = self.trends.interest_over_time()
+
+            if d.empty:
+                self.log.error('No Trend Data for {} on {}\n Filling with blank data'.format(self.columns, t))
+                # self.log.warn('Filling data as zero')
+                date_pair = self.datetime_pairs[i]
+                delta = date_pair[1].date() - date_pair[0].date()
+                empty_data = [0] * (delta.days + 1)
+                d = pd.DataFrame(index=pd.date_range(date_pair[0].date(), date_pair[1].date()))
+                for c in self.columns:
+                    d[c] = empty_data
+
             self.log.info('Retrieved {} days of trend data'.format(len(d)))
             trend_data.append(d)
 
@@ -285,25 +308,37 @@ class GoogleTrendDataManager(DataManager):
 
     def normalize_data(self, trend_data):
         df = pd.DataFrame(index=pd.date_range(self.START, self.END))
+        if len(trend_data) == 0:
+            self.log.error('No trend data found for {}'.format(self.columns))
+            raise ValueError('No trend data to normalize')
+
         # https://github.com/anyuzx/bitcoin-google-trend-strategy/blob/master/bitcoin_google_trend_strategy.py
         renorm_factor = 1.0
         for c in self.columns:
-            last_entry = None
+            last_entry = 0
             trend_array = []
-            for index, item in enumerate(trend_data[::-1]):
-                # first_entry = [i for i in item[c].values if i != 0][0]
-                if index > 0.0:
-                    first_entry = item[c].values[0]
-                    renorm_factor *= float(last_entry) / float(first_entry)
-                    renorm_array = item[c].values * renorm_factor
-                    trend_array.extend(list(renorm_array[1:]))
-                else:
-                    trend_array = list(item[c].values)
-                last_entry = item[c].values[-1]
+            for i, frame in enumerate(trend_data[::-1]):
+                if frame.empty:
+                    self.log.error('Trend Dataframe empty for {}: {}-{}'.format(c, self.START.date(), self.END.date()))
+                    raise ValueError("Incomplete trend data, can't normalize")
 
-            trend_array = np.array(trend_array)
-            trend_array = 100.0 * trend_array / trend_array.max()
-            df[c] = trend_array
+                if i == 0:
+                    trend_array = list(frame[c].values)
+                    last_entry = frame[c].values[-1]
+
+                else:
+                    first_entry = [i for i in frame[c].values if i != 0][0]
+                    renorm_factor *= float(last_entry) / float(first_entry)
+                    renorm_array = frame[c].values * renorm_factor
+                    trend_array.extend(list(renorm_array[1:]))
+                    last_entry = frame[c].values[-1]
+
+            try:
+                trend_array = np.array(trend_array)
+                trend_array = 100.0 * trend_array / trend_array.max()
+                df[c] = trend_array
+            except RuntimeWarning as e:
+                raise e
 
         return df
 
