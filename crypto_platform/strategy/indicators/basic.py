@@ -29,7 +29,8 @@ class RELCHANGE(AbstractIndicator):
 
         df['rel_change'] = df['val'] - df['mean'].shift(periods=1, freq=self.delta_t)
         df['rel_change_ratio'] = df['rel_change'] / df['mean'].shift(periods=1, freq=self.delta_t)
-        self.outputs = df
+
+        self.outputs = df.fillna(value=0)
 
     def record(self):
         record(rel_change=self.outputs.rel_change[-1], rel_change_ratio=self.outputs.rel_change_ratio[-1])
