@@ -1,6 +1,6 @@
 import sys
 import logbook
-
+from logbook.more import ColorizedStderrHandler
 logger_group = logbook.LoggerGroup()
 # logger_group.level = logbook.INFO
 logbook.set_datetime_format("local")
@@ -17,30 +17,31 @@ def setup_logging(*handlers):
     stream_handler = logbook.StreamHandler(sys.stdout, level='INFO', bubble=True)
     stream_handler.format_string = format_string
 
+    stder_handler = ColorizedStderrHandler(level='WARNING', bubble=False)
+    stder_handler.format_string = format_string
+
     file_handler = logbook.RotatingFileHandler('app.log', level='DEBUG', bubble=True, format_string=format_string)
 
     error_file_handler = logbook.RotatingFileHandler('error.log', level='ERROR', bubble=True)
-    error_file_handler.format_string = '''\
-    Application Error at {record.filename}:{record.lineno}
+    error_file_handler.format_string = '''
+----------------------------------------------------------------------------------
+{record.time:%H:%M:%S} KRYPTOS:{record.channel}:{record.level_name}:
 
-    Message type:       {record.level_name}
-    Location:           {record.filename}:{record.lineno}
-    Module:             {record.module}
-    Function:           {record.func_name}
-    Time:               {record.time:%Y-%m-%d %H:%M:%S}
+{record.message}
 
-    channel     {record.channel}
+Module: {record.module}:{record.lineno}
+Function: {record.func_name}
 
-    Trade Date: {record.extra[strat_date]}
+Channel: {record.channel}
+Trade Date: {record.extra[strat_date]}
 
-    Message:
-
-    {record.message}
-    '''
+----------------------------------------------------------------------------------
+'''
 
     setup = logbook.NestedSetup([
         logbook.NullHandler(),
         stream_handler,
+        stder_handler,
         file_handler,
         error_file_handler,
         *handlers

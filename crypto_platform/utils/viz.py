@@ -4,7 +4,11 @@ import os
 from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
 from logbook import Logger
 
-log = Logger('Viz')
+from crypto_platform import logger_group
+
+log = Logger('VIZ')
+logger_group.add_logger(log)
+
 
 
 def show_plot():
