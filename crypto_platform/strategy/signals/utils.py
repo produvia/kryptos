@@ -7,14 +7,20 @@ log = Logger('SIGNALS')
 def cross_above(signal_series, trigger):
     if isinstance(trigger, int):
         trigger = [trigger] * 3
-    return signal_series[-2] <= trigger[-2] and signal_series[-1] > trigger[-1]
-
+    try:
+        return signal_series[-2] <= trigger[-2] and signal_series[-1] > trigger[-1]
+    except IndexError:
+        log.warn('Not enough data to calculate cross above')
+        return False
 
 def cross_below(signal_series, trigger):
     if isinstance(trigger, int):
         trigger = [trigger] * 3
-    return signal_series[-2] >= trigger[-2] and signal_series[-1] < trigger[-2]
-
+    try:
+        return signal_series[-2] >= trigger[-2] and signal_series[-1] < trigger[-2]
+    except IndexError:
+        log.warn('Not enough data to calculate cross above')
+        return False
 
 def increasing(series, period=4):
     arr = series[period * -1:]
