@@ -43,8 +43,16 @@ class RELCHANGE(AbstractIndicator):
 
     @property
     def signals_sell(self):
-        return self.outputs.rel_change[-1] < 0.0
+        try:
+            return self.outputs.rel_change[-1] < 0.0
+        except AttributeError as e:
+            self.log.exception(e)
+            return False
 
     @property
     def signals_buy(self):
-        return self.outputs.rel_change[-1] > 0.0
+        try:
+            return self.outputs.rel_change[-1] > 0.0
+        except AttributeError as e:
+            self.log.exception(e)
+            return False
