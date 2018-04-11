@@ -194,7 +194,6 @@ class Strategy(object):
             data {pandas.Datframe} -- Catalyst data object
         """
         # set date first for logging purposes
-        import pdb; pdb.set_trace()
         self.current_date = context.blotter.current_dt.date()
 
         self.log.debug('Processing algo iteration')
@@ -408,9 +407,6 @@ class Strategy(object):
             load.ingest_exchange(self.trading_info)
             self.log.warn('Exchange ingested, please run the command again')
 
-        except Exception as e:
-            self.log.exception('Error', e)
-
     def run_backtest(self):
         try:
             run_algorithm(
@@ -427,6 +423,7 @@ class Strategy(object):
 
             )
         except KeyError as e:
+            self.log.exception(e)
             self.log.error('The configured timeframe seems to be causing an error. Consider adjusting the start date', e)
 
 
