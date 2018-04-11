@@ -98,11 +98,18 @@ def plot_column(results, column, pos, y_label=None, label=None, add_mean=False, 
     if y_label is None:
         y_label = '{}'.format(column.replace('_', '\n').title())
 
+    if results[column].isnull().all():
+        log.error('Not enough data to plot {}'.format(column))
+        ax = plt.subplot(pos)
+        ax.set_ylabel(y_label)
+        return ax
+
     if twin is None:
         ax = plt.subplot(pos)
     else:
         ax = twin.twinx()
     ax.set_ylabel(y_label)
+
     res = results.loc[:, [column]]
     ax.plot(res, label=label, **kw)
 

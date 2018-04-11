@@ -54,14 +54,17 @@ class TAIndicator(AbstractIndicator):
             **kw {[type]} -- [description]
         """
 
-        self.current_date = df.iloc[-1].name
+        self.current_date = df.iloc[-1].name.date()
         self.data = df
         self.outputs = self.func(df, **self.params)
-        if len(self.outputs.columns) == 1 and self.label is not None:
-            self.outputs.columns = [self.label]
 
         if isinstance(self.outputs, pd.Series):
             self.outputs = self.outputs.to_frame(self.label)
+
+        elif len(self.outputs.columns) == 1 and self.label is not None:
+            self.outputs.columns = [self.label]
+
+        
 
         if self.signals_buy:
             self.log.debug('Signals BUY')
@@ -80,12 +83,15 @@ class TAIndicator(AbstractIndicator):
 
     def plot(self, results, pos, ignore=None):
         """Plots the indicators outputs"""
+        ax = None
         y_label = self.name
         if ignore is None:
             ignore = []
+
         for col in [c for c in list(self.outputs) if c not in ignore]:
             ax = viz.plot_column(results, col, pos, y_label=y_label, label=col)
-        plt.legend()
+            plt.legend()
+
         return ax
 
     @property
