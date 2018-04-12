@@ -12,7 +12,8 @@ requires = [
     'matplotlib',
     'TA-Lib',
     'quandl',
-    'Click'
+    'click',
+    'logbook'
 ]
 
 
