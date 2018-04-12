@@ -87,7 +87,7 @@ def ingest_exchange(config):
 
     exchange_bundle = ExchangeBundle(config['EXCHANGE'])
 
-    log.info('Ingesting exchange bundle {}...'.format(config['EXCHANGE']))
+    log.notice('Ingesting {} exchange bundle {} - {}...'.format(config['EXCHANGE'], config['START'], config['END']))
     exchange_bundle.ingest(
         data_frequency=config['DATA_FREQ'],
         include_symbols=config['ASSET'],
@@ -95,7 +95,7 @@ def ingest_exchange(config):
         start=pd.to_datetime(config['START'], utc=True),
         end=pd.to_datetime(config['END'], utc=True),
         show_progress=True,
-        show_breakdown=False,
-        show_report=False,
+        show_breakdown=True,
+        show_report=True,
         csv=None
     )
