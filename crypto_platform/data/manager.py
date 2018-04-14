@@ -391,8 +391,10 @@ class QuandleDataManager(DataManager):
     def fetch_data(self):
         df = pd.read_csv(self.csv, index_col=[0])
 
-        df_start, df_end = df.iloc[0].name, df.iloc[-1].name
-        if self.config['START'] < df_start or self.config['END'] > df_end:
+        df_start, df_end = pd.to_datetime(df.iloc[0].name), pd.to_datetime(df.iloc[-1].name)
+        algo_start, algo_end = pd.to_datetime(self.config['START']), pd.to_datetime(self.config["END"])
+
+        if algo_start < df_start or algo_end > df_end:
             self.log.warn('Fetching missing quandl data')
             quandl_client.fetch_all()
 
