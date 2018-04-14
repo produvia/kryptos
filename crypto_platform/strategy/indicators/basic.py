@@ -32,6 +32,10 @@ class RELCHANGE(AbstractIndicator):
 
         self.outputs = df.fillna(value=0)
 
+    @property
+    def default_params(self):
+        return {}
+
     def record(self):
         record(rel_change=self.outputs.rel_change[-1], rel_change_ratio=self.outputs.rel_change_ratio[-1])
 

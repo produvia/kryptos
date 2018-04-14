@@ -17,7 +17,6 @@ MA_TYPE_MAP = {
 }
 
 
-
 class IndicatorLogger(logbook.Logger):
     def __init__(self, indicator):
         self.indicator = indicator
@@ -40,7 +39,6 @@ class AbstractIndicator(object):
         self.dataset = dataset
 
         self.params = {}
-        self.available_params = []
 
         func_params = kw.get('params', {})
         self._parse_params(func_params)
@@ -52,6 +50,10 @@ class AbstractIndicator(object):
         self.log = IndicatorLogger(self)
         logger_group.add_logger(self.log)
         self.log.info('Attached {} indicator'.format(self.name))
+
+    @property
+    def default_params(self):
+        return {}
 
     def update_param(self, param, val):
         self._parse_params({param: val})
@@ -67,11 +69,11 @@ class AbstractIndicator(object):
         return d
 
     def _parse_params(self, func_params):
+        self.params.update(self.default_params)
         for k, v in func_params.items():
             if 'matype' in k and isinstance(v, str):
                 v = MA_TYPE_MAP[v]
             self.params[k] = v
-
 
     def calculate(self, df):
         raise NotImplementedError

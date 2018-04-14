@@ -40,6 +40,10 @@ class TAIndicator(AbstractIndicator):
         """References the underlying ta-lib function"""
         return getattr(ab, self.name)
 
+    @property
+    def default_params(self):
+        return self.func.parameters
+
     def calculate(self, df, **kw):
         """Applies the indicator calculation on the provided data
 
@@ -63,8 +67,6 @@ class TAIndicator(AbstractIndicator):
 
         elif len(self.outputs.columns) == 1 and self.label is not None:
             self.outputs.columns = [self.label]
-
-        
 
         if self.signals_buy:
             self.log.debug('Signals BUY')
