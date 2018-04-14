@@ -1,12 +1,12 @@
 {
    "trading": {
-      "EXCHANGE": "bittrex",
-      "ASSET": "btc_usdt",
+      "EXCHANGE": "bitfinex",
+      "ASSET": "btc_usd",
       "DATA_FREQ": "daily",
       "HISTORY_FREQ": "1d",
       "CAPITAL_BASE": 10000,
-      "BASE_CURRENCY": "usdt",
-      "START": "2016-12-10",
+      "BASE_CURRENCY": "usd",
+      "START": "2017-10-10",
       "END": "2018-3-28"
    },
    "datasets": [

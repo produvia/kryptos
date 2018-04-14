@@ -7,7 +7,7 @@ name = "pypi"
 
 [packages]
 
-enigma-catalyst = "==0.5.7"
+enigma-catalyst = "==0.5.8"
 matplotlib = "*"
 ta-lib = "*"
 quandl = "*"
