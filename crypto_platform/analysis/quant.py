@@ -5,8 +5,18 @@ from crypto_platform.analysis.utils import quant_utils
 import matplotlib.pyplot as plt
 
 
-def dump_summary_table(algo, config, context, df):
-    ALGO_DIR = os.path.join(config.PERF_DIR, algo.NAMESPACE)
+def get_algo_dir(namespace, config):
+    algo_dir = os.path.join(os.path.abspath(config["PERF_DIR"]), namespace)
+    if not os.path.exists(algo_dir):
+        os.makedirs(algo_dir)
+    return algo_dir
+
+
+def dump_summary_table(namespace, config, df):
+    if not isinstance(config, dict):
+        config = config.__dict__
+
+    ALGO_DIR = get_algo_dir(namespace, config)
     ERROR_FILE = os.path.join(ALGO_DIR, "errors.txt")
 
     print("\n" * 5)
@@ -14,11 +24,10 @@ def dump_summary_table(algo, config, context, df):
     print("\n" * 5)
     print(df.columns)
     print("\n" * 5)
-    print(context)
 
     try:
         # No missing days in index
-        if config.DATA_FREQUENCY == "daily":
+        if config["DATA_FREQ"] == "daily":
             assert (pd.date_range(start=df.index.min(), periods=len(df)) == df.index).all()
 
         # There should be no missing data
@@ -26,7 +35,7 @@ def dump_summary_table(algo, config, context, df):
         assert df.iloc[1:].isnull().sum().sum() == 0
 
         # Starting capital should be consistent with config
-        assert config.CAPITAL_BASE == df.portfolio_value[0]
+        assert config["CAPITAL_BASE"] == df.portfolio_value[0]
 
     except Exception as e:
         quant_utils.log_error(ERROR_FILE, e)
@@ -93,18 +102,22 @@ def dump_summary_table(algo, config, context, df):
 
     # Write to file
     f_path = os.path.join(ALGO_DIR, "backtest_summary.csv")
-    df_quant.to_csv(f_path)
+    with open(f_path, "w") as f:
+        df_quant.to_csv(f)
 
 
-def dump_plots_to_file(algo, config, df):
-    SAVE_FOLDER = os.path.join(config.PERF_DIR, algo.NAMESPACE, "figures")
+def dump_plots_to_file(namespace, config, df):
+    if not isinstance(config, dict):
+        config = config.__dict__
+
+    algo_dir = get_algo_dir(namespace, config)
+    SAVE_FOLDER = os.path.join(algo_dir, "figures")
     if not os.path.exists(SAVE_FOLDER):
         os.makedirs(SAVE_FOLDER)
 
     plt.rcParams["figure.figsize"] = (6, 4)
     plt.rcParams["axes.labelpad"] = 10
     plt.style.use("ggplot")
-
     dump_metric_plot(df.portfolio_value, "Portfolio USD", SAVE_FOLDER)
     dump_metric_plot(df.cash, "Cash", SAVE_FOLDER)
     dump_metric_plot(
@@ -154,4 +167,5 @@ def dump_metric_plot(metric, metric_name, save_folder):
     plt.close()
     ax = metric.plot(legend=metric_name)
     f_name = metric_name.replace(" ", "_") + ".png"
-    plt.savefig(os.path.join(save_folder, f_name), bbox_inches="tight", dpi=300)
+    f_path = os.path.join(save_folder, f_name)
+    plt.savefig(f_path, bbox_inches="tight", dpi=300)

@@ -4,8 +4,10 @@ from logbook import Logger
 from crypto_platform.utils import load, outputs, viz, algo
 from crypto_platform.config import CONFIG
 from crypto_platform.analysis import quant
+from crypto_platform import add_logger
 
 log = Logger("Comparison")
+add_logger(log)
 
 
 @click.command()
@@ -46,10 +48,12 @@ def run(strategies, metrics):
     if len(metrics) > 0:
         CONFIG.METRICS = metrics
 
+    plot_name = "backtest-compare-"
     all_results = []
     for s in strategies:
         strat = load.load_by_name(s)
         strat.CONFIG = CONFIG
+        plot_name += strat.NAMESPACE + "-"
 
         def initialize(context):
             algo.initialze_from_config(context)
@@ -75,17 +79,16 @@ def run(strategies, metrics):
         algo.run_algo(initialize, handle_data, analyze)
 
     viz.add_legend()
-    viz.save_plot(strat, CONFIG)
+    viz.save_plot(CONFIG, plot_name)
     viz.show_plot()
 
     for strat, context, results in all_results:
         output_file = outputs.get_output_file(strat, CONFIG)
         log.info("Dumping result csv and pkl to {}".format(output_file))
         outputs.dump_to_csv(output_file, results)
-
-        quant.dump_summary_table(strat, CONFIG, context, results)
+        quant.dump_summary_table(strat.NAMESPACE, CONFIG, results)
         # Must be done outside of loop above to avoid matplotlib conflict
-        quant.dump_plots_to_file(strat, CONFIG, results)
+        quant.dump_plots_to_file(strat.NAMESPACE, CONFIG, results)
 
 
 if __name__ == "__main__":

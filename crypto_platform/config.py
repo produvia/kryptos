@@ -5,7 +5,7 @@ import talib as ta
 
 class CONFIG(object):
     ASSET = "btc_usd"
-    DATA_FREQUENCY = "daily"
+    DATA_FREQ = "daily"
     HISTORY_FREQ = "1D"
     CAPITAL_BASE = 1000
     BUY_EXCHANGE = "bitfinex"

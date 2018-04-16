@@ -21,13 +21,13 @@ def show_plot():
         break
 
 
-def save_plot(algo, config):
-    # ALGO_DIR = os.path.join(config.PERF_DIR, algo.NAMESPACE)
-    # FIG_PATH = os.path.join(ALGO_DIR, 'figures')
-    FIG_PATH = os.path.join(config.PERF_DIR, "figures")
+def save_plot(config, name):
+    if not isinstance(config, dict):
+        config = config.__dict__
+    FIG_PATH = os.path.join(config["PERF_DIR"], "figures")
     if not os.path.exists(FIG_PATH):
         os.makedirs(FIG_PATH)
-    f_path = os.path.join(FIG_PATH, "backtest-compare.png")
+    f_path = os.path.join(FIG_PATH, "{}.png".format(name))
     plt.savefig(f_path, bbox_inches="tight", dpi=300)
 
 
