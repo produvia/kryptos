@@ -219,7 +219,7 @@ class RSI(TAIndicator):
 
         overboughts = results[results['overbought']]
         oversolds = results[results['oversold']]
-        viz.mark_on_line(results, pos, y_val='RSI', color='red', label='overbought')
+        viz.mark_on_line(overboughts, pos, y_val='RSI', color='red', label='overbought')
         viz.mark_on_line(oversolds, pos, y_val='RSI', label='oversold')
 
         plt.legend()
