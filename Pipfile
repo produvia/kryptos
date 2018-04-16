@@ -19,6 +19,7 @@ colorama = "*"
 
 [dev-packages]
 
+black = "*"
 
 
 [requires]
