@@ -1,6 +1,6 @@
 # From catalyst examples
 
-'''
+"""
     This is a very simple example referenced in the beginner's tutorial:
     https://enigmampc.github.io/catalyst/beginner-tutorial.html
 
@@ -22,13 +22,14 @@
 
     To see which assets are available on each exchange, visit:
     https://www.enigma.co/catalyst/status
-'''
+"""
 from catalyst import run_algorithm
 from catalyst.api import order, record, symbol
 import pandas as pd
 
-NAMESPACE = 'buy_btc_simple'
+NAMESPACE = "buy_btc_simple"
 CONFIG = None
+
 
 def initialize(context):
     context.asset = symbol(CONFIG.ASSETS[0])
@@ -36,18 +37,18 @@ def initialize(context):
 
 def handle_data(context, data):
     order(context.asset, 1)
-    record(asset=data.current(context.asset, 'price'))
+    record(asset=data.current(context.asset, "price"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_algorithm(
         capital_base=10000,
-        data_frequency='daily',
+        data_frequency="daily",
         initialize=initialize,
         handle_data=handle_data,
-        exchange_name='bitfinex',
-        algo_namespace='buy_and_hodl',
-        base_currency='usd',
-        start=pd.to_datetime('2015-03-01', utc=True),
-        end=pd.to_datetime('2017-10-31', utc=True),
+        exchange_name="bitfinex",
+        algo_namespace="buy_and_hodl",
+        base_currency="usd",
+        start=pd.to_datetime("2015-03-01", utc=True),
+        end=pd.to_datetime("2017-10-31", utc=True),
     )

@@ -17,13 +17,14 @@ from crypto_platform import logger_group
 
 
 class StratLogger(logbook.Logger):
+
     def __init__(self, strat):
         self.strat = strat
-        super().__init__(name='STRATEGY')
+        super().__init__(name="STRATEGY")
 
     def process_record(self, record):
         logbook.Logger.process_record(self, record)
-        record.extra['trade_date'] = self.strat.current_date
+        record.extra["trade_date"] = self.strat.current_date
 
 
 class Strategy(object):
@@ -53,7 +54,7 @@ class Strategy(object):
 
         # name required for storing live algos
         if name is None:
-            name = 'Strat-' + str(uuid.uuid1())
+            name = "Strat-" + str(uuid.uuid1())
 
         self.name = name
         self.trading_info = DEFAULT_CONFIG
@@ -80,10 +81,10 @@ class Strategy(object):
 
     def serialize(self):
         d = {
-            'trading': self.trading_info,
-            'datasets': self.dataset_info,
-            'indicators': self.indicator_info,
-            'signals': self.signals
+            "trading": self.trading_info,
+            "datasets": self.dataset_info,
+            "indicators": self.indicator_info,
+            "signals": self.signals,
         }
         return json.dumps(d, indent=3)
 
@@ -121,6 +122,7 @@ class Strategy(object):
         def decorator(f):
             self._extra_analyze = f
             return f
+
         return decorator
 
     def buy_order(self, f):
@@ -140,48 +142,48 @@ class Strategy(object):
         self._signal_buy_func = f
 
     def load_from_json(self, json_file):
-        with open(json_file, 'r') as f:
+        with open(json_file, "r") as f:
             d = json.load(f)
 
-        trade_config = d.get('trading', {})
+        trade_config = d.get("trading", {})
         self.trading_info.update(trade_config)
         # For all trading pairs in the poloniex bundle, the default denomination
         # currently supported by Catalyst is 1/1000th of a full coin. Use this
         # constant to scale the price of up to that of a full coin if desired.
-        if self.trading_info['EXCHANGE'] == 'poloniex':
-            self.trading_info['TICK_SIZE'] = 1000.0
+        if self.trading_info["EXCHANGE"] == "poloniex":
+            self.trading_info["TICK_SIZE"] = 1000.0
 
-        indicators = d.get('indicators', {})
+        indicators = d.get("indicators", {})
         for i in indicators:
-            if i.get('dataset') in [None, 'market']:
+            if i.get("dataset") in [None, "market"]:
                 ind = technical.get_indicator(**i)
                 if ind not in self._market_indicators:
                     self.add_market_indicator(ind)
 
-        datasets = d.get('datasets', {})
+        datasets = d.get("datasets", {})
         for ds in datasets:
-            self.use_dataset(ds['name'], ds['columns'])
-            for i in ds.get('indicators', []):
-                self.add_data_indicator(ds['name'], i['name'], col=i['symbol'])
+            self.use_dataset(ds["name"], ds["columns"])
+            for i in ds.get("indicators", []):
+                self.add_data_indicator(ds["name"], i["name"], col=i["symbol"])
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
-        context.asset = symbol(self.trading_info['ASSET'])
-        context.market = symbol(self.trading_info['ASSET'])
+        context.asset = symbol(self.trading_info["ASSET"])
+        context.market = symbol(self.trading_info["ASSET"])
         set_benchmark(context.asset)
         context.ORDER_SIZE = 0.5
         context.SLIPPAGE_ALLOWED = 0.05
         context.BARS = 365
         context.errors = []
         for k, v in self.trading_info.items():
-            if '__' not in k:
+            if "__" not in k:
                 setattr(context, k, v)
 
         for dataset, manager in self._datasets.items():
             manager.fetch_data()
 
         self._extra_init(context)
-        self.log.info('Initilized Strategy')
+        self.log.info("Initilized Strategy")
 
     def _process_data(self, context, data):
         """Called at each algo iteration
@@ -196,13 +198,13 @@ class Strategy(object):
         # set date first for logging purposes
         self.current_date = context.blotter.current_dt.date()
 
-        self.log.debug('Processing algo iteration')
+        self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
-            self.log.debug('Canceling unfilled open order {}'.format(i))
+            self.log.debug("Canceling unfilled open order {}".format(i))
             cancel_order(i)
 
-        price = data.current(context.asset, 'price')
-        volume = data.current(context.asset, 'volume')
+        price = data.current(context.asset, "price")
+        volume = data.current(context.asset, "volume")
         cash = context.portfolio.cash
         record(price=price, cash=cash, volume=volume)
 
@@ -215,7 +217,7 @@ class Strategy(object):
         context.prices = data.history(
             context.asset,
             bar_count=context.BARS,
-            fields=['price', 'open', 'high', 'low', 'close', 'volume'],
+            fields=["price", "open", "high", "low", "close", "volume"],
             frequency=context.HISTORY_FREQ,
         )
 
@@ -247,7 +249,7 @@ class Strategy(object):
         plt.legend()
         pos += 1
 
-        viz.plot_column(results, 'cash', pos=pos)
+        viz.plot_column(results, "cash", pos=pos)
         # viz.plot_bar(results, 'volume', pos=pos, label='volume', twin=ax)
 
         pos += 1
@@ -280,7 +282,9 @@ class Strategy(object):
     def add_data_indicator(self, dataset, indicator, col=None):
         """Registers an indicator to be called on external data"""
         if dataset not in self._datasets:
-            raise LookupError('{} dataset not registered, register with .use_dataset() before adding indicators')
+            raise LookupError(
+                "{} dataset not registered, register with .use_dataset() before adding indicators"
+            )
 
         data_manager = self._datasets[dataset]
         data_manager.attach_indicator(indicator, col)
@@ -295,10 +299,10 @@ class Strategy(object):
         sells, buys, neutrals = 0, 0, 0
         for i in self._market_indicators:
             if i.signals_buy:
-                self.log.debug('{}: BUY'.format(i.name))
+                self.log.debug("{}: BUY".format(i.name))
                 buys += 1
             elif i.signals_sell:
-                self.log.debug('{}: SELL'.format(i.name))
+                self.log.debug("{}: SELL".format(i.name))
                 sells += 1
             else:
                 neutrals += 1
@@ -306,48 +310,57 @@ class Strategy(object):
         for d, manager in self._datasets.items():
             for i in manager._indicators:
                 if i.signals_buy:
-                    self.log.debug('{}: BUY'.format(i.name))
+                    self.log.debug("{}: BUY".format(i.name))
                     buys += 1
                 elif i.signals_sell:
-                    self.log.debug('{}: SELL'.format(i.name))
+                    self.log.debug("{}: SELL".format(i.name))
                     sells += 1
                 else:
                     neutrals += 1
 
         if self._signal_buy_func(context, data):
-            self.log.debug('Custom: BUY')
+            self.log.debug("Custom: BUY")
             buys += 1
         elif self._signal_sell_func(context, data):
-            self.log.debug('Custom: SELL')
+            self.log.debug("Custom: SELL")
             sells += 1
         else:
             neutrals += 1
 
-        self.log.debug('Buy signals: {}, Sell signals: {}, Neutral Signals: {}'.format(buys, sells, neutrals))
+        self.log.debug(
+            "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
+        )
         if buys > sells:
-            self.log.debug('Signaling to buy')
+            self.log.debug("Signaling to buy")
             self.make_buy(context)
         elif sells > buys:
-            self.log.debug('Signaling to sell')
+            self.log.debug("Signaling to sell")
             self.make_sell(context)
 
     def make_buy(self, context):
         if context.portfolio.cash < context.price * context.ORDER_SIZE:
-            self.log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
-                context.portfolio.cash, (context.price * context.ORDER_SIZE)))
+            self.log.warn(
+                "Skipping signaled buy due to cash amount: {} < {}".format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)
+                )
+            )
             return
-        self.log.info('Making Buy Order')
+
+        self.log.info("Making Buy Order")
         if self._buy_func is None:
             return self._default_buy(context)
+
         self._buy_func(context)
 
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
-            self.log.debug('Skipping signaled sell due b/c no position')
+            self.log.debug("Skipping signaled sell due b/c no position")
             return
-        self.log.info('Making Sell Order')
+
+        self.log.info("Making Sell Order")
         if self._sell_func is None:
             return self._default_sell(context)
+
         self._sell_func(context)
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
@@ -355,24 +368,22 @@ class Strategy(object):
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
-                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED),
+                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
             self.log.info(
-                'Bought {amount} @ {price}'.format(
-                    amount=context.ORDER_SIZE, price=context.price
-                )
+                "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
             )
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(context.asset)
         if position == 0:
-            self.log.debug('Position Zero')
+            self.log.debug("Position Zero")
             return
 
         # Cost Basis
         cost_basis = position.cost_basis
         self.log.info(
-            'Holdings: {amount} @ {cost_basis}'.format(
+            "Holdings: {amount} @ {cost_basis}".format(
                 amount=position.amount, cost_basis=cost_basis
             )
         )
@@ -381,15 +392,16 @@ class Strategy(object):
         order_target_percent(
             asset=context.asset,
             target=0,
-            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED)
         )
         self.log.info(
-            'Sold {amount} @ {price} Profit: {profit}'.format(
+            "Sold {amount} @ {price} Profit: {profit}".format(
                 amount=position.amount, price=context.price, profit=profit
             )
         )
 
     # Save the prices and analysis to send to analyze
+
     def run(self, live=False, simulate_orders=True):
         """Executes the trade strategy as a catalyst algorithm
 
@@ -397,47 +409,48 @@ class Strategy(object):
         iterative logic is managed by the Strategy object.
         """
         try:
-            if live or self.trading_info.get('LIVE', False):
+            if live or self.trading_info.get("LIVE", False):
                 self.run_live(simulate_orders=simulate_orders)
             else:
                 self.run_backtest()
 
         except PricingDataNotLoadedError:
-            self.log.warn('Ingesting required exchange bundle data')
+            self.log.warn("Ingesting required exchange bundle data")
             load.ingest_exchange(self.trading_info)
-            self.log.warn('Exchange ingested, please run the command again')
+            self.log.warn("Exchange ingested, please run the command again")
 
     def run_backtest(self):
         try:
             run_algorithm(
                 algo_namespace=self.name,
-                capital_base=self.trading_info['CAPITAL_BASE'],
-                data_frequency=self.trading_info['DATA_FREQ'],
+                capital_base=self.trading_info["CAPITAL_BASE"],
+                data_frequency=self.trading_info["DATA_FREQ"],
                 initialize=self._init_func,
                 handle_data=self._process_data,
                 analyze=self._analyze,
-                exchange_name=self.trading_info['EXCHANGE'],
-                base_currency=self.trading_info['BASE_CURRENCY'],
-                start=pd.to_datetime(self.trading_info['START'], utc=True),
-                end=pd.to_datetime(self.trading_info['END'], utc=True),
-
+                exchange_name=self.trading_info["EXCHANGE"],
+                base_currency=self.trading_info["BASE_CURRENCY"],
+                start=pd.to_datetime(self.trading_info["START"], utc=True),
+                end=pd.to_datetime(self.trading_info["END"], utc=True),
             )
         except KeyError as e:
             self.log.exception(e)
-            self.log.error('The configured timeframe seems to be causing an error. Consider adjusting the start date', e)
-
+            self.log.error(
+                "The configured timeframe seems to be causing an error. Consider adjusting the start date",
+                e,
+            )
 
     def run_live(self, simulate_orders=True):
         # import pdb; pdb.set_trace()
         run_algorithm(
-            capital_base=self.trading_info['CAPITAL_BASE'],
+            capital_base=self.trading_info["CAPITAL_BASE"],
             initialize=self._init_func,
             handle_data=self._process_data,
             analyze=self._analyze,
-            exchange_name=self.trading_info['EXCHANGE'],
+            exchange_name=self.trading_info["EXCHANGE"],
             live=True,
             algo_namespace=self.name,
-            base_currency=self.trading_info['BASE_CURRENCY'],
+            base_currency=self.trading_info["BASE_CURRENCY"],
             live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,

@@ -20,6 +20,7 @@ def get_indicator(name, **kw):
 
 
 class TAIndicator(AbstractIndicator):
+
     def __init__(self, name, **kw):
         super().__init__(name, **kw)
         """Factory for creating an indicator using the ta-lib library
@@ -69,9 +70,9 @@ class TAIndicator(AbstractIndicator):
             self.outputs.columns = [self.label]
 
         if self.signals_buy:
-            self.log.debug('Signals BUY')
+            self.log.debug("Signals BUY")
         elif self.signals_sell:
-            self.log.debug('Signals SELL')
+            self.log.debug("Signals SELL")
 
     def record(self):
         """Records indicator's output to catalyst results"""
@@ -108,8 +109,9 @@ class TAIndicator(AbstractIndicator):
 
 
 class BBANDS(TAIndicator):
+
     def __init__(self, **kw):
-        super().__init__('BBANDS', **kw)
+        super().__init__("BBANDS", **kw)
 
     def plot(self, results, pos):
         super().plot(results, pos)
@@ -128,12 +130,13 @@ class BBANDS(TAIndicator):
 
 
 class SAR(TAIndicator):
+
     def __init__(self, **kw):
-        super(SAR, self).__init__('SAR', **kw)
+        super(SAR, self).__init__("SAR", **kw)
 
     def plot(self, results, pos):
-        viz.plot_column(results, 'price', pos)
-        viz.plot_as_points(results, self.name, pos, y_val='SAR', color='black')
+        viz.plot_column(results, "price", pos)
+        viz.plot_as_points(results, self.name, pos, y_val="SAR", color="black")
 
     @property
     def current_price(self):
@@ -147,18 +150,18 @@ class SAR(TAIndicator):
     def signals_sell(self):
         bearish = utils.cross_below(self.data.close, self.outputs.SAR)
         if bearish:
-            self.log.info('Closing position due to PSAR')
+            self.log.info("Closing position due to PSAR")
         return bearish
 
 
 class MACD(TAIndicator):
 
     def __init__(self, **kw):
-        super(MACD, self).__init__('MACD', **kw)
+        super(MACD, self).__init__("MACD", **kw)
 
     def plot(self, results, pos):
-        super().plot(results, pos, ignore=['macdhist'])
-        viz.plot_bar(results, 'macdhist', pos)
+        super().plot(results, pos, ignore=["macdhist"])
+        viz.plot_bar(results, "macdhist", pos)
 
     @property
     def signals_buy(self):
@@ -171,12 +174,12 @@ class MACD(TAIndicator):
 
 class MACDFIX(TAIndicator):
 
-    def __init__(self, **kw,):
-        super(MACDFIX, self).__init__('MACDFIX', **kw)
+    def __init__(self, **kw):
+        super(MACDFIX, self).__init__("MACDFIX", **kw)
 
     def plot(self, results, pos):
-        super().plot(results, pos, ignore=['macdhist'])
-        viz.plot_bar(results, 'macdhist', pos)
+        super().plot(results, pos, ignore=["macdhist"])
+        viz.plot_bar(results, "macdhist", pos)
 
     @property
     def signals_buy(self):
@@ -188,8 +191,9 @@ class MACDFIX(TAIndicator):
 
 
 class OBV(TAIndicator):
+
     def __init__(self, **kw):
-        super(OBV, self).__init__('OBV', **kw)
+        super(OBV, self).__init__("OBV", **kw)
 
     @property
     def signals_buy(self):
@@ -201,26 +205,27 @@ class OBV(TAIndicator):
 
 
 class RSI(TAIndicator):
+
     def __init__(self, timeperiod=14, **kw):
-        super(RSI, self).__init__('RSI', timeperiod=timeperiod, **kw)
+        super(RSI, self).__init__("RSI", timeperiod=timeperiod, **kw)
 
     def record(self):
         super().record()
         record(overbought=self.overbought, oversold=self.oversold)
 
     def plot(self, results, pos):
-        y_label = 'RSI'
-        ax = viz.plot_column(results, 'RSI', pos, y_label=y_label, label='RSI')
+        y_label = "RSI"
+        ax = viz.plot_column(results, "RSI", pos, y_label=y_label, label="RSI")
 
         overbought_line = [CONFIG.RSI_OVERBOUGHT for i in results.index]
         oversold_line = [CONFIG.RSI_OVERSOLD for i in results.index]
         ax.plot(results.index, overbought_line)
         ax.plot(results.index, oversold_line)
 
-        overboughts = results[results['overbought']]
-        oversolds = results[results['oversold']]
-        viz.mark_on_line(overboughts, pos, y_val='RSI', color='red', label='overbought')
-        viz.mark_on_line(oversolds, pos, y_val='RSI', label='oversold')
+        overboughts = results[results["overbought"]]
+        oversolds = results[results["oversold"]]
+        viz.mark_on_line(overboughts, pos, y_val="RSI", color="red", label="overbought")
+        viz.mark_on_line(oversolds, pos, y_val="RSI", label="oversold")
 
         plt.legend()
 
@@ -245,7 +250,7 @@ class STOCH(TAIndicator):
     """docstring for STOCH"""
 
     def __init__(self, **kw):
-        super(STOCH, self).__init__('STOCH', **kw)
+        super(STOCH, self).__init__("STOCH", **kw)
 
     def record(self):
         super().record()
@@ -260,10 +265,10 @@ class STOCH(TAIndicator):
         ax.plot(results.index, overbought_line)
         ax.plot(results.index, oversold_line)
 
-        overboughts = results[results['stoch_overbought']]
-        oversolds = results[results['stoch_oversold']]
-        viz.mark_on_line(overboughts, pos, y_val='slowd', color='red', label='overbought')
-        viz.mark_on_line(oversolds, pos, y_val='slowk', label='oversold')
+        overboughts = results[results["stoch_overbought"]]
+        oversolds = results[results["stoch_oversold"]]
+        viz.mark_on_line(overboughts, pos, y_val="slowd", color="red", label="overbought")
+        viz.mark_on_line(oversolds, pos, y_val="slowk", label="oversold")
 
         plt.legend()
 
@@ -274,7 +279,10 @@ class STOCH(TAIndicator):
     @property
     def oversold(self):
         return utils.cross_below(self.outputs.slowd, CONFIG.STOCH_OVERSOLD)
-        return self.outputs.slowd[-1] < CONFIG.STOCH_OVERSOLD and utils.increasing(self.outputs.slowd, 2)
+
+        return self.outputs.slowd[-1] < CONFIG.STOCH_OVERSOLD and utils.increasing(
+            self.outputs.slowd, 2
+        )
 
     @property
     def signals_buy(self):
@@ -286,8 +294,9 @@ class STOCH(TAIndicator):
 
 
 class SMA(TAIndicator):
+
     def __init__(self, **kw):
-        super(SMA, self).__init__('SMA', **kw)
+        super(SMA, self).__init__("SMA", **kw)
 
     @property
     def signals_buy(self):

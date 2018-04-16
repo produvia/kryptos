@@ -1,4 +1,5 @@
 import click
+
 # import matplotlib.pyplot as plt
 from logbook import Logger
 
@@ -8,14 +9,14 @@ from logbook import Logger
 from crypto_platform.strategy import Strategy
 
 
-log = Logger('Blockchain Activity')
+log = Logger("Blockchain Activity")
 
 
 # qdata = QuandleDataManager()
 
 
 @click.command()
-@click.option('--datasets', '-s', multiple=True)
+@click.option("--datasets", "-s", multiple=True)
 def run(datasets):
     """Runs s strategy based on provided Blockchain dataset codes
 
@@ -60,15 +61,13 @@ def run(datasets):
           - DIFF - Bitcoin Difficulty
   """
 
-    click.secho('Executing using datasets:\n{}'.format(datasets), fg='white')
-
+    click.secho("Executing using datasets:\n{}".format(datasets), fg="white")
 
     strat = Strategy()
 
-    strat.use_dataset('quandl', columns=list(datasets))
+    strat.use_dataset("quandl", columns=list(datasets))
     strat.run()
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

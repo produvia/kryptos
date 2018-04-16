@@ -6,12 +6,12 @@ from catalyst.api import order, order_target_percent
 from crypto_platform.strategy import Strategy
 
 
-log = Logger('TA')
+log = Logger("TA")
 
 
 @click.command()
-@click.option('--indicators', '-i', multiple=True)
-@click.option('--quick_enter/--no-quick-enter', '-e', default=False)
+@click.option("--indicators", "-i", multiple=True)
+@click.option("--quick_enter/--no-quick-enter", "-e", default=False)
 def run(indicators, quick_enter):
     """Runs a strategy based on specified TA indicators
 
@@ -29,7 +29,7 @@ def run(indicators, quick_enter):
           - rsi
           - stoch
     """
-    click.secho('Executing using indicators:\n{}'.format(indicators), fg='white')
+    click.secho("Executing using indicators:\n{}".format(indicators), fg="white")
 
     strat = Strategy()
 
@@ -43,7 +43,7 @@ def run(indicators, quick_enter):
     @strat.handle_data
     def handle_data(context, data):
         if context.i == 0 and quick_enter:
-            log.info('Quick Entering market')
+            log.info("Quick Entering market")
             strat.make_buy(context)
             context.i += 1
 
@@ -54,39 +54,38 @@ def run(indicators, quick_enter):
 
         position = context.portfolio.positions.get(context.asset)
         if position == 0:
-            log.info('Position Zero')
+            log.info("Position Zero")
             return
 
         cost_basis = position.cost_basis
         log.info(
-            'Holdings: {amount} @ {cost_basis}'.format(
-                amount=position.amount,
-                cost_basis=cost_basis
+            "Holdings: {amount} @ {cost_basis}".format(
+                amount=position.amount, cost_basis=cost_basis
             )
         )
 
-        profit = (context.price * position.amount) - (
-            cost_basis * position.amount)
+        profit = (context.price * position.amount) - (cost_basis * position.amount)
 
         order_target_percent(
             asset=context.asset,
             target=0,
-            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED)
         )
         log.info(
-            'Sold {amount} @ {price} Profit: {profit}'.format(
-                amount=position.amount,
-                price=context.price,
-                profit=profit
+            "Sold {amount} @ {price} Profit: {profit}".format(
+                amount=position.amount, price=context.price, profit=profit
             )
         )
 
     @strat.buy_order
     def buy(context):
-        log.info('Making Buy Order')
+        log.info("Making Buy Order")
         if context.portfolio.cash < context.price * context.ORDER_SIZE:
-            log.warn('Skipping signaled buy due to cash amount: {} < {}'.format(
-                context.portfolio.cash, (context.price * context.ORDER_SIZE)))
+            log.warn(
+                "Skipping signaled buy due to cash amount: {} < {}".format(
+                    context.portfolio.cash, (context.price * context.ORDER_SIZE)
+                )
+            )
 
         if context.asset not in context.portfolio.positions:
             order(
@@ -95,14 +94,11 @@ def run(indicators, quick_enter):
                 limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
             log.info(
-                'Bought {amount} @ {price}'.format(
-                    amount=context.ORDER_SIZE,
-                    price=context.price
-                )
+                "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
             )
 
     strat.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

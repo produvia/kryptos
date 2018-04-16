@@ -27,34 +27,35 @@ from logbook import Logger
 
 DATA_DIR = os.path.dirname(os.path.abspath(csv_data.__file__))
 
-AVAILABLE_DATASETS = [
-    'google',
-    'quandl',
-]
+AVAILABLE_DATASETS = ["google", "quandl"]
 
 
 def get_data_manager(name, cols=None, config=None):
-    datasets = {
-        'google': GoogleTrendDataManager,
-        'quandl': QuandleDataManager,
-    }
+    datasets = {"google": GoogleTrendDataManager, "quandl": QuandleDataManager}
     try:
         return datasets[name](columns=cols, config=config)
+
     except KeyError as e:
-        raise e('No dataset available with name {}.\nAvailable Datasets: {}'.format(name, AVAILABLE_DATASETS))
+        raise e(
+            "No dataset available with name {}.\nAvailable Datasets: {}".format(
+                name, AVAILABLE_DATASETS
+            )
+        )
 
 
 class DataManagerLogger(logbook.Logger):
+
     def __init__(self, manager):
         self.manager = manager
         super().__init__(name=self.manager.name.upper())
 
     def process_record(self, record):
         logbook.Logger.process_record(self, record)
-        record.extra['trade_date'] = self.manager.current_date
+        record.extra["trade_date"] = self.manager.current_date
 
 
 class DataManager(object):
+
     def __init__(self, name, columns=None, config=None):
         """Base class of Data Managers
 
@@ -84,8 +85,8 @@ class DataManager(object):
         if config is None:
             config = DEFAULT_CONFIG
 
-        self.START = pd.to_datetime(config['START'], utc=True)
-        self.END = pd.to_datetime(config['END'], utc=True)
+        self.START = pd.to_datetime(config["START"], utc=True)
+        self.END = pd.to_datetime(config["END"], utc=True)
 
         index = pd.date_range(start=self.START, end=self.END)
         self.df = pd.DataFrame(index=index)
@@ -102,9 +103,9 @@ class DataManager(object):
 
     def serialize(self):
         return {
-            'name': self.name,
-            'columns': self.columns,
-            'indicators': [i.serialize() for i in self._indicators]
+            "name": self.name,
+            "columns": self.columns,
+            "indicators": [i.serialize() for i in self._indicators],
         }
 
     def current_data(self, date):
@@ -171,7 +172,7 @@ class DataManager(object):
         # Basic indicators accept a series as opposed to a df with technical indicators
         for i in self._indicators:
             for col in self._indicator_map[i.name]:
-                self.log.debug('Calculating {} for {}'.format(i.name, col))
+                self.log.debug("Calculating {} for {}".format(i.name, col))
                 try:
                     col_vals = self.df_to_date(self.current_date)[col]
                     i.calculate(col_vals)
@@ -180,7 +181,9 @@ class DataManager(object):
                     msg = """{} is set as the column for {}, but it is not found in the dataset.
                     Does the config look right?:
                     {}
-                        """.format(col, i.name, json.dumps(self.serialize(), indent=2))
+                        """.format(
+                        col, i.name, json.dumps(self.serialize(), indent=2)
+                    )
                     e = Exception(msg)
                     self.log.exception(e)
                     raise e
@@ -201,7 +204,7 @@ class DataManager(object):
         record_payload = {}
 
         if date not in self.df.index:
-            raise ValueError('No {} data found for {}'.format(self.name, date))
+            raise ValueError("No {} data found for {}".format(self.name, date))
 
         for k in self.columns:
             current_val = self.column_by_date(k, date)
@@ -210,7 +213,7 @@ class DataManager(object):
                 current_val = current_val.mean()
             record_payload[k] = current_val
 
-        self.log.debug('Recording {}'.format(record_payload))
+        self.log.debug("Recording {}".format(record_payload))
         record(**record_payload)
         return record_payload
 
@@ -240,10 +243,10 @@ class DataManager(object):
 class GoogleTrendDataManager(DataManager):
 
     def __init__(self, columns, config=None):
-        super(GoogleTrendDataManager, self).__init__('google', columns, config)
+        super(GoogleTrendDataManager, self).__init__("google", columns, config)
         """DataManager object used to fetch and integrate Google Trends data"""
 
-        self.trends = TrendReq(hl='en-US', tz=360)
+        self.trends = TrendReq(hl="en-US", tz=360)
         self.df = pd.DataFrame()
 
     def date_steps(self):
@@ -251,45 +254,45 @@ class GoogleTrendDataManager(DataManager):
         start, end = self.START.date(), self.END.date()
 
         if start + relativedelta(weeks=+1) >= end:
-            self.log.debug('Using daily steps for {} - {}'.format(start, end))
+            self.log.debug("Using daily steps for {} - {}".format(start, end))
             dates = [dt for dt in rrule(freq=DAILY, interval=1, dtstart=start, until=end)]
 
         elif start + relativedelta(months=+6) >= end:
-            self.log.debug('Using weekly steps for {} - {}'.format(start, end))
+            self.log.debug("Using weekly steps for {} - {}".format(start, end))
             dates = [dt for dt in rrule(freq=WEEKLY, interval=1, dtstart=start, until=end)]
 
         elif start + relativedelta(months=+6) >= end:
-            self.log.debug('Using monthly steps for {} - {}'.format(start, end))
+            self.log.debug("Using monthly steps for {} - {}".format(start, end))
             dates = [dt for dt in rrule(freq=MONTHLY, interval=1, dtstart=start, until=end)]
 
         else:
             dates = [dt for dt in rrule(freq=MONTHLY, interval=6, dtstart=start, until=end)]
-            self.log.debug('Using 6 month steps for {} - {}'.format(start, end))
+            self.log.debug("Using 6 month steps for {} - {}".format(start, end))
 
         last_date = dates[-1].date()
         if last_date < end:
             dates.append(self.END)
 
-            # TODO: Determine best method of normalizing trend values for daily data
-            # while last_date + relativedelta(months=+1) < end:
-            #     self.log.debug('Building remainer MONTH steps')
-            #     final_steps = [dt for dt in rrule(freq=MONTHLY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
-            #     dates.extend(final_steps)
-            #     last_date = dates[-1].date()
+        # TODO: Determine best method of normalizing trend values for daily data
+        # while last_date + relativedelta(months=+1) < end:
+        #     self.log.debug('Building remainer MONTH steps')
+        #     final_steps = [dt for dt in rrule(freq=MONTHLY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
+        #     dates.extend(final_steps)
+        #     last_date = dates[-1].date()
 
-            # while last_date + relativedelta(weeks=+1) < end:
-            #     self.log.debug('Building remainer WEEKLY steps')
+        # while last_date + relativedelta(weeks=+1) < end:
+        #     self.log.debug('Building remainer WEEKLY steps')
 
-            #     final_steps = [dt for dt in rrule(freq=WEEKLY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
-            #     dates.extend(final_steps)
-            #     last_date = dates[-1].date()
+        #     final_steps = [dt for dt in rrule(freq=WEEKLY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
+        #     dates.extend(final_steps)
+        #     last_date = dates[-1].date()
 
-            # while last_date + relativedelta(days=+1) < end:
-            #     self.log.debug('Building remainer DAILY steps')
+        # while last_date + relativedelta(days=+1) < end:
+        #     self.log.debug('Building remainer DAILY steps')
 
-            #     final_steps = [dt for dt in rrule(freq=DAILY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
-            #     dates.extend(final_steps)
-            #     last_date = dates[-1].date()
+        #     final_steps = [dt for dt in rrule(freq=DAILY, interval=1, dtstart=dates[-1], until=end) if dt not in dates]
+        #     dates.extend(final_steps)
+        #     last_date = dates[-1].date()
 
         return dates
 
@@ -300,30 +303,34 @@ class GoogleTrendDataManager(DataManager):
         for i, date in enumerate(steps):
             if i < len(steps) - 1:
                 date_pairs.append((date, steps[i + 1]))
-        self.log.debug('Date Pairs: {}'.format(date_pairs))
+        self.log.debug("Date Pairs: {}".format(date_pairs))
         return date_pairs
 
     @property
     def timeframes(self):
         timeframes = []
         for pair in self.datetime_pairs:
-            as_str = str(pair[0].date()) + ' ' + str(pair[1].date())
+            as_str = str(pair[0].date()) + " " + str(pair[1].date())
             timeframes.append(as_str)
         return timeframes
 
     def fetch_data(self):
-        self.log.warn("""
+        self.log.warn(
+            """
             The GoogleTrend Dataset is not yet reliable for obtaining daily data over large timespans.
             This may result in innacurate peaks in trend volume
-            """)
+            """
+        )
         trend_data = []
         for i, t in enumerate(self.timeframes):
-            self.log.info('Fetching trend data for {}'.format(t))
-            self.trends.build_payload(self.columns, cat=0, timeframe=t, geo='', gprop='')
+            self.log.info("Fetching trend data for {}".format(t))
+            self.trends.build_payload(self.columns, cat=0, timeframe=t, geo="", gprop="")
             d = self.trends.interest_over_time()
 
             if d.empty:
-                self.log.warn('No Trend Data for {} on {}\n Filling with blank data'.format(self.columns, t))
+                self.log.warn(
+                    "No Trend Data for {} on {}\n Filling with blank data".format(self.columns, t)
+                )
                 date_pair = self.datetime_pairs[i]
                 delta = date_pair[1].date() - date_pair[0].date()
                 empty_data = [0] * (delta.days + 1)
@@ -331,7 +338,7 @@ class GoogleTrendDataManager(DataManager):
                 for c in self.columns:
                     d[c] = empty_data
 
-            self.log.debug('Retrieved {} days of trend data'.format(len(d)))
+            self.log.debug("Retrieved {} days of trend data".format(len(d)))
             trend_data.append(d)
 
         self.df = self.normalize_data(trend_data)
@@ -339,17 +346,21 @@ class GoogleTrendDataManager(DataManager):
     def normalize_data(self, trend_data):
         df = pd.DataFrame(index=pd.date_range(self.START, self.END))
         if len(trend_data) == 0:
-            self.log.critical('No trend data found for {}'.format(self.columns))
-            raise ValueError('No trend data to normalize')
+            self.log.critical("No trend data found for {}".format(self.columns))
+            raise ValueError("No trend data to normalize")
 
         # https://github.com/anyuzx/bitcoin-google-trend-strategy/blob/master/bitcoin_google_trend_strategy.py
         renorm_factor = 1.0
         for c in self.columns:
             last_entry = 0
             trend_array = []
-            for i, frame in enumerate(trend_data[:: -1]):
+            for i, frame in enumerate(trend_data[::-1]):
                 if frame.empty:
-                    self.log.critical('Trend Dataframe empty for {}: {}-{}'.format(c, self.START.date(), self.END.date()))
+                    self.log.critical(
+                        "Trend Dataframe empty for {}: {}-{}".format(
+                            c, self.START.date(), self.END.date()
+                        )
+                    )
                     raise ValueError("Incomplete trend data, can't normalize")
 
                 if i == 0:
@@ -357,7 +368,7 @@ class GoogleTrendDataManager(DataManager):
                     last_entry = frame[c].values[-1]
 
                 elif all([v == 0 for v in frame[c].values]):
-                    self.log.debug('Skipping normalization for all 0 dataframe')
+                    self.log.debug("Skipping normalization for all 0 dataframe")
                     trend_array.extend(list(frame[c][1:]))
                     last_entry = frame[c].values[-1]
 
@@ -379,26 +390,29 @@ class GoogleTrendDataManager(DataManager):
 
 
 class QuandleDataManager(DataManager):
+
     def __init__(self, columns, config=None):
-        super(QuandleDataManager, self).__init__('quandl', columns, config)
+        super(QuandleDataManager, self).__init__("quandl", columns, config)
         """DataManager object used to fetch and integrate Quandl Blockchain database"""
 
         self.config = config
-        _api_key = os.getenv('QUANDL_API_KEY')
+        _api_key = os.getenv("QUANDL_API_KEY")
         quandl.ApiConfig.api_key = _api_key
-        self.data_dir = os.path.join(DATA_DIR, 'quandle', )
+        self.data_dir = os.path.join(DATA_DIR, "quandle")
 
     def fetch_data(self):
         df = pd.read_csv(self.csv, index_col=[0])
 
         df_start, df_end = pd.to_datetime(df.iloc[0].name), pd.to_datetime(df.iloc[-1].name)
-        algo_start, algo_end = pd.to_datetime(self.config['START']), pd.to_datetime(self.config["END"])
+        algo_start, algo_end = pd.to_datetime(self.config["START"]), pd.to_datetime(
+            self.config["END"]
+        )
 
         if algo_start < df_start or algo_end > df_end:
-            self.log.warn('Fetching missing quandl data')
+            self.log.warn("Fetching missing quandl data")
             quandl_client.fetch_all()
 
-        df.index = pd.date_range(start=df.iloc[0].name, end=df.iloc[-1].name, freq='D')
+        df.index = pd.date_range(start=df.iloc[0].name, end=df.iloc[-1].name, freq="D")
         self.df = df
 
         self.pretty_names = {}
@@ -409,14 +423,14 @@ class QuandleDataManager(DataManager):
         """Path of quandl csv file"""
         f = quandl_client.data_csv()
         if not os.path.exists(f):
-            self.log.warn('Quandle Data not downloaded, fetching...')
+            self.log.warn("Quandle Data not downloaded, fetching...")
             quandl_client.fetch_all()
         return f
 
     def _build_name_map(self):
-        with open(quandl_client.code_csv(), 'r') as f:
+        with open(quandl_client.code_csv(), "r") as f:
             for i in csv.reader(f):
-                col_name = i[0].replace('BCHAIN/', '')
+                col_name = i[0].replace("BCHAIN/", "")
                 self.pretty_names[col_name] = i[1]
 
     def pretty_title(self, col):

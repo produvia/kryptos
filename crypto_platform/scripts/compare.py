@@ -5,12 +5,12 @@ from crypto_platform.utils import load, outputs, viz, algo
 from crypto_platform.config import CONFIG
 from crypto_platform.analysis import quant
 
-log = Logger('Comparison')
+log = Logger("Comparison")
 
 
 @click.command()
-@click.argument('strategies', nargs=-1)
-@click.option('--metrics', '-m', multiple=True, default=None, help='Performance metrics')
+@click.argument("strategies", nargs=-1)
+@click.option("--metrics", "-m", multiple=True, default=None, help="Performance metrics")
 def run(strategies, metrics):
     """Compares performance of provided algorithms
 
@@ -40,7 +40,9 @@ def run(strategies, metrics):
       - stochastics
     """
 
-    click.secho('Comparing Strategies: {}\nAnalyzing Metrics: {}'.format(strategies, metrics), fg='white')
+    click.secho(
+        "Comparing Strategies: {}\nAnalyzing Metrics: {}".format(strategies, metrics), fg="white"
+    )
     if len(metrics) > 0:
         CONFIG.METRICS = metrics
 
@@ -78,7 +80,7 @@ def run(strategies, metrics):
 
     for strat, context, results in all_results:
         output_file = outputs.get_output_file(strat, CONFIG)
-        log.info('Dumping result csv and pkl to {}'.format(output_file))
+        log.info("Dumping result csv and pkl to {}".format(output_file))
         outputs.dump_to_csv(output_file, results)
 
         quant.dump_summary_table(strat, CONFIG, context, results)
@@ -86,5 +88,5 @@ def run(strategies, metrics):
         quant.dump_plots_to_file(strat, CONFIG, results)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

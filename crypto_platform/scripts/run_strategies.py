@@ -10,7 +10,7 @@ from crypto_platform.config import CONFIG
 
 import click
 
-log = Logger('Strategy Runner')
+log = Logger("Strategy Runner")
 
 
 @click.command()
@@ -22,7 +22,8 @@ def run():
     for strategy in load.load_algos():
         if strategy is None:
             continue
-        log.info('Running {}'.format(strategy.NAMESPACE))
+
+        log.info("Running {}".format(strategy.NAMESPACE))
         strategy.CONFIG = CONFIG
 
         def initialize(context):
@@ -35,8 +36,8 @@ def run():
 
         def analyze(context, results):
             viz.plot_portfolio(context, results, strategy.NAMESPACE)
-            output_file = outputs.get_output_file(strategy, CONFIG) + '.csv'
-            log.info('Dumping result csv to {}'.format(output_file))
+            output_file = outputs.get_output_file(strategy, CONFIG) + ".csv"
+            log.info("Dumping result csv to {}".format(output_file))
             outputs.dump_to_csv(output_file, results)
 
         algo.run_algo(initialize, handle_data, analyze)
@@ -45,5 +46,5 @@ def run():
     viz.show_plot()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

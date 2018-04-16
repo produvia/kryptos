@@ -2,22 +2,23 @@ import os
 import pandas as pd
 import talib as ta
 
+
 class CONFIG(object):
-    ASSET = 'btc_usd'
-    DATA_FREQUENCY = 'daily'
-    HISTORY_FREQ = '1D'
+    ASSET = "btc_usd"
+    DATA_FREQUENCY = "daily"
+    HISTORY_FREQ = "1D"
     CAPITAL_BASE = 1000
-    BUY_EXCHANGE = 'bitfinex'
-    BASE_CURRENCY = 'usd'
-    START = pd.to_datetime('2016-04-10', utc=True)
-    END = pd.to_datetime('2018-01-2', utc=True)
-    PERF_DIR = os.path.abspath('./performance_results')
+    BUY_EXCHANGE = "bitfinex"
+    BASE_CURRENCY = "usd"
+    START = pd.to_datetime("2016-04-10", utc=True)
+    END = pd.to_datetime("2018-01-2", utc=True)
+    PERF_DIR = os.path.abspath("./performance_results")
 
     # For all trading pairs in the poloniex bundle, the default denomination
     # currently supported by Catalyst is 1/1000th of a full coin. Use this
     # constant to scale the price of up to that of a full coin if desired.
     TICK_SIZE = 1
-    if BUY_EXCHANGE == 'poloniex':
+    if BUY_EXCHANGE == "poloniex":
         TICK_SIZE = 1000.0
 
     # Optionally set metrics here instead of with the metrics "-m" option
@@ -40,13 +41,13 @@ class CONFIG(object):
         # 'long_exposure',
         # 'long_value',
         # 'longs_count',
-        'max_drawdown',
+        "max_drawdown",
         # 'max_leverage',
         # 'net_leverage',
-        'pnl',
+        "pnl",
         # 'price',
         # 'returns',
-        'sharpe',
+        "sharpe",
         # 'short_exposure',
         # 'short_value',
         # 'shorts_count',
@@ -55,21 +56,19 @@ class CONFIG(object):
         # 'starting_exposure',
         # 'starting_value',
         # 'treasury_period_return',
-
-        ]
-
+    ]
 
 
 class TAConfig(object):
 
     BARS = 365
 
-    #bbands_psar
+    # bbands_psar
     MATYPE = ta.MA_Type.T3
     SAR_ACCEL = 0.02
     SAR_MAX = 0.2
 
-     # macdfix
+    # macdfix
     MACD_SIGNAL = 9
     RSI_OVERSOLD = 55
     RSI_OVERBOUGHT = 65
@@ -77,7 +76,7 @@ class TAConfig(object):
     # mean_reversion
     RSI_OVERSOLD = 55
     RSI_OVERBOUGHT = 65
-    CANDLE_SIZE = '5T'
+    CANDLE_SIZE = "5T"
 
     # rsi_profit_target
     MAX_HOLDINGS = 0.2
@@ -110,19 +109,14 @@ class TAConfig(object):
     STOCH_OVER_BOUGHT = 20
     STOCH_OVER_SOLD = 80
 
-    #stochastics
+    # stochastics
     STOCH_K_PERIOD = 5
     STOCH_D_PERIOD = 3
     STOCH_OVER_BOUGHT = 80
     STOCH_OVER_SOLD = 40
-
-
 
     RSI_OVERSOLD = 40
     RSI_OVERBOUGHT = 80
 
     STOCH_OVERBOUGHT = 80
     STOCH_OVERSOLD = 30
-
-
-        

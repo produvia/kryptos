@@ -5,17 +5,24 @@ from crypto_platform.strategy import Strategy
 from crypto_platform.data.manager import AVAILABLE_DATASETS
 from crypto_platform import setup_logging
 
-log = logbook.Logger('Platform')
+log = logbook.Logger("Platform")
 setup_logging()
 
 
 @click.command()
-@click.option('--market-indicators', '-ta', multiple=True, help='Market Indicators listed in order of priority')
-@click.option('--dataset', '-d', type=click.Choice(AVAILABLE_DATASETS), help='Include asset in keyword list')
-@click.option('--columns', '-c', multiple=True, help='Target columns for specified dataset')
-@click.option('--data-indicators', '-i', multiple=True, help='Dataset indicators')
-@click.option('--json-file', '-f')
-@click.option('--paper', is_flag=True, help='Run the strategy in Paper trading mode')
+@click.option(
+    "--market-indicators",
+    "-ta",
+    multiple=True,
+    help="Market Indicators listed in order of priority",
+)
+@click.option(
+    "--dataset", "-d", type=click.Choice(AVAILABLE_DATASETS), help="Include asset in keyword list"
+)
+@click.option("--columns", "-c", multiple=True, help="Target columns for specified dataset")
+@click.option("--data-indicators", "-i", multiple=True, help="Dataset indicators")
+@click.option("--json-file", "-f")
+@click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 def run(market_indicators, dataset, columns, data_indicators, json_file, paper):
 
     strat = Strategy()
@@ -36,7 +43,7 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper):
 
     @strat.init
     def initialize(context):
-        log.info('Initializing strategy')
+        log.info("Initializing strategy")
         pass
 
     @strat.handle_data
@@ -46,9 +53,9 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper):
 
     @strat.analyze()
     def analyze(context, results, pos):
-        log.info('Analyzing strategy')
+        log.info("Analyzing strategy")
         pass
 
-    click.secho(strat.serialize(), fg='white')
+    click.secho(strat.serialize(), fg="white")
 
     strat.run(live=paper)

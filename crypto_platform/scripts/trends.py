@@ -5,12 +5,12 @@ from crypto_platform.config import CONFIG
 from crypto_platform.strategy import Strategy
 
 
-log = Logger('Blockchain Activity')
+log = Logger("Blockchain Activity")
 
 
 @click.command()
-@click.argument('keywords', nargs=-1)
-@click.option('--asset', '-a', is_flag=True, help='Include asset in keyword list')
+@click.argument("keywords", nargs=-1)
+@click.option("--asset", "-a", is_flag=True, help="Include asset in keyword list")
 def run(keywords, asset):
     """Runs strategy using Google Search Trends
 
@@ -20,15 +20,15 @@ def run(keywords, asset):
 
     keywords = list(keywords)
     if asset:
-        keywords.append(CONFIG.ASSET.replace('_', ' '))
+        keywords.append(CONFIG.ASSET.replace("_", " "))
 
     strat = Strategy()
-    strat.use_dataset('google', columns=keywords)
+    strat.use_dataset("google", columns=keywords)
 
-    click.secho('Analysis Google Trends:\n{}'.format(keywords), fg='white')
+    click.secho("Analysis Google Trends:\n{}".format(keywords), fg="white")
 
     strat.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()
