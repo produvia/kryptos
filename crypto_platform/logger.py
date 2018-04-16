@@ -1,3 +1,4 @@
+import os
 import sys
 import logbook
 from logbook.more import ColorizedStderrHandler
@@ -5,6 +6,10 @@ logger_group = logbook.LoggerGroup()
 # logger_group.level = logbook.INFO
 logbook.set_datetime_format("local")
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+APP_LOG = os.path.join(LOG_DIR, 'app.log')
+ERROR_LOG = os.path.join(LOG_DIR, 'error.log')
 
 def add_logger(logger):
     logger_group.add_logger(logger)
@@ -12,6 +17,7 @@ def add_logger(logger):
 
 
 def setup_logging(*handlers):
+    os.makedirs(LOG_DIR, exist_ok=True)
     format_string = '{record.time:%H:%M:%S} KRYPTOS:{record.channel} {record.level_name}: DATE:{record.extra[trade_date]} {record.message}'
 
     stream_handler = logbook.StreamHandler(sys.stdout, level='INFO', bubble=True)
@@ -20,9 +26,9 @@ def setup_logging(*handlers):
     stder_handler = ColorizedStderrHandler(level='WARNING', bubble=False)
     stder_handler.format_string = format_string
 
-    file_handler = logbook.RotatingFileHandler('app.log', level='DEBUG', bubble=True, format_string=format_string)
+    file_handler = logbook.RotatingFileHandler(APP_LOG, level='DEBUG', bubble=True, format_string=format_string)
 
-    error_file_handler = logbook.RotatingFileHandler('error.log', level='ERROR', bubble=True)
+    error_file_handler = logbook.RotatingFileHandler(ERROR_LOG, level='ERROR', bubble=True)
     error_file_handler.format_string = '''
 ----------------------------------------------------------------------------------
 {record.time:%H:%M:%S} KRYPTOS:{record.channel}:{record.level_name}:
