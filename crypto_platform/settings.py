@@ -4,7 +4,7 @@ import json
 
 APP_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(APP_DIR)
-PERF_DIR = os.path.relpath(os.path.join(BASE_DIR, "performance_results"))
+PERF_DIR = os.path.join(BASE_DIR, "performance_results")
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
 STRAT_DIR = os.path.join(APP_DIR, "strategy")
