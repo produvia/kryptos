@@ -13,21 +13,6 @@ $ cd cryptocurrency-trading-platform
 $ pipenv install
 ```
 
-#### Optionally install with pip:
-
-Create virtualenv
-```bash
-$ pip install virtualenv
-$ virtualenv venv
-$ source ./venv/bin/activate
-```
-
-Install package as editable
-```bash
-$ pip install -e .
-```
-
-
 ## Using the platform
 
 The functionality of the paltform is exposed through various CLI commands.
@@ -39,11 +24,6 @@ Before running the commands, ensure your virtualenv is activated:
 If installed via pipenv:
 ```bash
 $ pipenv shell
-```
-
-If installed via virtualenv/pip:
-```bash
-$ source ./venv/bin/activate
 ```
 
 ### Configuration
