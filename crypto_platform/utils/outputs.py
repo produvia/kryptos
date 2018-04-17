@@ -15,7 +15,7 @@ def get_output_file(algo, config):
     return os.path.join(algo_dir, file_specs)
 
 
-def get_algo_dir(namespace, config):
+def get_algo_dir(namespace):
     algo_dir = os.path.join(os.path.abspath(PERF_DIR), namespace)
     if not os.path.exists(algo_dir):
         os.makedirs(algo_dir)

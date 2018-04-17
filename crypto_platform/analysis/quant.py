@@ -15,7 +15,7 @@ def dump_summary_table(namespace, config, df):
     if not isinstance(config, dict):
         config = config.__dict__
 
-    ALGO_DIR = get_algo_dir(namespace, config)
+    ALGO_DIR = get_algo_dir(namespace)
     ERROR_FILE = os.path.join(ALGO_DIR, "errors.txt")
 
     log.debug("Completed Strategy with config:\n{}".format(config))
@@ -106,12 +106,8 @@ def dump_summary_table(namespace, config, df):
         log.info("Wrote Summary Table to {}".format(f_path))
 
 
-def dump_plots_to_file(namespace, config, df):
-    log.info("Generating Performance Result Plots")
-    if not isinstance(config, dict):
-        config = config.__dict__
-
-    algo_dir = get_algo_dir(namespace, config)
+def dump_plots_to_file(namespace, df):
+    algo_dir = get_algo_dir(namespace)
     SAVE_FOLDER = os.path.join(algo_dir, "figures")
     if not os.path.exists(SAVE_FOLDER):
         os.makedirs(SAVE_FOLDER)

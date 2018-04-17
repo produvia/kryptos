@@ -90,7 +90,7 @@ def run(strategies, metrics):
         outputs.dump_to_csv(output_file, results)
         quant.dump_summary_table(strat.NAMESPACE, CONFIG, results)
         # Must be done outside of loop above to avoid matplotlib conflict
-        quant.dump_plots_to_file(strat.NAMESPACE, CONFIG, results)
+        quant.dump_plots_to_file(strat.NAMESPACE, results)
 
 
 if __name__ == "__main__":
