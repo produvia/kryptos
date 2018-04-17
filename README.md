@@ -32,7 +32,7 @@ $ pip install -e .
 
 The functionality of the paltform is exposed through various CLI commands.
 
-Each command simulates a trading strategy by running pre-built or dynamically built trading algorithms via [enigma-catalyst](https://github.com/enigmampc/catalyst). The algorithm(s) will run using global configuration values and  plot various measurements of the algorithms performance.
+Each command simulates a trading strategy by running pre-built or dynamically built trading algorithms via [enigma-catalyst](https://github.com/enigmampc/catalyst).
 
 Before running the commands, ensure your virtualenv is activated:
 
@@ -47,12 +47,24 @@ $ source ./venv/bin/activate
 ```
 
 ### Configuration
-Global algorithm behavior can be adjusted by modifying the values in [crypto_platform/config.json](/crypto_platform/config.py). These parameters (asset, exchange, start, end, etc...) are useful standardizng strategy performance.
+There are 2 files used for configuration
+  1. _crypto_platform/strategy/config.js_ -> Default trading strategy configuration
+  2. _crypto_platform/settings.py_ -> General app behavior
 
 ## Strategies
 The `Strategy` class acts as the interface for creating and running trading strategies as catalyst algorithms.
+Running a strategy will by default run a backtest according to its trade config, produce plots visualizing performance and save a summary of its performance statistics.
 
-#### Running Stratgies from the CLI
+Strategies are composed of a number of different inputs:
+  - Trading Environment
+  - Indicators
+  - Datasets
+  - ~Signals~
+  - ~Order Behavior~
+
+These options can be defined via the CLI, JSON objects, the python API or a combination of the three interfaces.
+
+### Running Stratgies from the CLI
 ```bash
 Usage: strat [OPTIONS]
 
@@ -77,7 +89,6 @@ Google Trends
 $ strat -d google -c 'bitcoin futures'
 ```
 
-
 Quandle
 ```bash
 $ strat -d quandl -c 'MKTCP' -c 'NTRAN'
@@ -88,7 +99,7 @@ Calculate a basic indicator for external data
 $ strat -d google -c 'btc usd' -i 'relchange'
 ```
 
-#### JSON Format
+### JSON Format
 The `strat` command also accepts a JSON file. The JSON object represents all the inputs used to create a strategy. The JSON representation is displayed anytime the `strat` command is run, so you can use save it as a file and fine tune inputs such as indicator parameters.
 
 For example:
@@ -146,10 +157,94 @@ For example:
 
 To run a strategy from the file:
 ```bash
-$ strat -f api_example.json
+$ strat -f examples/api_example.json
 ```
 
+### Python API
 
+#### Basics
+
+Create a strategy object
+```python
+from crypto_platform.strategy import Strategy
+
+strat = Strategy('MyStrategy')
+```
+
+Optionally load JSON config
+```
+config = './sma_crossover.json'
+strat.load_from_json(config)
+```
+
+Run the strategy
+```python
+strat.run()
+```
+
+Attach indicators
+```python
+from crypto_platform.strategy.indicators import technical
+
+# first create indicators
+bbands = technical.get_indicator('BBANDS')
+stoch = technical.get_indicator('STOCH')
+
+# override default params
+bbands.update_param('matype', 'EMA') 
+
+# attach indicators to strategy
+strat.add_market_indicator(bbands)
+strat.add_market_indicator(stoch)
+```
+
+Use External Datadets
+```python
+from crypto_platform.strategy.indicators import basic
+
+strat.use_dataset('quandl', columns=['MKTCP'])
+
+strat.use_dataset('google', columns=['bitcoin futures'])
+strat.add_data_indicator('google', 'relchange', col='bitcoin futures')
+```
+
+#### Decorators
+
+The `Strategy` object provides a set of decorators used to define logic to specific moments in the algorithm lifespan.
+
+Define setup and processing logic
+```
+@strat.init
+def init(context):
+"""Set up strategy once before trading begins"""
+    context.i = 0
+
+@strat.handle_data
+def handle_data(context, data):
+"""Executed at every new trading step"""
+    context.i += 1
+
+@strat.analyze()
+def analyze(context, results, pos):
+"""Executed once after algorthim ends"""
+    print('Completed for {} trading periods'.format(context.i))
+
+```
+
+Define buy and sell signals
+```python
+from crypto_paltform.strategy.signals import utils
+
+@strat.signal_sell
+def my_sell_signal(context, data):
+  """Defines condition to signal sell"""
+  return utils.cross_below(sma_fast.outputs.SMA_FAST, sma_slow.outputs.SMA_SLOW)
+
+@strat.signal_buy
+def signal_buy(context, data):
+"""Defines condition to signal buy"""
+    return utils.cross_above(sma_fast.outputs.SMA_FAST, sma_slow.outputs.SMA_SLOW)
+  ```
 
 ## Running example (pre-built) strategies
 This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
@@ -204,61 +299,6 @@ Optionally specify performance metrics via the `-m` flag
 $ metrics buy_and_hodl -m sharpe -m sortino -m max_drawdown
 ```
 
-## Running Dynamic Stragies
-The following commands run algorithms requiring input parameters that effect their trading logic. These strategies contain a basic skeleton to iterate through the algorithm but tradng decisions are determined by analyses specified indicators of the respective dataset.
-
-#### Technical Analysis
-Use the `ta` command to run a strategy using Technical Analysis of specified market indicators.
-
-```bash
-$ ta -i bbands
-```
-
-use multiple indicators
-```bash
-$ ta -i bbands -i psar
-```
-
-Optionally enter the market on the first iteration
-```bash
-$ ta -i obv -e
-```
-
-
-#### Blockchain Activity
-
-The `bchain` command is used to create a trading strategy by analyzing Quandl's [Blockchain Database](https://www.quandl.com/data/BCHAIN-Blockchain).
-
-This database is split into datasets which can be specified via their [codes](/crypto_platform/datasets/quandl_data/BCHAIN-datasets-codes.csv) using the `-s` flag.
-
-For example, to use Number of Transactions Per Day:
-```bash
-$ bchain -s NTRAN
-```
-
-To view Miners' Revenue and Bitcoin Difficulty
-```bash
-$ bchain -s MIREV -s DIFF
-```
-
-Note: `bchain` does not yet peform trade logic and only visualizes the dataset
-
-#### Google Search Trends
-
-The `trends` command is used to create a strategy by analyzing interest over time in terms of Google Trends search volume.
-
-Simply provide one or more seach terms:
-
-```bash
-$ trends btc ethereum litecoin
-```
-
-Or for terms that include spaces:
-```bash
-$ trends btc litecoin 'litecoin vs bitcoin'
-```
-
-Optionally provide the `-a` to include the algorithm's asset (for example btc_usd) as a search term
 
 
 
