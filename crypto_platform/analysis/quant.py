@@ -2,8 +2,13 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from logbook import Logger
 from crypto_platform.analysis.utils import quant_utils
 from crypto_platform.utils.outputs import get_algo_dir
+from crypto_platform import logger_group
+
+log = Logger("QUANT")
+logger_group.add_logger(log)
 
 
 def dump_summary_table(namespace, config, df):
@@ -13,11 +18,11 @@ def dump_summary_table(namespace, config, df):
     ALGO_DIR = get_algo_dir(namespace, config)
     ERROR_FILE = os.path.join(ALGO_DIR, "errors.txt")
 
-    print("\n" * 5)
-    print(config)
-    print("\n" * 5)
-    print(df.columns)
-    print("\n" * 5)
+    log.debug("Completed Strategy with config:\n{}".format(config))
+    log.info("Analyzing strategy performance")
+    print("\n\n")
+    log.info("Performance Result Columns:\n{}".format(df.columns))
+    print("\n\n")
 
     try:
         # No missing days in index
@@ -98,9 +103,11 @@ def dump_summary_table(namespace, config, df):
     f_path = os.path.join(ALGO_DIR, "backtest_summary.csv")
     with open(f_path, "w") as f:
         df_quant.to_csv(f)
+        log.info("Wrote Summary Table to {}".format(f_path))
 
 
 def dump_plots_to_file(namespace, config, df):
+    log.info("Generating Performance Result Plots")
     if not isinstance(config, dict):
         config = config.__dict__
 
@@ -155,6 +162,8 @@ def dump_plots_to_file(namespace, config, df):
         "Max Weekly Drawdown %",
         SAVE_FOLDER
     )
+
+    log.info("Saved plots to {}".format(SAVE_FOLDER))
 
 
 def dump_metric_plot(metric, metric_name, save_folder):
