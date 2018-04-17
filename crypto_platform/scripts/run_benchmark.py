@@ -2,7 +2,7 @@ import click
 from logbook import Logger
 
 from crypto_platform.utils import load, outputs, viz, algo
-from crypto_platform.config import CONFIG
+from crypto_platform.settings import DEFAULT_CONFIG as CONFIG
 
 
 log = Logger("Benchmark Runner")

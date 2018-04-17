@@ -2,9 +2,9 @@ import click
 from logbook import Logger
 
 from crypto_platform.utils import load, outputs, viz, algo
-from crypto_platform.config import CONFIG
 from crypto_platform.analysis import quant
 from crypto_platform import add_logger
+from crypto_platform.settings import METRICS, DEFAULT_CONFIG as CONFIG
 
 log = Logger("Comparison")
 add_logger(log)
@@ -46,7 +46,9 @@ def run(strategies, metrics):
         "Comparing Strategies: {}\nAnalyzing Metrics: {}".format(strategies, metrics), fg="white"
     )
     if len(metrics) > 0:
-        CONFIG.METRICS = metrics
+        CONFIG["METRICS"] = metrics
+    else:
+        CONFIG["METRICS"] = METRICS
 
     plot_name = "backtest-compare-"
     all_results = []
@@ -64,13 +66,13 @@ def run(strategies, metrics):
             strat.trade_logic(context, data)
 
         def analyze(context, results):
-            pos = viz.get_start_geo(len(CONFIG.METRICS) + 1)
+            pos = viz.get_start_geo(len(CONFIG["METRICS"]) + 1)
             viz.plot_percent_return(results, name=strat.NAMESPACE, pos=pos)
             if strategies.index(s) == len(strategies) - 1:
                 viz.plot_benchmark(results, pos=pos)
             pos += 1
 
-            for m in CONFIG.METRICS:
+            for m in CONFIG["METRICS"]:
                 viz.plot_column(results, m, pos=pos, label=strat.NAMESPACE)
                 pos += 1
 

@@ -1,7 +1,7 @@
 import click
 from logbook import Logger
 
-from crypto_platform.config import CONFIG
+from crypto_platform.settings import DEFAULT_CONFIG as CONFIG
 from crypto_platform.strategy import Strategy
 
 
@@ -20,7 +20,7 @@ def run(keywords, asset):
 
     keywords = list(keywords)
     if asset:
-        keywords.append(CONFIG.ASSET.replace("_", " "))
+        keywords.append(CONFIG["ASSET"].replace("_", " "))
 
     strat = Strategy()
     strat.use_dataset("google", columns=keywords)

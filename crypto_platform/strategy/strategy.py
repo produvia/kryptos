@@ -12,8 +12,8 @@ from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from crypto_platform.utils import load, viz
 from crypto_platform.strategy.indicators import technical
 from crypto_platform.data.manager import get_data_manager
-from crypto_platform.strategy import DEFAULT_CONFIG
 from crypto_platform import logger_group
+from crypto_platform.settings import DEFAULT_CONFIG, PERF_DIR
 
 
 class StratLogger(logbook.Logger):
@@ -73,6 +73,7 @@ class Strategy(object):
         self._sell_func = None
 
         self.trading_info.update(kw)
+        self.trading_info["PERF_DIR"] = PERF_DIR
 
         self.log = StratLogger(self)
         logger_group.add_logger(self.log)

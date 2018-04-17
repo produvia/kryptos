@@ -4,8 +4,8 @@ from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from logbook import Logger
 import pandas as pd
 
-from crypto_platform.strategy import DEFAULT_CONFIG as CONFIG
 from crypto_platform.utils import load
+from crypto_platform.settings import DEFAULT_CONFIG as CONFIG
 
 log = Logger("AlgoFactory")
 

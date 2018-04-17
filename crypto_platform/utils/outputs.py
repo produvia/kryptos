@@ -1,6 +1,5 @@
-import sys
 import os
-from os.path import basename
+from crypto_platform.settings import PERF_DIR, DEFAULT_CONFIG as CONFIG
 
 
 def dump_to_csv(filename, results, context=None):
@@ -10,7 +9,14 @@ def dump_to_csv(filename, results, context=None):
 
 def get_output_file(algo, config):
     # perf_dir = CONFIG.PERF_DIR
-    algo_dir = os.path.join(config.PERF_DIR, algo.NAMESPACE)
+    algo_dir = os.path.join(PERF_DIR, algo.NAMESPACE)
     os.makedirs(algo_dir, exist_ok=True)
-    file_specs = "{}_{}_{}".format(config.ASSET, config.BUY_EXCHANGE, config.DATA_FREQ)
+    file_specs = "{}_{}_{}".format(CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"])
     return os.path.join(algo_dir, file_specs)
+
+
+def get_algo_dir(namespace, config):
+    algo_dir = os.path.join(os.path.abspath(PERF_DIR), namespace)
+    if not os.path.exists(algo_dir):
+        os.makedirs(algo_dir)
+    return algo_dir

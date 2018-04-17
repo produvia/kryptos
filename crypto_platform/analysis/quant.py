@@ -1,15 +1,9 @@
 import os
 import pandas as pd
-import datetime
-from crypto_platform.analysis.utils import quant_utils
 import matplotlib.pyplot as plt
 
-
-def get_algo_dir(namespace, config):
-    algo_dir = os.path.join(os.path.abspath(config["PERF_DIR"]), namespace)
-    if not os.path.exists(algo_dir):
-        os.makedirs(algo_dir)
-    return algo_dir
+from crypto_platform.analysis.utils import quant_utils
+from crypto_platform.utils.outputs import get_algo_dir
 
 
 def dump_summary_table(namespace, config, df):

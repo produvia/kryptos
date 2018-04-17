@@ -3,12 +3,12 @@ import sys
 import logbook
 from logbook.more import ColorizedStderrHandler
 
+from crypto_platform.settings import LOG_DIR
+
 logger_group = logbook.LoggerGroup()
 # logger_group.level = logbook.INFO
 logbook.set_datetime_format("local")
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
 APP_LOG = os.path.join(LOG_DIR, "app.log")
 ERROR_LOG = os.path.join(LOG_DIR, "error.log")
 

@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from catalyst.exchange.utils.stats_utils import extract_transactions, get_pretty_stats
+from catalyst.exchange.utils.stats_utils import extract_transactions
 from logbook import Logger
 
 from crypto_platform import logger_group
+from crypto_platform.settings import PERF_DIR
 
 log = Logger("VIZ")
 logger_group.add_logger(log)
@@ -24,7 +25,7 @@ def show_plot():
 def save_plot(config, name):
     if not isinstance(config, dict):
         config = config.__dict__
-    FIG_PATH = os.path.join(config["PERF_DIR"], "figures")
+    FIG_PATH = os.path.join(PERF_DIR, "figures")
     if not os.path.exists(FIG_PATH):
         os.makedirs(FIG_PATH)
     f_path = os.path.join(FIG_PATH, "{}.png".format(name))

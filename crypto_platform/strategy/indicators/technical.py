@@ -5,7 +5,7 @@ import pandas as pd
 from catalyst.api import record
 
 
-from crypto_platform.config import TAConfig as CONFIG
+from crypto_platform.settings import TAConfig as CONFIG
 from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import AbstractIndicator
 from crypto_platform.strategy.signals import utils
