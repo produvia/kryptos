@@ -12,7 +12,8 @@ requires = [
     'matplotlib',
     'TA-Lib',
     'quandl',
-    'Click'
+    'click',
+    'logbook'
 ]
 
 
@@ -48,6 +49,8 @@ setup(
         compare=crypto_platform.scripts.compare:run
         ta=crypto_platform.scripts.run_ta:run
         bchain=crypto_platform.scripts.bchain_activity:run
+        trends=crypto_platform.scripts.trends:run
+        strat=crypto_platform.scripts.build_strategy:run
     ''',
     zip_safe=False,
 )

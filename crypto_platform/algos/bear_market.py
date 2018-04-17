@@ -4,8 +4,7 @@
 from catalyst.api import order_target_percent, record
 from logbook import Logger
 
-CONFIG = None
-NAMESPACE = 'bear_market'
+NAMESPACE = "bear_market"
 log = Logger(NAMESPACE)
 
 
@@ -19,7 +18,7 @@ def trade_logic(context, data):
 
     # Get price history for the last two months. Find peak, bottom, and last
     # prices for the period
-    price_history = data.history(context.asset, fields='price', bar_count=60, frequency="1d")
+    price_history = data.history(context.asset, fields="price", bar_count=60, frequency="1d")
     peak = price_history.max()
     bottom = price_history.min()
     price = price_history.ix[-1]
@@ -36,23 +35,20 @@ def trade_logic(context, data):
         context.IS_MARKET_BEAR = False
 
     if context.IS_MARKET_BEAR:
-        order_target_percent(
-            context.asset,
-            0.3,
-        )
+        order_target_percent(context.asset, 0.3)
     else:
-        order_target_percent(
-            context.asset,
-            0.75,
-        )
+        order_target_percent(context.asset, 0.75)
 
-    Portfolio_cumulative_return = (context.portfolio.portfolio_value / context.portfolio.starting_cash - 1) * 100
+    Portfolio_cumulative_return = (
+        context.portfolio.portfolio_value / context.portfolio.starting_cash - 1
+    ) * 100
 
     # Save values for later inspection
-    record(price=price,
-           peak=peak,
-           bottom=bottom,
-           cash=context.portfolio.cash,
-           leverage=context.account.leverage,
-           Portfolio_cumulative_return=Portfolio_cumulative_return,
-           )
+    record(
+        price=price,
+        peak=peak,
+        bottom=bottom,
+        cash=context.portfolio.cash,
+        leverage=context.account.leverage,
+        Portfolio_cumulative_return=Portfolio_cumulative_return,
+    )

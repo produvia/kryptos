@@ -11,14 +11,13 @@ from logbook import Logger
 from catalyst.api import symbol, record, order_target_percent, get_open_orders
 
 
-
-CONFIG = None
-NAMESPACE = 'mean_reversion_simple'
+NAMESPACE = "mean_reversion_simple"
 log = Logger(NAMESPACE)
 
 
 # To run an algorithm in Catalyst, you need two functions: initialize and
 # handle_data.
+
 
 def initialize(context):
     # This initialize function sets any data or variables that you'll use in
@@ -27,13 +26,12 @@ def initialize(context):
     # parameters or values you're going to use.
 
     # In our example, we're looking at Neo in Ether.
-    context.market = symbol(CONFIG.ASSET)
     context.base_price = None
     context.current_day = None
 
     context.RSI_OVERSOLD = 55
     context.RSI_OVERBOUGHT = 65
-    context.CANDLE_SIZE = '5T'
+    context.CANDLE_SIZE = "5T"
 
     context.start_time = time.time()
 
@@ -51,7 +49,7 @@ def trade_logic(context, data):
     # would only execute once. This method works with minute and daily
     # frequencies.
 
-    today = data.current_dt.floor('1D')
+    today = data.current_dt.floor("1D")
     if today != context.current_day:
         context.traded_today = False
         context.current_day = today
@@ -64,10 +62,7 @@ def trade_logic(context, data):
     # for the frequency alias:
     # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
     prices = data.history(
-        context.market,
-        fields='close',
-        bar_count=50,
-        frequency=context.CANDLE_SIZE
+        context.market, fields="close", bar_count=50, frequency=context.CANDLE_SIZE
     )
 
     # Ta-lib calculates various technical indicator based on price and
@@ -79,8 +74,8 @@ def trade_logic(context, data):
     # We need a variable for the current price of the security to compare to
     # the average. Since we are requesting two fields, data.current()
     # returns a DataFrame with
-    current = data.current(context.market, fields=['close', 'volume'])
-    price = current['close']
+    current = data.current(context.market, fields=["close", "volume"])
+    price = current["close"]
 
     # If base_price is not set, we use the current value. This is the
     # price at the first bar which we reference to calculate price_change.
@@ -94,13 +89,7 @@ def trade_logic(context, data):
     # the record() method to save it. This data will be available as
     # a parameter of the analyze() function for further analysis.
 
-    record(
-        volume=current['volume'],
-        price=price,
-        price_change=price_change,
-        rsi=rsi[-1],
-        cash=cash
-    )
+    record(volume=current["volume"], price=price, price_change=price_change, rsi=rsi[-1], cash=cash)
     # We are trying to avoid over-trading by limiting our trades to
     # one per day.
     if context.traded_today:
@@ -111,7 +100,7 @@ def trade_logic(context, data):
     # we wait until all orders are executed before considering more trades.
     orders = get_open_orders(context.market)
     if len(orders) > 0:
-        log.info('exiting because orders are open: {}'.format(orders))
+        log.info("exiting because orders are open: {}".format(orders))
         return
 
     # Exit if we cannot trade
@@ -125,27 +114,14 @@ def trade_logic(context, data):
     pos_amount = context.portfolio.positions[context.market].amount
 
     if rsi[-1] <= context.RSI_OVERSOLD and pos_amount == 0:
-        log.info(
-            '{}: buying - price: {}, rsi: {}'.format(
-                data.current_dt, price, rsi[-1]
-            )
-        )
+        log.info("{}: buying - price: {}, rsi: {}".format(data.current_dt, price, rsi[-1]))
         # Set a style for limit orders,
         limit_price = price * 1.005
-        order_target_percent(
-            context.market, 1, limit_price=limit_price
-        )
+        order_target_percent(context.market, 1, limit_price=limit_price)
         context.traded_today = True
 
     elif rsi[-1] >= context.RSI_OVERBOUGHT and pos_amount > 0:
-        log.info(
-            '{}: selling - price: {}, rsi: {}'.format(
-                data.current_dt, price, rsi[-1]
-            )
-        )
+        log.info("{}: selling - price: {}, rsi: {}".format(data.current_dt, price, rsi[-1]))
         limit_price = price * 0.995
-        order_target_percent(
-            context.market, 0, limit_price=limit_price
-        )
+        order_target_percent(context.market, 0, limit_price=limit_price)
         context.traded_today = True
-

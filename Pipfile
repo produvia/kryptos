@@ -7,15 +7,19 @@ name = "pypi"
 
 [packages]
 
-enigma-catalyst = "*"
+enigma-catalyst = "==0.5.8"
 matplotlib = "*"
-pandas = "*"
 ta-lib = "*"
 quandl = "*"
 click = "*"
+pytrends = "*"
 "e1839a8" = {path = ".", editable = true}
+colorama = "*"
+
 
 [dev-packages]
+
+black = "*"
 
 
 [requires]

@@ -3,19 +3,14 @@ The recorded results are saved to a csv file  and as a pickled pandas Dataframe
 in scripts/performance_results
 """
 
-from catalyst import run_algorithm
-from catalyst.api import record, symbol, set_benchmark
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-
 from logbook import Logger
-from crypto_platform.utils import load, outputs, viz
-from crypto_platform.config import CONFIG
+from crypto_platform.utils import load, outputs, viz, algo
+from crypto_platform.settings import DEFAULT_CONFIG as CONFIG
 
 
-import matplotlib.pyplot as plt
 import click
 
-log = Logger('Strategy Runner')
+log = Logger("Strategy Runner")
 
 
 @click.command()
@@ -24,51 +19,32 @@ def run():
 
     Plots the portfolio value over time for each strategy
     """
-    for algo in load.load_algos():
-        if algo is None:
+    for strategy in load.load_algos():
+        if strategy is None:
             continue
-        log.info('Running {}'.format(algo.NAMESPACE))
-        algo.CONFIG = CONFIG
+
+        log.info("Running {}".format(strategy.NAMESPACE))
+        strategy.CONFIG = CONFIG
 
         def initialize(context):
-            context.ASSET_NAME = CONFIG.ASSET
-            context.asset = symbol(context.ASSET_NAME)
-            context.market = symbol(CONFIG.ASSET)
-            algo.initialize(context)
+            algo.initialze_from_config(context)
+            strategy.initialize(context)
 
         def handle_data(context, data):
-            price = data.current(context.asset, 'price')
-            record(price=price, cash=context.portfolio.cash)
-            algo.trade_logic(context, data)
+            algo.record_data(context, data)
+            strategy.trade_logic(context, data)
 
         def analyze(context, results):
-            viz.plot_portfolio(context, results, algo.NAMESPACE)
-            output_file = outputs.get_output_file(algo, CONFIG) + '.csv'
-            log.info('Dumping result csv to {}'.format(output_file))
+            viz.plot_portfolio(context, results, strategy.NAMESPACE)
+            output_file = outputs.get_output_file(strategy, CONFIG) + ".csv"
+            log.info("Dumping result csv to {}".format(output_file))
             outputs.dump_to_csv(output_file, results)
 
-        try:
-            run_algorithm(
-                capital_base=CONFIG.CAPITAL_BASE,
-                data_frequency=CONFIG.DATA_FREQUENCY,
-                initialize=initialize,
-                handle_data=handle_data,
-                analyze=analyze,
-                exchange_name=CONFIG.BUY_EXCHANGE,
-                algo_namespace=algo.NAMESPACE,
-                base_currency=CONFIG.BASE_CURRENCY,
-                start=CONFIG.START,
-                end=CONFIG.END,
-                output=outputs.get_output_file(algo, CONFIG) + '.p'
-            )
-        except PricingDataNotLoadedError:
-            log.info('Ingesting required exchange bundle data')
-            load.ingest_exchange(CONFIG)
-        log.info('Run completed for {}'.format(algo.NAMESPACE))
+        algo.run_algo(initialize, handle_data, analyze)
 
     viz.add_legend()
     viz.show_plot()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

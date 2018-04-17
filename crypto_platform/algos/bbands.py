@@ -3,20 +3,15 @@ import pandas as pd
 import talib as ta
 from logbook import Logger
 
-from catalyst.api import (
-    order,
-    order_target_percent,
-    get_open_orders,
-    cancel_order
-)
+from catalyst.api import order, order_target_percent, get_open_orders, cancel_order
 
 
-NAMESPACE = 'bbands'
+NAMESPACE = "bbands"
 log = Logger(NAMESPACE)
 
 
 def initialize(context):
-    log.info('Starting TALib Simple Example')
+    log.info("Starting TALib Simple Example")
 
     context.ORDER_SIZE = 10
     context.SLIPPAGE_ALLOWED = 0.05
@@ -41,7 +36,7 @@ def close_open_orders(context, asset):
 
 def perform_ta(context, data):
 
-    today = data.current_dt.floor('1D')
+    today = data.current_dt.floor("1D")
     if today != context.current_day:
         context.traded_today = False
         context.current_day = today
@@ -50,20 +45,21 @@ def perform_ta(context, data):
     prices = data.history(
         context.asset,
         bar_count=context.BARS,
-        fields=['price', 'open', 'high', 'low', 'close'],
-        frequency='1d')
+        fields=["price", "open", "high", "low", "close"],
+        frequency="1d",
+    )
 
     # Create a analysis data frame
     analysis = pd.DataFrame(index=prices.index)
 
-    analysis['bb_upper'], analysis['bb_middle'], analysis['bb_lower'] = ta.BBANDS(
-        prices.close.as_matrix(), matype=ta.MA_Type.T3)
-
+    analysis["bb_upper"], analysis["bb_middle"], analysis["bb_lower"] = ta.BBANDS(
+        prices.close.as_matrix(), matype=ta.MA_Type.T3
+    )
 
     # Save the prices and analysis to send to analyze
     context.prices = prices
     context.analysis = analysis
-    context.price = data.current(context.asset, 'price')
+    context.price = data.current(context.asset, "price")
 
     makeOrders(context, analysis)
 
@@ -72,7 +68,7 @@ def perform_ta(context, data):
 
 
 def trade_logic(context, data):
-    log.info('handling bar {}'.format(data.current_dt))
+    log.info("handling bar {}".format(data.current_dt))
 
     # Exit if we cannot trade
     if not data.can_trade(context.market):
@@ -84,17 +80,16 @@ def trade_logic(context, data):
     try:
         perform_ta(context, data)
     except Exception as e:
-        log.warn('aborting the bar on error {}'.format(e))
+        log.warn("aborting the bar on error {}".format(e))
         context.errors.append(e)
         raise e
 
-    log.info('completed bar {}, total execution errors {}'.format(
-        data.current_dt,
-        len(context.errors)
-    ))
+    log.info(
+        "completed bar {}, total execution errors {}".format(data.current_dt, len(context.errors))
+    )
 
     if len(context.errors) > 0:
-        log.info('the errors:\n{}'.format(context.errors))
+        log.info("the errors:\n{}".format(context.errors))
 
 
 def makeOrders(context, analysis):
@@ -104,63 +99,62 @@ def makeOrders(context, analysis):
         # Current position
         position = context.portfolio.positions[context.asset]
 
-        if (position == 0):
-            log.info('Position Zero')
+        if position == 0:
+            log.info("Position Zero")
             return
 
         # Cost Basis
         cost_basis = position.cost_basis
 
         log.info(
-            'Holdings: {amount} @ {cost_basis}'.format(
-                amount=position.amount,
-                cost_basis=cost_basis
+            "Holdings: {amount} @ {cost_basis}".format(
+                amount=position.amount, cost_basis=cost_basis
             )
         )
 
         # Sell when holding and got sell singnal
         if isSell(context, analysis):
-            profit = (context.price * position.amount) - (
-                cost_basis * position.amount)
+            profit = (context.price * position.amount) - (cost_basis * position.amount)
             order_target_percent(
                 asset=context.asset,
                 target=0,
-                limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+                limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED)
             )
             log.info(
-                'Sold {amount} @ {price} Profit: {profit}'.format(
-                    amount=position.amount,
-                    price=context.price,
-                    profit=profit
+                "Sold {amount} @ {price} Profit: {profit}".format(
+                    amount=position.amount, price=context.price, profit=profit
                 )
             )
         else:
-            log.info('no buy or sell opportunity found')
+            log.info("no buy or sell opportunity found")
     else:
         # Buy when not holding and got buy signal
         if isBuy(context, analysis):
+            if context.portfolio.cash < context.price * context.ORDER_SIZE:
+                log.warn(
+                    "Skipping signaled buy due to cash amount: {} < {}".format(
+                        context.portfolio.cash, (context.price * context.ORDER_SIZE)
+                    )
+                )
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
                 limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
             log.info(
-                'Bought {amount} @ {price}'.format(
-                    amount=context.ORDER_SIZE,
-                    price=context.price
-                )
+                "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
             )
 
 
 def isBuy(context, analysis):
-    if context.price > getLast(analysis, 'bb_upper'):
+    if context.price > getLast(analysis, "bb_upper"):
         return True
 
     return False
 
 
 def isSell(context, analysis):
-    if context.price < getLast(analysis, 'bb_lower'):
+    if context.price < getLast(analysis, "bb_lower"):
         return True
 
     return False
@@ -168,8 +162,8 @@ def isSell(context, analysis):
 
 def logAnalysis(analysis):
     # Log only the last value in the array
-    log.info('- bb_upper:           {:.2f}'.format(getLast(analysis, 'bb_upper')))
-    log.info('- bb_lower:           {:.2f}'.format(getLast(analysis, 'bb_lower')))
+    log.info("- bb_upper:           {:.2f}".format(getLast(analysis, "bb_upper")))
+    log.info("- bb_lower:           {:.2f}".format(getLast(analysis, "bb_lower")))
 
 
 def getLast(arr, name):

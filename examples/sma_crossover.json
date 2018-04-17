@@ -1,0 +1,34 @@
+{
+   "trading": {
+      "EXCHANGE": "bitfinex",
+      "ASSET": "btc_usd",
+      "DATA_FREQ": "minute",
+      "HISTORY_FREQ": "1m",
+      "CAPITAL_BASE": 15000,
+      "BASE_CURRENCY": "usd",
+      "START": "2017-12-10",
+      "END": "2017-12-12"
+   },
+   "datasets": [],
+   "indicators": [
+      {
+         "name": "SMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "SMA_FAST",
+         "params": {
+            "timeperiod": 50
+         }
+      },
+      {
+         "name": "SMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "SMA_SLOW",
+         "params": {
+            "timeperiod": 100
+         }
+      }
+   ],
+   "signals": {}
+}

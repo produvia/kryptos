@@ -1,78 +1,42 @@
-from catalyst import run_algorithm
-from catalyst.api import record, set_benchmark, symbol
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
-
-from logbook import Logger
-from crypto_platform.utils import load, outputs, viz
-from crypto_platform.config import CONFIG
-
 import click
+from logbook import Logger
 
-log = Logger('Benchmark Runner')
+from crypto_platform.utils import load, outputs, viz, algo
+from crypto_platform.settings import DEFAULT_CONFIG as CONFIG
 
 
-def record_data(context, data):
-     # Let's keep the price of our asset in a more handy variable
-    price = data.current(context.asset, 'price')
-
-    # Save values for later inspection
-    record(price=price, cash=context.portfolio.cash)
+log = Logger("Benchmark Runner")
 
 
 @click.command()
-@click.argument('algo_name')
-def benchmark(algo_name):
+@click.argument("strategy")
+def benchmark(strategy):
     """Plots the percent return of a given algorithm against the benchmark of bitcoin price (btc_usdt)"""
 
-    algo = load.load_by_name(algo_name)
-    click.echo('Benchmarking {}'.format(algo.NAMESPACE))
-    algo.CONFIG = CONFIG
-
+    strat = load.load_by_name(strategy)
+    click.echo("Benchmarking {}".format(strat.NAMESPACE))
+    strat.CONFIG = CONFIG
 
     def initialize(context):
-        context.ASSET_NAME = CONFIG.ASSET
-        context.asset = symbol(context.ASSET_NAME)
-        context.market = symbol(CONFIG.ASSET)
-        algo.initialize(context)
-
-        set_benchmark(context.asset)
+        algo.initialze_from_config(context)
+        strat.initialize(context)
 
     def handle_data(context, data):
-        record_data(context, data)
-        algo.trade_logic(context, data)
+        algo.record_data(context, data)
+        strat.trade_logic(context, data)
 
     def analyze(context, results):
-        viz.plot_percent_return(results, algo.NAMESPACE)
+        viz.plot_percent_return(results, strat.NAMESPACE)
         viz.plot_benchmark(results)
-        output_file = outputs.get_output_file(algo, CONFIG) + '.csv'
-        log.info('Dumping result csv to {}'.format(output_file))
+        output_file = outputs.get_output_file(strat, CONFIG) + ".csv"
+        log.info("Dumping result csv to {}".format(output_file))
         viz.plot_buy_sells(results, pos=212)
 
-
-    try:
-        run_algorithm(
-            capital_base=CONFIG.CAPITAL_BASE,
-            data_frequency=CONFIG.DATA_FREQUENCY,
-            initialize=initialize,
-            handle_data=handle_data,
-            analyze=analyze,
-            exchange_name=CONFIG.BUY_EXCHANGE,
-            algo_namespace=algo.NAMESPACE,
-            base_currency=CONFIG.BASE_CURRENCY,
-            start=CONFIG.START,
-            end=CONFIG.END,
-            output=outputs.get_output_file(algo, CONFIG) + '.p'
-        )
-    except PricingDataNotLoadedError as e:
-        log.info('Ingesting required exchange bundle data')
-        load.ingest_exchange(CONFIG)
-        raise e
-        
+    algo.run_algo(initialize, handle_data, analyze)
 
     viz.add_legend()
     viz.show_plot()
-    log.info('Run completed for {}'.format(algo.NAMESPACE))
 
 
-if __name__ == '__main__':
-    run()
+if __name__ == "__main__":
+    benchmark()

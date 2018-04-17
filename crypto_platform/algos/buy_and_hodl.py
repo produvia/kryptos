@@ -18,12 +18,10 @@
 # From catalyst examples
 
 
-from catalyst.api import (order_target_value, record,
-                          cancel_order, get_open_orders, )
+from catalyst.api import order_target_value, record, cancel_order, get_open_orders
 
 
-NAMESPACE = 'buy_and_hodl'
-CONFIG = None
+NAMESPACE = "buy_and_hodl"
 
 
 def initialize(context):
@@ -52,21 +50,17 @@ def trade_logic(context, data):
         context.is_buying = False
 
     # Retrieve current asset price from pricing data
-    price = data.current(context.asset, 'price')
+    price = data.current(context.asset, "price")
 
     # Check if still buying and could (approximately) afford another purchase
     if context.is_buying and cash > price:
-        print('buying')
+        print("buying")
         # Place order to make position in asset equal to target_hodl_value
-        order_target_value(
-            context.asset,
-            target_hodl_value,
-            limit_price=price * 1.1,
-        )
+        order_target_value(context.asset, target_hodl_value, limit_price=price * 1.1)
 
     record(
         price=price,
-        volume=data.current(context.asset, 'volume'),
+        volume=data.current(context.asset, "volume"),
         cash=cash,
         starting_cash=context.portfolio.starting_cash,
         leverage=context.account.leverage,
