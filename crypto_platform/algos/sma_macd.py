@@ -24,22 +24,22 @@ log = Logger(NAMESPACE)
 def initialize(context):
     log.info("Starting TALib Simple Example")
 
-    context.ORDER_SIZE = 10
-    context.SLIPPAGE_ALLOWED = 0.05
+    # context.ORDER_SIZE = 10
+    # context.SLIPPAGE_ALLOWED = 0.05
 
     context.swallow_errors = True
     context.errors = []
 
     # Bars to look at per iteration should be bigger than SMA_SLOW
-    context.BARS = 365
+    # context.BARS = 365
     context.COUNT = 0
 
     # Technical Analysis Settings
-    context.SMA_FAST = 50
-    context.SMA_SLOW = 100
-    context.MACD_FAST = 12
-    context.MACD_SLOW = 26
-    context.MACD_SIGNAL = 9
+    # context.SMA_FAST = 50
+    # context.SMA_SLOW = 100
+    # context.MACD_FAST = 12
+    # context.MACD_SLOW = 26
+    # context.MACD_SIGNAL = 9
 
     pass
 
@@ -147,6 +147,7 @@ def makeOrders(context, analysis):
                         context.portfolio.cash, (context.price * context.ORDER_SIZE)
                     )
                 )
+                return
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,

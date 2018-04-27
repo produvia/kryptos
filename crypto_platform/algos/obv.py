@@ -14,11 +14,11 @@ log = Logger(NAMESPACE)
 def initialize(context):
     log.info("Starting TALib Simple Example")
 
-    context.ORDER_SIZE = 10
-    context.SLIPPAGE_ALLOWED = 0.1
+    # context.ORDER_SIZE = 10
+    # context.SLIPPAGE_ALLOWED = 0.1
 
     # Bars to look at per iteration should be bigger than SMA_SLOW
-    context.BARS = 365
+    # context.BARS = 365
 
     context.swallow_errors = True
     context.errors = []
@@ -119,6 +119,7 @@ def makeOrders(context, analysis):
                         context.portfolio.cash, (context.price * context.ORDER_SIZE)
                     )
                 )
+                return
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,

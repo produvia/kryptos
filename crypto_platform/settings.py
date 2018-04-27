@@ -16,10 +16,10 @@ with open(DEFAULT_CONFIG_FILE, "r") as f:
 # Optionally set metrics here instead of with the metrics "-m" option
 METRICS = [
     # 'algo_volatility',
-    # 'alpha',
+    'alpha',
     # 'benchmark_period_return',
     # 'benchmark_volatility',
-    # 'beta',
+    'beta',
     # 'gross_leverage',
     # 'long_exposure',
     # 'long_value',
@@ -32,68 +32,66 @@ METRICS = [
     # 'short_exposure',
     # 'short_value',
     # 'shorts_count',
-    # 'sortino',
+    'sortino',
 ]
 
 
 class TAConfig(object):
 
+    # global
     BARS = 365
+    ORDER_SIZE = 10
+    SLIPPAGE_ALLOWED = 0.05
 
-    # bbands_psar
+    # bbands.py
     # MATYPE = ta.MA_Type.T3
     SAR_ACCEL = 0.02
     SAR_MAX = 0.2
 
-    # macdfix
+    # macdfix.py
     MACD_SIGNAL = 9
     RSI_OVERSOLD = 55
     RSI_OVERBOUGHT = 65
 
-    # mean_reversion
-    RSI_OVERSOLD = 55
-    RSI_OVERBOUGHT = 65
+    # mean_reversion.py
+    # RSI_OVERSOLD = 55     # defined in macdfix section
+    # RSI_OVERBOUGHT = 65   # defined in macdfix section
     CANDLE_SIZE = "5T"
 
-    # rsi_profit_target
+    # rsi_profit_target.py
     MAX_HOLDINGS = 0.2
-    RSI_OVERSOLD = 30
+    # RSI_OVERSOLD = 30     # defined in macdfix section
     RSI_OVERSOLD_BBANDS = 45
     RSI_OVERBOUGHT_BBANDS = 55
+    TARGET = 0.15
+    STOP_LOSS = 0.1
+    STOP = 0.03
 
-    # rsi_ta
+    # rsi_ta.py
     RSI_PERIOD = 7
     RSI_OVER_BOUGHT = 70
     RSI_OVER_SOLD = 30
     RSI_AVG_PERIOD = 15
 
-    # sma_crossover
-    SMA_FAST = 50
-    SMA_SLOW = 100
-
-    # sma_macd
+    # sma_crossover.py
+    # sma_macd.py
     SMA_FAST = 50
     SMA_SLOW = 100
     MACD_FAST = 12
     MACD_SLOW = 26
-    MACD_SIGNAL = 9
+    # MACD_SIGNAL = 9   # defined in macdfix
 
-    # stoch_rsi
+    # stoch_rsi.py
     TIMEPERIOD = 9
     FASTK_PERIOD = 5
     FASTD_PERIOD = 3
     FASTD_MATYPE = 0
-    STOCH_OVER_BOUGHT = 20
-    STOCH_OVER_SOLD = 80
+    # STOCH_OVER_BOUGHT = 20    # defined in stochastics section
+    # STOCH_OVER_SOLD = 80      # defined in stochastics section
 
-    # stochastics
-    STOCH_K_PERIOD = 5
-    STOCH_D_PERIOD = 3
+    # stochastics.py
+    STOCH_K = 14
+    STOCH_D = 3
     STOCH_OVER_BOUGHT = 80
-    STOCH_OVER_SOLD = 40
+    STOCH_OVER_SOLD = 20
 
-    RSI_OVERSOLD = 40
-    RSI_OVERBOUGHT = 80
-
-    STOCH_OVERBOUGHT = 80
-    STOCH_OVERSOLD = 30

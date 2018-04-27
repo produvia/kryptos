@@ -13,18 +13,18 @@ log = Logger(NAMESPACE)
 def initialize(context):
     log.info("Starting TALib Simple Example")
 
-    context.ORDER_SIZE = 10
-    context.SLIPPAGE_ALLOWED = 0.05
+    # context.ORDER_SIZE = 10
+    # context.SLIPPAGE_ALLOWED = 0.05
 
     context.swallow_errors = True
     context.errors = []
 
     # Bars to look at per iteration should be bigger than SMA_SLOW
-    context.BARS = 365
+    # context.BARS = 365
 
     context.MATYPE = ta.MA_Type.T3
-    context.SAR_ACCEL = 0.02
-    context.SAR_MAX = 0.2
+    # context.SAR_ACCEL = 0.02
+    # context.SAR_MAX = 0.2
 
 
 def close_open_orders(context, asset):
@@ -136,6 +136,7 @@ def makeOrders(context, analysis):
                         context.portfolio.cash, (context.price * context.ORDER_SIZE)
                     )
                 )
+                return
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,

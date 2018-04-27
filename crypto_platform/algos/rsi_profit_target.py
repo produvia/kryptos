@@ -18,15 +18,15 @@ def initialize(context):
     log.info("initializing algo")
     context.base_price = None
 
-    context.MAX_HOLDINGS = 0.2
-    context.RSI_OVERSOLD = 30
-    context.RSI_OVERSOLD_BBANDS = 45
-    context.RSI_OVERBOUGHT_BBANDS = 55
-    context.SLIPPAGE_ALLOWED = 0.03
+    # context.MAX_HOLDINGS = 0.2
+    # context.RSI_OVERSOLD = 30
+    # context.RSI_OVERSOLD_BBANDS = 45
+    # context.RSI_OVERBOUGHT_BBANDS = 55
+    # context.SLIPPAGE_ALLOWED = 0.03
 
-    context.TARGET = 0.15
-    context.STOP_LOSS = 0.1
-    context.STOP = 0.03
+    # context.TARGET = 0.15
+    # context.STOP_LOSS = 0.1
+    # context.STOP = 0.03
     context.position = None
 
     context.last_bar = None
@@ -85,6 +85,7 @@ def _handle_buy_sell_decision(context, data, signal, price):
                         context.portfolio.cash, (context.price * buy_amount)
                     )
                 )
+                return
             order(
                 asset=context.asset,
                 amount=buy_amount,

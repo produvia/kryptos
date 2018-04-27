@@ -4,7 +4,7 @@ from logbook import Logger
 from crypto_platform.utils import load, outputs, viz, algo
 from crypto_platform.analysis import quant
 from crypto_platform import add_logger
-from crypto_platform.settings import METRICS, DEFAULT_CONFIG as CONFIG
+from crypto_platform.settings import METRICS, DEFAULT_CONFIG as CONFIG, TAConfig
 
 log = Logger("Comparison")
 add_logger(log)
@@ -60,6 +60,12 @@ def run(strategies, metrics):
         def initialize(context):
             algo.initialze_from_config(context)
             strat.initialize(context)
+            # Set algo parameters as defined in settings.py
+            param_values = [(attr, attr_val) for attr, attr_val
+                            in TAConfig().__class__.__dict__.items()
+                            if not attr.startswith('__')]
+            for param, val in param_values:
+                setattr(context, param, val)
 
         def handle_data(context, data):
             algo.record_data(context, data)
