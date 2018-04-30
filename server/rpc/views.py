@@ -2,7 +2,7 @@
 """Public section, including homepage and signup."""
 import json
 from flask import Blueprint
-from web.extensions import jsonrpc
+from server.extensions import jsonrpc
 from crypto_platform.strategy import Strategy
 
 api = Blueprint('api', __name__)

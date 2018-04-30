@@ -2,9 +2,9 @@
 """The flask app module, containing the app factory function."""
 from flask import Flask
 
-from web import web, rpc
-from web.extensions import jsonrpc
-from web.settings import ProdConfig
+from server import web, rpc
+from server.extensions import jsonrpc
+from server.settings import ProdConfig
 
 
 def create_app(config_object=ProdConfig):
@@ -14,6 +14,7 @@ def create_app(config_object=ProdConfig):
     """
     app = Flask(__name__.split('.')[0])
     app.config.from_object(config_object)
+    app.logger.warn('Using {}'.format(config_object))
     register_extensions(app)
     register_blueprints(app)
     return app

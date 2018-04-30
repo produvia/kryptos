@@ -251,7 +251,7 @@ A simple JSONRPC server is accessible to enable running strategies remotely.
 
 First set up the flask app environment
 ```bash
-$ export FLASK_APP=web/autoapp.py
+$ export FLASK_APP=server/autoapp.py
 $ export FLASK_DEVUG=1
 ```
 
