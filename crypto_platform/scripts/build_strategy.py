@@ -1,5 +1,8 @@
+import json
 import click
 import logbook
+
+from flask_jsonrpc.proxy import ServiceProxy
 
 from crypto_platform.strategy import Strategy
 from crypto_platform.data.manager import AVAILABLE_DATASETS
@@ -23,7 +26,8 @@ setup_logging()
 @click.option("--data-indicators", "-i", multiple=True, help="Dataset indicators")
 @click.option("--json-file", "-f")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
-def run(market_indicators, dataset, columns, data_indicators, json_file, paper):
+@click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
+def run(market_indicators, dataset, columns, data_indicators, json_file, paper, rpc):
 
     strat = Strategy()
 
@@ -58,4 +62,19 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper):
 
     click.secho(strat.serialize(), fg="white")
 
-    strat.run(live=paper)
+    if rpc:
+        log.warn(
+            """
+        *************
+        Running strategy on JSONRPC server at http://localhost:5000/api
+        Visualization will not be shown.
+        *************
+        """
+        )
+        server = ServiceProxy("http://localhost:5000/api")
+        strat_json = strat.serialize()
+        resp = server.Strat.run(strat_json)
+        log.info(resp)
+
+    else:
+        strat.run(live=paper)
