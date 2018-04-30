@@ -246,6 +246,30 @@ def signal_buy(context, data):
     return utils.cross_above(sma_fast.outputs.SMA_FAST, sma_slow.outputs.SMA_SLOW)
   ```
 
+## JSONRPC Server
+A simple JSONRPC server is accessible to enable running strategies remotely.
+
+First set up the flask app environment
+```bash
+$ export FLASK_APP=web/autoapp.py
+$ export FLASK_DEVUG=1
+```
+
+Start the Server
+```bash
+$ flask run
+```
+
+To call the server, use the `strat` command in a seperate terminal
+```bash
+$ strat -ta macdfix --rpc
+```
+
+#TODO Deployment and using rpc for remote server
+
+Note that vizualization will not be shown, and the response make take some time depending on the length of the trading period.
+
+
 ## Running example (pre-built) strategies
 This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
 
