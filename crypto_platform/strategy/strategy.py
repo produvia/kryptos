@@ -66,6 +66,7 @@ class Strategy(object):
         self._extra_handle = lambda context, data: None
         self._extra_analyze = lambda context, results, pos: None
         self._extra_plots = 0
+        self.viz = True
 
         self._signal_buy_func = lambda context, data: None
         self._signal_sell_func = lambda context, data: None
@@ -142,11 +143,8 @@ class Strategy(object):
         """Calls the wrapped function when weighing signals to define extra signal logic"""
         self._signal_buy_func = f
 
-    def load_from_json(self, json_file):
-        with open(json_file, "r") as f:
-            d = json.load(f)
-
-        trade_config = d.get("trading", {})
+    def load_from_dict(self, strat_dict):
+        trade_config = strat_dict.get("trading", {})
         self.trading_info.update(trade_config)
         # For all trading pairs in the poloniex bundle, the default denomination
         # currently supported by Catalyst is 1/1000th of a full coin. Use this
@@ -154,18 +152,23 @@ class Strategy(object):
         if self.trading_info["EXCHANGE"] == "poloniex":
             self.trading_info["TICK_SIZE"] = 1000.0
 
-        indicators = d.get("indicators", {})
+        indicators = strat_dict.get("indicators", {})
         for i in indicators:
             if i.get("dataset") in [None, "market"]:
                 ind = technical.get_indicator(**i)
                 if ind not in self._market_indicators:
                     self.add_market_indicator(ind)
 
-        datasets = d.get("datasets", {})
+        datasets = strat_dict.get("datasets", {})
         for ds in datasets:
             self.use_dataset(ds["name"], ds["columns"])
             for i in ds.get("indicators", []):
                 self.add_data_indicator(ds["name"], i["name"], col=i["symbol"])
+
+    def load_from_json(self, json_file):
+        with open(json_file, "r") as f:
+            d = json.load(f)
+            self.load_from_dict(d)
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
@@ -241,8 +244,7 @@ class Strategy(object):
 
         return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
 
-    def _analyze(self, context, results):
-        """Plots results of algo performance, external data, and indicators"""
+    def _make_plots(self, context, results):
         # strat_plots = len(self._market_indicators) + len(self._datasets)
         pos = viz.get_start_geo(self.total_plots + 3)
         viz.plot_percent_return(results, pos=pos)
@@ -271,9 +273,12 @@ class Strategy(object):
         viz.plot_buy_sells(results, pos=pos)
         viz.show_plot()
 
+    def _analyze(self, context, results):
+        """Plots results of algo performance, external data, and indicators"""
+        if self.viz:
+            self._make_plots(context, results)
         quant.dump_summary_table(self.name, self.trading_info, results)
         quant.dump_plots_to_file(self.name, results)
-
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
@@ -406,12 +411,14 @@ class Strategy(object):
 
     # Save the prices and analysis to send to analyze
 
-    def run(self, live=False, simulate_orders=True):
+    def run(self, live=False, simulate_orders=True, viz=True):
         """Executes the trade strategy as a catalyst algorithm
 
         Basic algorithm behavior is defined cia the config object, while
         iterative logic is managed by the Strategy object.
         """
+
+        self.viz = viz
         try:
             if live or self.trading_info.get("LIVE", False):
                 self.run_live(simulate_orders=simulate_orders)
