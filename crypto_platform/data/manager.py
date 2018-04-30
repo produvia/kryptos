@@ -20,7 +20,6 @@ from crypto_platform.utils import viz
 from crypto_platform.strategy.indicators import basic, technical
 from crypto_platform.strategy import DEFAULT_CONFIG
 from crypto_platform import logger_group
-#from crypto_platform import errors
 
 from logbook import Logger
 
