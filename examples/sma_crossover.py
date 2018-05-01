@@ -1,6 +1,6 @@
-from crypto_platform.strategy import Strategy
-from crypto_platform.strategy.signals import utils
-from crypto_platform.utils import viz
+from kryptos.platform.strategy import Strategy
+from kryptos.platform.strategy.signals import utils
+from kryptos.platform.utils import viz
 import matplotlib.pyplot as plt
 
 config = './sma_crossover.json'
