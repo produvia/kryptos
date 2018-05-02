@@ -1,7 +1,9 @@
 import json
+import time
+import requests
+
 import click
 import logbook
-
 from flask_jsonrpc.proxy import ServiceProxy
 
 from kryptos.platform.strategy import Strategy
@@ -63,18 +65,44 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
     click.secho(strat.serialize(), fg="white")
 
     if rpc:
-        log.warn(
-            """
+        strat_id = run_rpc(strat)
+        poll_status(strat_id)
+
+    else:
+        strat.run(live=paper)
+
+
+def run_rpc(strat):
+    click.secho(
+        """
         *************
         Running strategy on JSONRPC server at http://localhost:5000/api
         Visualization will not be shown.
         *************
-        """
-        )
-        server = ServiceProxy("http://localhost:5000/api")
-        strat_json = strat.serialize()
-        resp = server.Strat.run(strat_json)
-        log.info(resp)
+        """,
+        fg="yellow",
+    )
+    api_url = "http://localhost:5000/api"
+    rpc_service = ServiceProxy(api_url)
+    strat_json = strat.serialize()
+    res = rpc_service.Strat.run(strat_json)
+    log.info(res)
 
-    else:
-        strat.run(live=paper)
+    result = res["result"]
+    strat_id = result["data"]["strat_id"]
+    status = result["status"]
+    click.secho("Job Started. Strategy job ID: {}".format(strat_id))
+    click.secho("status: {}".format(status), fg="magenta")
+    return strat_id
+
+
+def poll_status(strat_id):
+    api_url = "http://localhost:5000/api"
+    rpc_service = ServiceProxy(api_url)
+    status = None
+    colors = {"started": "green", "failed": "red", "finished": "blue"}
+    while status not in ["finished", "failed"]:
+        res = rpc_service.Strat.status(strat_id)
+        status = res["result"]["status"]
+        click.secho("status: {}".format(status), fg=colors.get(status))
+        time.sleep(2)
