@@ -1,5 +1,6 @@
 import json
 import uuid
+import os
 
 import logbook
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
-from crypto_platform.utils import load, viz
+from crypto_platform.utils import load, viz, outputs
 from crypto_platform.strategy.indicators import technical
 from crypto_platform.data.manager import get_data_manager
 from crypto_platform import logger_group
@@ -271,6 +272,9 @@ class Strategy(object):
         viz.plot_buy_sells(results, pos=pos)
         viz.show_plot()
 
+        output_file = os.path.join(outputs.get_algo_dir(self.name), 'backtest')
+        self.log.info("Dumping result to {}.csv".format(output_file))
+        outputs.dump_to_csv(output_file, results)
         quant.dump_summary_table(self.name, self.trading_info, results)
         quant.dump_plots_to_file(self.name, results)
 
