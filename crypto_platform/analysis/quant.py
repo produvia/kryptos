@@ -102,7 +102,7 @@ def dump_summary_table(namespace, config, df):
     # Write to file
     f_path = os.path.join(ALGO_DIR, "backtest_summary.csv")
     with open(f_path, "w") as f:
-        df_quant.to_csv(f)
+        df_quant.T.to_csv(f)
         log.info("Wrote Summary Table to {}".format(f_path))
 
 
