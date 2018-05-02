@@ -40,7 +40,7 @@ class TAConfig(object):
 
     # global
     BARS = 365
-    ORDER_SIZE = 10
+    ORDER_SIZE = 0.01
     SLIPPAGE_ALLOWED = 0.05
 
     # bbands.py
@@ -75,8 +75,8 @@ class TAConfig(object):
 
     # sma_crossover.py
     # sma_macd.py
-    SMA_FAST = 50
-    SMA_SLOW = 100
+    SMA_FAST = 5503.84
+    SMA_SLOW = 4771.08
     MACD_FAST = 12
     MACD_SLOW = 26
     # MACD_SIGNAL = 9   # defined in macdfix
@@ -92,6 +92,6 @@ class TAConfig(object):
     # stochastics.py
     STOCH_K = 14
     STOCH_D = 3
-    STOCH_OVER_BOUGHT = 80
-    STOCH_OVER_SOLD = 20
+    STOCH_OVERBOUGHT = 80
+    STOCH_OVERSOLD = 20
 
