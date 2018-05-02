@@ -1,1 +1,2 @@
-web: gunicorn kryptos.server.app:create_app 
+web: gunicorn autoapp:app
+worker: python kryptos/server/utils/worker.py
