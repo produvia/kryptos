@@ -12,8 +12,8 @@ from kryptos.platform.strategy import Strategy
 from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
 
-from kryptos.app.settings import DevConfig, StageConfig
-CONFIG = DevConfig if get_debug_flag() else StageConfig
+from kryptos.app.settings import DevConfig, ProdConfig
+CONFIG = DevConfig if get_debug_flag() else ProdConfig
 
 log = logbook.Logger("Platform")
 setup_logging()
@@ -34,7 +34,8 @@ setup_logging()
 @click.option("--json-file", "-f")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
-def run(market_indicators, dataset, columns, data_indicators, json_file, paper, rpc):
+@click.option('--hosted', '-h', is_flag=True, help='Run via rpc using remote server')
+def run(market_indicators, dataset, columns, data_indicators, json_file, paper, rpc, hosted):
 
     strat = Strategy()
 
@@ -70,24 +71,26 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
     click.secho(strat.serialize(), fg="white")
 
     if rpc:
-        strat_id = run_rpc(strat)
-        poll_status(strat_id)
+        if hosted:
+            CONFIG = ProdConfig # to run on remote during dev
+
+        strat_id = run_rpc(strat, CONFIG.API_URL)
+        poll_status(strat_id, CONFIG.API_URL)
 
     else:
         strat.run(live=paper)
 
 
-def run_rpc(strat):
+def run_rpc(strat, api_url):
     click.secho(
         """
         *************
         Running strategy on JSONRPC server at {}
         Visualization will not be shown.
         *************
-        """.format(CONFIG.API_URL),
+        """.format(api_url),
         fg="yellow",
     )
-    api_url = CONFIG.API_URL
     rpc_service = ServiceProxy(api_url)
     strat_json = strat.serialize()
     res = rpc_service.Strat.run(strat_json)
@@ -104,8 +107,7 @@ def run_rpc(strat):
     return strat_id
 
 
-def poll_status(strat_id):
-    api_url = CONFIG.API_URL
+def poll_status(strat_id, api_url):
     rpc_service = ServiceProxy(api_url)
     status = None
     colors = {"started": "green", "failed": "red", "finished": "blue"}
