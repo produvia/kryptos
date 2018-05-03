@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+numpy = "==1.14.3"
 enigma-catalyst = "==0.5.8"
 matplotlib = "*"
 ta-lib = "*"
@@ -15,7 +16,6 @@ colorama = "*"
 flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
-gunicorn = "*"
 
 [dev-packages]
 black = "==18.4a4"
