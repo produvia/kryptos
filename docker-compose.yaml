@@ -7,9 +7,7 @@ services:
     volumes:
      - .:/app
     environment:
-      - FLASK_APP=app/main.py
-      - FLASK_DEBUG=1
-      - 'RUN=flask run --host=0.0.0.0 --port=80'
+      - FLASK_DEBUG=${DEBUG}
       # - REDIS_HOST=redis
 
     depends_on:
@@ -22,8 +20,8 @@ services:
     build: .
     # container
     environment:
+      - FLASK_DEBUG=${DEBUG}
 
-      LOCAL_SETTINGS: /app/settings.cfg
     command: ['python', '/app/kryptos/app/utils/worker.py']
     volumes:
     - .:/app
