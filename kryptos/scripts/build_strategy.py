@@ -14,7 +14,6 @@ from kryptos.platform import setup_logging
 
 from kryptos.app.settings import DevConfig, ProdConfig
 
-CONFIG = DevConfig if get_debug_flag() else ProdConfig
 
 log = logbook.Logger("Platform")
 setup_logging()
@@ -72,6 +71,8 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
     click.secho(strat.serialize(), fg="white")
 
     if rpc:
+        CONFIG = DevConfig if get_debug_flag() else ProdConfig
+
         if hosted:
             CONFIG = ProdConfig  # to run on remote during dev
 
