@@ -1,5 +1,6 @@
 import json
 import uuid
+import shutil
 import os
 
 import logbook
@@ -148,6 +149,14 @@ class Strategy(object):
             d = json.load(f)
 
         trade_config = d.get("trading", {})
+        if trade_config:
+            save_path = os.path.join(outputs.get_algo_dir(self.name),
+                                     os.path.split(json_file)[-1])
+            shutil.copyfile(json_file, save_path)
+            self.log.info("Dumping JSON config file to {}".format(save_path))
+            # with open(save_path, "w") as f:
+            #     json.dump(trade_config, f)
+
         self.trading_info.update(trade_config)
         # For all trading pairs in the poloniex bundle, the default denomination
         # currently supported by Catalyst is 1/1000th of a full coin. Use this
