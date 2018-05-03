@@ -154,8 +154,6 @@ class Strategy(object):
                                      os.path.split(json_file)[-1])
             shutil.copyfile(json_file, save_path)
             self.log.info("Dumping JSON config file to {}".format(save_path))
-            # with open(save_path, "w") as f:
-            #     json.dump(trade_config, f)
 
         self.trading_info.update(trade_config)
         # For all trading pairs in the poloniex bundle, the default denomination
