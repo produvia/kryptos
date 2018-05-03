@@ -13,6 +13,7 @@ from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
 
 from kryptos.app.settings import DevConfig, ProdConfig
+
 CONFIG = DevConfig if get_debug_flag() else ProdConfig
 
 log = logbook.Logger("Platform")
@@ -34,7 +35,7 @@ setup_logging()
 @click.option("--json-file", "-f")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
-@click.option('--hosted', '-h', is_flag=True, help='Run via rpc using remote server')
+@click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
 def run(market_indicators, dataset, columns, data_indicators, json_file, paper, rpc, hosted):
 
     strat = Strategy()
@@ -72,7 +73,7 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
 
     if rpc:
         if hosted:
-            CONFIG = ProdConfig # to run on remote during dev
+            CONFIG = ProdConfig  # to run on remote during dev
 
         strat_id = run_rpc(strat, CONFIG.API_URL)
         poll_status(strat_id, CONFIG.API_URL)
@@ -88,7 +89,9 @@ def run_rpc(strat, api_url):
         Running strategy on JSONRPC server at {}
         Visualization will not be shown.
         *************
-        """.format(api_url),
+        """.format(
+            api_url
+        ),
         fg="yellow",
     )
     rpc_service = ServiceProxy(api_url)
@@ -96,8 +99,8 @@ def run_rpc(strat, api_url):
     res = rpc_service.Strat.run(strat_json)
     log.info(res)
 
-    if res.get('error'):
-        raise Exception(res['error'])
+    if res.get("error"):
+        raise Exception(res["error"])
 
     result = res["result"]
     strat_id = result["data"]["strat_id"]

@@ -24,7 +24,7 @@ class ProdConfig(Config):
 
     ENV = "prod"
     DEBUG = False
-    API_URL = 'http://35.161.89.0/api'
+    API_URL = "http://35.161.89.0/api"
 
 
 class StageConfig(object):
@@ -33,13 +33,12 @@ class StageConfig(object):
     API_URL = None
 
 
-
 class DevConfig(Config):
     """Development configuration."""
 
     ENV = "dev"
     DEBUG = True
-    API_URL = 'http://0.0.0.0:80/api'
+    API_URL = "http://0.0.0.0:80/api"
 
 
 class TestConfig(Config):

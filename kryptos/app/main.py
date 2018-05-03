@@ -7,7 +7,7 @@ from kryptos.app.settings import DevConfig, ProdConfig
 #         self.script_name = script_name
 #         self.scheme = scheme
 #         self.server = server
-    
+
 #     def __call__(self, environ, start_response):
 #         script_name = environ.get('HTTP_X_SCRIPT_NAME', '') or self.script_name
 #         if script_name:
@@ -29,5 +29,5 @@ app = create_app(DevConfig)
 
 if __name__ == "__main__":
     # Only for debugging while developing
-    app.run(host='0.0.0.0', debug=True, port=80)
+    app.run(host="0.0.0.0", debug=True, port=80)
     # app.run(port=8000)
