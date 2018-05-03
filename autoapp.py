@@ -2,8 +2,8 @@
 """Create an application instance."""
 from flask.helpers import get_debug_flag
 
-from kryptos.server.app import create_app
-from kryptos.server.settings import DevConfig, ProdConfig
+from kryptos.app.app import create_app
+from kryptos.app.settings import DevConfig, ProdConfig
 
 CONFIG = DevConfig if get_debug_flag() else ProdConfig
 

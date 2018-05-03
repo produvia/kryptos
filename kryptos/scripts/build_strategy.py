@@ -2,6 +2,8 @@ import json
 import time
 import requests
 
+from flask.helpers import get_debug_flag
+
 import click
 import logbook
 from flask_jsonrpc.proxy import ServiceProxy
@@ -9,6 +11,9 @@ from flask_jsonrpc.proxy import ServiceProxy
 from kryptos.platform.strategy import Strategy
 from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
+
+from kryptos.app.settings import DevConfig, StageConfig
+CONFIG = DevConfig if get_debug_flag() else StageConfig
 
 log = logbook.Logger("Platform")
 setup_logging()
@@ -76,17 +81,20 @@ def run_rpc(strat):
     click.secho(
         """
         *************
-        Running strategy on JSONRPC server at http://localhost:5000/api
+        Running strategy on JSONRPC server at {}
         Visualization will not be shown.
         *************
-        """,
+        """.format(CONFIG.API_URL),
         fg="yellow",
     )
-    api_url = "http://localhost:5000/api"
+    api_url = CONFIG.API_URL
     rpc_service = ServiceProxy(api_url)
     strat_json = strat.serialize()
     res = rpc_service.Strat.run(strat_json)
     log.info(res)
+
+    if res.get('error'):
+        raise Exception(res['error'])
 
     result = res["result"]
     strat_id = result["data"]["strat_id"]
@@ -97,7 +105,7 @@ def run_rpc(strat):
 
 
 def poll_status(strat_id):
-    api_url = "http://localhost:5000/api"
+    api_url = CONFIG.API_URL
     rpc_service = ServiceProxy(api_url)
     status = None
     colors = {"started": "green", "failed": "red", "finished": "blue"}

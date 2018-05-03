@@ -4,8 +4,8 @@ from flask import Blueprint
 from rq import Queue
 
 from kryptos.platform.strategy import Strategy
-from kryptos.server.extensions import jsonrpc
-from kryptos.server.utils.worker import conn
+from kryptos.app.extensions import jsonrpc
+from kryptos.app.utils.worker import conn
 
 # api blueprint currently not actually used
 # jsonrpc acts as its own blueprint, asigning all method to api/

@@ -8,4 +8,4 @@ blueprint = Blueprint("public", __name__, static_folder="../static")
 @blueprint.route("/", methods=["GET", "POST"])
 def home():
     """Landing page for the web/html blueprint"""
-    return "Kryptos Web Page"
+    return "Kryptos Web Page !!!!~~~~~~~~~~~~~~"

@@ -27,11 +27,10 @@ class ProdConfig(Config):
 
 
 class StageConfig(object):
-    """docstring for StageConfig"""
+    ENV = "stage"
+    DEBUG = False
+    API_URL = None
 
-    def __init__(self, arg):
-        super(StageConfig, self).__init__()
-        self.arg = arg
 
 
 class DevConfig(Config):
@@ -39,6 +38,8 @@ class DevConfig(Config):
 
     ENV = "dev"
     DEBUG = True
+    API_URL = 'http://localhost:5000/api'
+    API_URL = 'http://0.0.0.0:80/api'
 
 
 class TestConfig(Config):

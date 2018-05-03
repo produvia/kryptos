@@ -2,9 +2,9 @@
 """The flask app module, containing the app factory function."""
 from flask import Flask
 
-from kryptos.server import web, rpc
-from kryptos.server.extensions import jsonrpc
-from kryptos.server.settings import ProdConfig
+from kryptos.app import web, rpc
+from kryptos.app.extensions import jsonrpc
+from kryptos.app.settings import ProdConfig
 
 
 def create_app(config_object=ProdConfig):
