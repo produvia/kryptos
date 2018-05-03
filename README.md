@@ -259,7 +259,12 @@ To call the server, use the `strat` command in a seperate terminal
 $ strat -ta macdfix --rpc
 ```
 
-Note that vizualization will not be shown, and the response make take some time depending on the length of the trading period.
+To run the strategy on the hosted EC2 instance, used the --hosted/-h flag
+```bash
+$ strat -ta macdfix --rpc -h
+```
+
+Note that vizualization will not be shown.
 
 ## Deployment with Docker
 
