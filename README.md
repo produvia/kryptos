@@ -1,4 +1,4 @@
-# Cryptocurrency Trading Platform
+# Kryptos
 
 ## Installation
 
@@ -13,18 +13,12 @@ $ cd cryptocurrency-trading-platform
 $ pipenv install
 ```
 
-#### Optionally install with pip:
+or
 
-Create virtualenv
+#### Install with Docker
+For a containerized installation: 
 ```bash
-$ pip install virtualenv
-$ virtualenv venv
-$ source ./venv/bin/activate
-```
-
-Install package as editable
-```bash
-$ pip install -e .
+$ bash ./install_docker
 ```
 
 
@@ -41,9 +35,9 @@ If installed via pipenv:
 $ pipenv shell
 ```
 
-If installed via virtualenv/pip:
+If installed via docker:
 ```bash
-$ source ./venv/bin/activate
+$ docker exec -i -t kryptos_web_1 /bin/bash
 ```
 
 ### Configuration
@@ -245,6 +239,53 @@ def signal_buy(context, data):
 """Defines condition to signal buy"""
     return utils.cross_above(sma_fast.outputs.SMA_FAST, sma_slow.outputs.SMA_SLOW)
   ```
+
+## JSONRPC Server
+A simple JSONRPC server is accessible to enable running strategies remotely.
+
+First set up the flask app environment
+```bash
+$ export FLASK_APP=server/autoapp.py
+$ export FLASK_DEVUG=1
+```
+
+Start the Server
+```bash
+$ flask run
+```
+
+To call the server, use the `strat` command in a seperate terminal
+```bash
+$ strat -ta macdfix --rpc
+```
+
+Note that vizualization will not be shown, and the response make take some time depending on the length of the trading period.
+
+## Deployment with Docker
+
+Install [Docker](https://docs.docker.com/compose/install/#prerequisites)(and Docker Compose)
+
+For Linux:
+```bash
+$ sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+$ sudo chmod +x /usr/local/bin/docker-compose
+```
+
+Start docker and Build the images
+```bash
+# this will take a while
+$ bash ./init_docker.sh
+```
+
+Run `docker-compose up` to start start kryptos
+
+To enter into the container's shell: 
+`$ sudo docker exec -i -t kryptos_web_1 /bin/bash`
+
+
+To stop everything:
+`$ docker-compose stop`
+
 
 ## Running example (pre-built) strategies
 This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
