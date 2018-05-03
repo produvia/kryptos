@@ -68,6 +68,9 @@ Options:
   -c, --columns TEXT             Target columns for specified dataset
   -i, --data-indicators TEXT     Dataset indicators
   -f, --json-file TEXT
+  --paper                        Run the strategy in Paper trading mode
+  --rpc                          Run the strategy via JSONRPC
+  -h, --hosted                   Run via rpc using remote server
   --help                         Show this message and exit.
 ```
 
