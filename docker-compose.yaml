@@ -10,20 +10,25 @@ services:
       - FLASK_APP=app/main.py
       - FLASK_DEBUG=1
       - 'RUN=flask run --host=0.0.0.0 --port=80'
+      # - REDIS_HOST=redis
+
+    depends_on:
+      - redis
     # command: flask run --host=0.0.0.0 --port=80
     # Infinite loop, to keep it alive, for debugging
-# command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"
-  redis:
-    image: redis:alpine
-    # command: ["redis-server", "--appendonly", "yes"]
-    # hostname: localhost
-    # networks:
-    #   - redis-net
-    # volumes:
-    #   - redis-data:/data
+    # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"
+  
+  worker:
+    build: .
+    # container
+    environment:
 
-  # rq:
-  #   build: .
-  #   command: ["python", "/app/kryptos/app/utils/worker.py"]
-  #   volumes:
-  #    - .:/app
+      LOCAL_SETTINGS: /app/settings.cfg
+    command: ['python', '/app/kryptos/app/utils/worker.py']
+    volumes:
+    - .:/app
+    depends_on:
+    - redis
+
+  redis:
+    image: redis:4.0.5-alpine
