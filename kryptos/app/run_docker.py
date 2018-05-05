@@ -1,3 +1,4 @@
+from flask.helpers import get_debug_flag
 from kryptos.app.app import create_app
 from kryptos.app.settings import DevConfig, ProdConfig
 
@@ -25,9 +26,7 @@ class ReverseProxied(object):
             environ["HTTP_HOST"] = server
         return self.app(environ, start_response)
 
-
-app = create_app(ProdConfig)
+config = DevConfig if get_debug_flag() else ProdConfig
+app = create_app(config)
 app.wsgi_app = ReverseProxied(app.wsgi_app, script_name="/flask")
 
-if __name__ == "__main__":
-    app.run(port=80)
