@@ -16,6 +16,7 @@ colorama = "*"
 flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
+rq-dashboard = "*"
 
 [dev-packages]
 black = "==18.4a4"
