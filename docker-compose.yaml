@@ -2,44 +2,46 @@ version: '3'
 services:
   web:
     container_name: web
-    build: .
+    image: gcr.io/kryptos-204204/krpytos-main:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
      - "80:80"
     volumes:
      - .:/app
-     - ~/.catalyst:/root/catalyst #to store exhange data and auth
+     # - ~/.catalyst:/root/catalyst #to store exhange data and auth
     environment:
       - FLASK_DEBUG=${DEBUG:-0}
       - REDIS_HOST=redis
+
+    networks:
+      - kryptos-net
     depends_on:
       - redis
-    # command: flask run --host=0.0.0.0 --port=80
     # Infinite loop, to keep it alive, for debugging
-    # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"
-  
-  worker:
-    container_name: worker
-    build: .
-    environment:
-      - REDIS_HOST=redis
+    # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
+    # command: ['flask', 'run']
 
-    command: ['python', '/app/kryptos/app/utils/worker.py']
-    volumes:
-    - .:/app
+  worker:
+    image: gcr.io/kryptos-204204/krpytos-main:latest
+    container_name: worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    entrypoint: ["rqworker", "-u", "redis://redis:6379"]
+    networks:
+      - kryptos-net
+
     depends_on:
     - redis
 
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
+    networks:
+      - kryptos-net
 
-
-  # rq-dash:
-  #   container_name: rq-dash
-  #   image: kryptos-rq-dash:latest
-  #   build: .
-  #   # command: ['rq-dashboard']
-  #   ports:
-  #     - "9181:9181"
-  #   volumes:
-  #     - .:/app
+networks:
+  kryptos-net:
