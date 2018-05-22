@@ -8,11 +8,11 @@ services:
       dockerfile: Dockerfile
     ports:
      - "80:80"
-    volumes:
-     - .:/app
+    # volumes:
+     # - .:/app
      # - ~/.catalyst:/root/catalyst #to store exhange data and auth
     environment:
-      - FLASK_DEBUG=${DEBUG:-0}
+      - FLASK_DEBUG=0
       - REDIS_HOST=redis
 
     networks:
@@ -26,6 +26,8 @@ services:
   worker:
     image: gcr.io/kryptos-204204/krpytos-main:latest
     container_name: worker
+    # volumes:
+    #   - ~/.catalyst:/root/catalyst #to store exhange data and auth
     build:
       context: .
       dockerfile: Dockerfile
