@@ -15,7 +15,8 @@ RUN apt-get -y update \
     && rm -rf ta-lib*
 
 
-COPY . /app
+# copy only the requirements to prevent rebuild for any changes
+COPY requirements.txt /app/requirements.txt
 
 # ensure numpy installed before ta-lib, matplotlib, etc
 RUN pip install 'numpy==1.14.3'
