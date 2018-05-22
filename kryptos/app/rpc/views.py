@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
 from flask import Blueprint
-from rq import Queue
+import redis
+from rq import Queue, Connection
 
 from kryptos.platform.strategy import Strategy
 from kryptos.app.extensions import jsonrpc
-from kryptos.app.utils.worker import conn
+
+conn = redis.Redis(host="redis", port=6379)
 
 # api blueprint currently not actually used
 # jsonrpc acts as its own blueprint, asigning all method to api/
