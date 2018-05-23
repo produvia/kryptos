@@ -30,7 +30,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-
+    volumes:
+      - .:/app
+      - ~/.catalyst:/root/.catalyst
     entrypoint: ["rqworker", "-u", "redis://redis:6379"]
     networks:
       - kryptos-net
