@@ -1,6 +1,15 @@
 #!/bin/bash
 
-docker-compose -f docker-compose.yaml up -d
+# uses docker-compose inmage within docker due to containerized os restrictions
+
+docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$PWD:/rootfs/$PWD" \
+    -w="/rootfs/$PWD" \
+    docker/compose:1.13.0 \
+    docker-compose -f docker-compose.yaml up -d
+
+
 docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$PWD:/rootfs/$PWD" \
