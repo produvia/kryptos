@@ -16,9 +16,14 @@ $ pipenv install
 or
 
 #### Install with Docker
-For a containerized installation: 
+For a containerized installation:
 ```bash
-$ bash ./install_docker
+$ bash docker_scripts/dev-build.sh
+```
+
+Then finish setting up the environment by downloading exchange dataset before running strategies
+```bash
+$ bash docker_scripts/ingest.sh
 ```
 
 
@@ -37,7 +42,7 @@ $ pipenv shell
 
 If installed via docker:
 ```bash
-$ docker exec -i -t kryptos_web_1 /bin/bash
+$ bash docker_scripts/dev-start.sh
 ```
 
 ### Configuration
@@ -185,7 +190,7 @@ bbands = technical.get_indicator('BBANDS')
 stoch = technical.get_indicator('STOCH')
 
 # override default params
-bbands.update_param('matype', 'EMA') 
+bbands.update_param('matype', 'EMA')
 
 # attach indicators to strategy
 strat.add_market_indicator(bbands)
@@ -261,87 +266,72 @@ $ strat -ta macdfix --rpc
 
 Note that vizualization will not be shown, and the response make take some time depending on the length of the trading period.
 
-## Deployment with Docker
+
+## Using Docker
+
+### Local development
 
 Install [Docker](https://docs.docker.com/compose/install/#prerequisites)(and Docker Compose)
 
-For Linux:
+Build the containers
+
+`$ bash docker_scripts/dev-build.sh`
+
+Run and connect to the containers
+
+`$ bash docker_scripts/dev-start.sh`
+
+To stop everything
 ```bash
-$ sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-$ sudo chmod +x /usr/local/bin/docker-compose
+$ docker-compose stop
 ```
 
-Start docker and Build the images
-```bash
-# this will take a while
-$ bash ./init_docker.sh
+### Deploy to Google Cloud Platform
+
+#### Initial instance setup
+Ensure firewall allows http on port 80
+
+Because the app runs on a containerized OS, we need to use the docker-compose *image* inside docker instead of installing
+
+`docker run docker/compose:1.13.0 version`
+
+then make an alias
+
+```
+echo alias docker-compose="'"'docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$PWD:/rootfs/$PWD" \
+    -w="/rootfs/$PWD" \
+    docker/compose:1.13.0'"'" >> ~/.bashrc
 ```
 
-Run `docker-compose up` to start start kryptos
+docker-compose should now be accessible
 
-To enter into the container's shell: 
-`$ sudo docker exec -i -t kryptos_web_1 /bin/bash`
+Next, configure docker to pull from GCR
 
+`docker-credential-gcr configure-docker`
 
-To stop everything:
-`$ docker-compose stop`
+#### Run for production
 
+Push the images from your local machine
 
-## Running example (pre-built) strategies
-This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
+`$ bash docker_scripts/push-images`
 
-#### compare
+Connect to the Google Cloud Compute instance
 
-Use the `compare` command to compare a select number of algos. 
-
-```bash
-$ compare [ALGOS]
+```
+gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compose"
 ```
 
-The resulting percent return of each strategy is plotted against the benchmark.
+Start the containers with docker-compose
 
-The command optionally accepts metrics to compare via the `-m` flag, similar to with the `metrics` command
+`$docker compose up -d`
 
-```bash
-$ compare macdfix sma_crossover -m sharpe -m pnl
-```
-
-If no metrics are given the command defaults to the metrics enabled in *config.py*
-
-#### compare_all_straegies
-Use the `compare_all_straegies` command to run all exmaple strategies.
-
-The portfolio of each strategy will be plotted against the benchmark.
-The results will be saved to a new  *performance_results/* directory and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
-
-This command does not accept any arguments.
-
-#### benchmark
-
-The `benchmark` command will plot the percent return of a single algorithim against the benchmark of bitcoin price (*btc_usdt*)
+Download exchange data
 
 ```bash
-$ benchmark ALGO_NAME
+docker-compose exec worker sh -c "catalyst ingest-exchange -x bitfinex &&
+    catalyst ingest-exchange -x bittrex poloniex &&
+    catalyst ingest-exchange -x bitfinex &&
+    /bin/bash"
 ```
-
-
-#### metrics
-
-The `metrics` command will plot performance metrics over the trading period for a given algo.
-
-If no metrics are specified, the metrics defined in _config.py_ will be used.
-
-```bash
-$ metrics ALGO_NAME
-```
-
-Optionally specify performance metrics via the `-m` flag
-```bash
-$ metrics buy_and_hodl -m sharpe -m sortino -m max_drawdown
-```
-
-
-
-
-
-
