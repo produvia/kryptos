@@ -325,13 +325,16 @@ gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compo
 
 Start the containers with docker-compose
 
-`$docker compose up -d`
+`$ docker compose up -d`
 
 Download exchange data
 
 ```bash
-docker-compose exec worker sh -c "catalyst ingest-exchange -x bitfinex &&
-    catalyst ingest-exchange -x bittrex poloniex &&
-    catalyst ingest-exchange -x bitfinex &&
-    /bin/bash"
+$ bash docker_scripts/ingest.sh
+```
+
+Test deployment using rpc from local machine
+
+```
+$ strat -ta macd --rpc -h
 ```
