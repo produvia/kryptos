@@ -6,7 +6,7 @@ in scripts/performance_results
 from logbook import Logger
 from kryptos.platform.utils import load, outputs, viz, algo
 from kryptos.platform.settings import DEFAULT_CONFIG as CONFIG
-
+from kryptos.platform.analysis import quant
 
 import click
 
@@ -19,6 +19,7 @@ def run():
 
     Plots the portfolio value over time for each strategy
     """
+    all_results = []
     for strategy in load.load_algos():
         if strategy is None:
             continue
@@ -39,12 +40,17 @@ def run():
             output_file = outputs.get_output_file(strategy, CONFIG) + ".csv"
             log.info("Dumping result csv to {}".format(output_file))
             outputs.dump_to_csv(output_file, results)
+            all_results.append(results)
 
         algo.run_algo(initialize, handle_data, analyze)
 
     viz.add_legend()
     viz.show_plot()
 
+    output_dir = 'all_strategies'
+    output_file = outputs.get_output_file_str(output_dir, CONFIG) + ".csv"
+    log.info("Dumping all results csv to {}".format(output_file))
+    quant.dump_summary_table_all_strategies(CONFIG, all_results, output_dir)
 
 if __name__ == "__main__":
     run()
