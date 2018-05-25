@@ -16,7 +16,7 @@ $ pipenv install
 or
 
 #### Install with Docker
-For a containerized installation: 
+For a containerized installation:
 ```bash
 $ bash ./install_docker
 ```
@@ -58,7 +58,7 @@ Strategies are composed of a number of different inputs:
 
 These options can be defined via the CLI, JSON objects, the python API or a combination of the three interfaces.
 
-### Running Stratgies from the CLI
+### Running Strategies from the CLI
 ```bash
 Usage: strat [OPTIONS]
 
@@ -188,7 +188,7 @@ bbands = technical.get_indicator('BBANDS')
 stoch = technical.get_indicator('STOCH')
 
 # override default params
-bbands.update_param('matype', 'EMA') 
+bbands.update_param('matype', 'EMA')
 
 # attach indicators to strategy
 strat.add_market_indicator(bbands)
@@ -223,7 +223,7 @@ def handle_data(context, data):
 
 @strat.analyze()
 def analyze(context, results, pos):
-"""Executed once after algorthim ends"""
+"""Executed once after algorithm ends"""
     print('Completed for {} trading periods'.format(context.i))
 
 ```
@@ -257,7 +257,7 @@ Start the Server
 $ flask run
 ```
 
-To call the server, use the `strat` command in a seperate terminal
+To call the server, use the `strat` command in a separate terminal
 ```bash
 $ strat -ta macdfix --rpc
 ```
@@ -267,7 +267,7 @@ To run the strategy on the hosted EC2 instance, used the --hosted/-h flag
 $ strat -ta macdfix --rpc -h
 ```
 
-Note that vizualization will not be shown.
+Note that visualization will not be shown.
 
 ## Deployment with Docker
 
@@ -287,7 +287,7 @@ $ bash ./init_docker.sh
 
 Run `docker-compose up` to start start kryptos
 
-To enter into the container's shell: 
+To enter into the container's shell:
 `$ sudo docker exec -i -t kryptos_web_1 /bin/bash`
 
 
@@ -296,11 +296,11 @@ To stop everything:
 
 
 ## Running example (pre-built) strategies
-This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
+This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/).
 
 #### compare
 
-Use the `compare` command to compare a select number of algos. 
+Use the `compare` command to compare a select number of algos.
 
 ```bash
 $ compare [ALGOS]
@@ -316,8 +316,8 @@ $ compare macdfix sma_crossover -m sharpe -m pnl
 
 If no metrics are given the command defaults to the metrics enabled in *config.py*
 
-#### compare_all_straegies
-Use the `compare_all_straegies` command to run all exmaple strategies.
+#### compare_all_strategies
+Use the `compare_all_strategies` command to run all example strategies.
 
 The portfolio of each strategy will be plotted against the benchmark.
 The results will be saved to a new  *performance_results/* directory and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
@@ -326,7 +326,7 @@ This command does not accept any arguments.
 
 #### benchmark
 
-The `benchmark` command will plot the percent return of a single algorithim against the benchmark of bitcoin price (*btc_usdt*)
+The `benchmark` command will plot the percent return of a single algorithm against the benchmark of bitcoin price (*btc_usdt*)
 
 ```bash
 $ benchmark ALGO_NAME
@@ -347,9 +347,3 @@ Optionally specify performance metrics via the `-m` flag
 ```bash
 $ metrics buy_and_hodl -m sharpe -m sortino -m max_drawdown
 ```
-
-
-
-
-
-
