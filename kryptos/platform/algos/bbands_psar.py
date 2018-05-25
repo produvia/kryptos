@@ -23,8 +23,8 @@ def initialize(context):
     # context.BARS = 365
 
     context.MATYPE = ta.MA_Type.T3
-    # context.SAR_ACCEL = 0.02
-    # context.SAR_MAX = 0.2
+    context.SAR_ACCEL = 0.02
+    context.SAR_MAX = 0.2
 
 
 def close_open_orders(context, asset):
