@@ -16,6 +16,7 @@ colorama = "*"
 flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
+jupyterlab = "*"
 
 [dev-packages]
 black = "==18.4a4"
