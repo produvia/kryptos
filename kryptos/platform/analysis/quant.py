@@ -64,7 +64,7 @@ def dump_summary_table_all_strategies(config, list_dfs, output_dir):
     # Build the table
     df_quant = pd.DataFrame()
     for df in list_dfs:
-        df = quant_utils.build_row_table(df, config)
+        df = quant_utils.build_row_table(df['results'], config, df['namespace'])
         df_quant = df_quant.append(df, ignore_index=True)
 
     # Write to file

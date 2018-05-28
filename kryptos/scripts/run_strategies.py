@@ -40,7 +40,7 @@ def run():
             output_file = outputs.get_output_file(strategy, CONFIG) + ".csv"
             log.info("Dumping result csv to {}".format(output_file))
             outputs.dump_to_csv(output_file, results)
-            all_results.append(results)
+            all_results.append({'namespace': strategy.NAMESPACE, 'results': results})
 
         algo.run_algo(initialize, handle_data, analyze)
 

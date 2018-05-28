@@ -8,7 +8,7 @@ def log_error(err_file, err_msg):
         f.write(str(err_msg) + "\n")
 
 
-def build_row_table(df, config=None):
+def build_row_table(df, config=None, namespace=None):
     df_quant = pd.DataFrame(index=["Backtest"])
 
     df_quant["start_date"] = df.period_open.min().strftime("%Y-%m-%d")
@@ -78,7 +78,9 @@ def build_row_table(df, config=None):
         df_quant["asset"] = config['ASSET'] # btc_usd
         df_quant["exchange"] = config['EXCHANGE'] # poloniex
         df_quant["history_freq"] = config['HISTORY_FREQ'] # 1d
-        # df_quant['indicator_ta'] = ''
-        # df_quant['params'] = ''
+        # df_quant['input_params'] =
+
+    if namespace:
+        df_quant["namespace"] = namespace
 
     return df_quant
