@@ -6,8 +6,10 @@ from rq import Queue, Connection
 
 from kryptos.platform.strategy import Strategy
 from kryptos.app.extensions import jsonrpc
+from kryptos.platform.utils.outputs import in_docker
 
-conn = redis.Redis(host="redis", port=6379)
+host = 'redis' if in_docker() else 'localhost'
+conn = redis.Redis(host=host, port=6379)
 
 # api blueprint currently not actually used
 # jsonrpc acts as its own blueprint, asigning all method to api/

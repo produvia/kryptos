@@ -7,13 +7,14 @@ from flask.helpers import get_debug_flag
 import click
 import logbook
 from flask_jsonrpc.proxy import ServiceProxy
+import pandas as pd
 
 from kryptos.platform.strategy import Strategy
 from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
 from kryptos.platform.utils.outputs import in_docker
 
-from kryptos.app.settings import DevConfig, ProdConfig
+from kryptos.app.settings import DevConfig, ProdConfig, DockerDevConfig
 
 log = logbook.Logger("Platform")
 setup_logging()
@@ -70,11 +71,13 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
 
     click.secho(strat.serialize(), fg="white")
 
-    if rpc:
-        CONFIG = DevConfig if get_debug_flag() else ProdConfig
-        if hosted:
-            CONFIG = ProdConfig  # to run on remote during dev
+    if hosted:
+        CONFIG = ProdConfig
 
+    else:
+        CONFIG = DockerDevConfig if in_docker() else DevConfig
+
+    if rpc:
         strat_id = run_rpc(strat, CONFIG.API_URL)
         poll_status(strat_id, CONFIG.API_URL)
 
