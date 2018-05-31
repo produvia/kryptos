@@ -277,8 +277,10 @@ class Strategy(object):
         """Plots results of algo performance, external data, and indicators"""
         if self.viz:
             self._make_plots(context, results)
+            quant.dump_plots_to_file(self.name, results)
+
         quant.dump_summary_table(self.name, self.trading_info, results)
-        quant.dump_plots_to_file(self.name, results)
+
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""

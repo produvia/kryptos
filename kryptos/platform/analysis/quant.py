@@ -107,6 +107,7 @@ def dump_summary_table(namespace, config, df):
 
 
 def dump_plots_to_file(namespace, df):
+    log.info('Creating and dumping quant plots')
     algo_dir = get_algo_dir(namespace)
     SAVE_FOLDER = os.path.join(algo_dir, "figures")
     if not os.path.exists(SAVE_FOLDER):
@@ -163,8 +164,8 @@ def dump_plots_to_file(namespace, df):
 
 
 def dump_metric_plot(metric, metric_name, save_folder):
-    plt.close()
     ax = metric.plot(legend=metric_name)
     f_name = metric_name.replace(" ", "_") + ".png"
     f_path = os.path.join(save_folder, f_name)
     plt.savefig(f_path, bbox_inches="tight", dpi=300)
+    plt.close()
