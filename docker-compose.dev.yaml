@@ -13,8 +13,10 @@ services:
      - .:/app
      - ~/.catalyst:/root/catalyst #to store exhange data and auth
     environment:
-      - FLASK_DEBUG=${DEBUG:-True}
+      - FLASK_DEBUG=1
+      - FLASK_ENV=development
       - REDIS_HOST=redis
+      - FLASK_APP=autoapp.py
       # - LISTEN_PORT=80
     networks:
       - kryptos-net
@@ -22,7 +24,7 @@ services:
       - redis
     # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
-    command: ['flask', 'run']
+    command: ['flask', 'run', '--host=0.0.0.0']
 
   worker:
     image: kryptos-main
@@ -33,12 +35,15 @@ services:
     volumes:
       - .:/app
       - ~/.catalyst:/root/.catalyst
+    environment:
+      - FLASK_DEBUG=1
     entrypoint: ["rqworker", "-u", "redis://redis:6379"]
     networks:
       - kryptos-net
 
     depends_on:
     - redis
+    - web
 
   redis:
     container_name: redis
@@ -48,3 +53,4 @@ services:
 
 networks:
   kryptos-net:
+      driver: bridge
