@@ -11,6 +11,7 @@ from flask_jsonrpc.proxy import ServiceProxy
 from kryptos.platform.strategy import Strategy
 from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
+from kryptos.platform.utils.outputs import in_docker
 
 from kryptos.app.settings import DevConfig, ProdConfig
 
@@ -78,7 +79,8 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
         poll_status(strat_id, CONFIG.API_URL)
 
     else:
-        strat.run(live=paper)
+        viz = not in_docker()
+        strat.run(live=paper, viz=viz)
 
 
 def run_rpc(strat, api_url):
