@@ -27,11 +27,10 @@ class ProdConfig(Config):
     API_URL = "http://35.233.156.192/api"
 
 
-class StageConfig(object):
-    ENV = "stage"
-    DEBUG = False
-    API_URL = None
-    API_URL = "http://0.0.0.0:80/api"
+class DockerDevConfig(object):
+    ENV = "docker-dev"
+    DEBUG = True
+    API_URL = "http://web:5000/api"
 
 
 class DevConfig(Config):
