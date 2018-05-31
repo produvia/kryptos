@@ -307,6 +307,8 @@ class Strategy(object):
         """Processes indicator to determine buy/sell opportunities"""
         sells, buys, neutrals = 0, 0, 0
         for i in self._market_indicators:
+            if i.outputs is None:
+                continue
             if i.signals_buy:
                 self.log.debug("{}: BUY".format(i.name))
                 buys += 1
