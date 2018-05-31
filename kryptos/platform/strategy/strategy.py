@@ -67,6 +67,7 @@ class Strategy(object):
         self._extra_analyze = lambda context, results, pos: None
         self._extra_plots = 0
         self.viz = True
+        self.quant_results = None
 
         self._signal_buy_func = lambda context, data: None
         self._signal_sell_func = lambda context, data: None
@@ -279,7 +280,7 @@ class Strategy(object):
             self._make_plots(context, results)
             quant.dump_plots_to_file(self.name, results)
 
-        quant.dump_summary_table(self.name, self.trading_info, results)
+        self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
 
     def add_market_indicator(self, indicator, priority=0, **params):
