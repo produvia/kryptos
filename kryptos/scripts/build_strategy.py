@@ -123,3 +123,12 @@ def poll_status(strat_id, api_url):
         status = res["result"]["status"]
         click.secho("status: {}".format(status), fg=colors.get(status))
         time.sleep(2)
+
+    print('\n\n')
+    click.secho('Results:\n', fg='magenta')
+    result_json = res['result'].get('strat_results')
+    result_dict = json.loads(result_json)
+    for k, v in json.loads(result_json).items():
+        # nested dict with trading type as key
+        metric, val = k, v['Backtest']
+        click.secho('{}: {}'.format(metric, val), fg='blue')

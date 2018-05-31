@@ -22,6 +22,10 @@ def queue_strat(strat_json):
     strat.load_from_dict(strat_dict)
     strat.run(viz=False)
 
+    # serialize results for job result
+    result_df = strat.quant_results
+    return result_df.to_json()
+
 
 @jsonrpc.method("Strat.run")
 def run(strat_json):
@@ -36,4 +40,6 @@ def get_status(strat_id):
     q = Queue(connection=conn)
     job = q.fetch_job(strat_id)
     resp = {"status": job.status, "data": {"strat_id": job.get_id()}}
+    if job.is_finished:
+        resp['strat_results'] = job.result
     return resp
