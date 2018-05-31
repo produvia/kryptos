@@ -11,7 +11,7 @@ services:
      - "5000:5000"
     volumes:
      - .:/app
-     # - ~/.catalyst:/root/catalyst #to store exhange data and auth
+     - ~/.catalyst:/root/catalyst #to store exhange data and auth
     environment:
       - FLASK_DEBUG=${DEBUG:-True}
       - REDIS_HOST=redis
