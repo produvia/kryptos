@@ -8,7 +8,7 @@ $ git clone https://github.com/produvia/cryptocurrency-trading-platform.git
 $ cd cryptocurrency-trading-platform
 ```
 
-#### Install with [pipenv](https://github.com/pypa/pipenv#installation) (recommended):
+#### Install with [pipenv](https://github.com/pypa/pipenv#installation)
 ```bash
 $ pipenv install
 ```
@@ -16,7 +16,7 @@ $ pipenv install
 or
 
 #### Install with Docker
-For a containerized installation:
+For a hassle-free containerized installation:
 ```bash
 $ bash docker_scripts/dev-build.sh
 ```
@@ -73,6 +73,9 @@ Options:
   -c, --columns TEXT             Target columns for specified dataset
   -i, --data-indicators TEXT     Dataset indicators
   -f, --json-file TEXT
+  --paper                        Run the strategy in Paper trading mode
+  --rpc                          Run the strategy via JSONRPC
+  -h, --hosted                   Run via rpc using remote server
   --help                         Show this message and exit.
 ```
 
@@ -246,25 +249,46 @@ def signal_buy(context, data):
   ```
 
 ## JSONRPC Server
-A simple JSONRPC server is accessible to enable running strategies remotely.
 
-First set up the flask app environment
+A simple JSONRPC server is accessible to enable running strategies remotely. Simply add the `--rpc` flag to the `strat` command
+
+### Remote Server
+To use the hosted server on Google Cloud Platform, add the `-h` (hosted) flag
+
 ```bash
-$ export FLASK_APP=server/autoapp.py
-$ export FLASK_DEVUG=1
+$ strat -ta macdfix --rpc -h
 ```
 
-Start the Server
-```bash
-$ flask run
-```
 
-To call the server, use the `strat` command in a seperate terminal
+### Using the local server
+
+#### Inside Docker
+If you are using docker, there is no setup needed. Simply add the `--rpc` flag.
+
 ```bash
 $ strat -ta macdfix --rpc
 ```
 
-Note that vizualization will not be shown, and the response make take some time depending on the length of the trading period.
+#### Outside Docker
+
+If running outside of Docker, first set up the flask app environment
+```bash
+$ export FLASK_APP=autoapp.py
+$ export FLASK_DEBUG=1
+$ export FLASK_ENV=development
+```
+
+Then start the server
+```bash
+$ flask run
+```
+
+Then use the `strat` command in a seperate terminal
+```bash
+$ strat -ta macdfix --rpc
+```
+
+Note that vizualization will not be shown when using `--rpc`
 
 
 ## Using Docker
@@ -288,17 +312,25 @@ $ docker-compose stop
 
 ### Deploy to Google Cloud Platform
 
+Connect to the Google Cloud Compute instance
+
+```
+gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compose"
+```
+
 #### Initial instance setup
 Ensure firewall allows http on port 80
 
 Because the app runs on a containerized OS, we need to use the docker-compose *image* inside docker instead of installing
 
-`docker run docker/compose:1.13.0 version`
+```bash
+$ docker run docker/compose:1.13.0 version
+```
 
 then make an alias
 
-```
-echo alias docker-compose="'"'docker run \
+```bash
+$ echo alias docker-compose="'"'docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$PWD:/rootfs/$PWD" \
     -w="/rootfs/$PWD" \
@@ -309,23 +341,23 @@ docker-compose should now be accessible
 
 Next, configure docker to pull from GCR
 
-`docker-credential-gcr configure-docker`
+```bash
+docker-credential-gcr configure-docker
+```
 
 #### Run for production
 
-Push the images from your local machine
+Pull the latest changes from github, and build the images
 
-`$ bash docker_scripts/push-images`
-
-Connect to the Google Cloud Compute instance
-
-```
-gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compose"
+```bash
+$ bash docker_scripts/prod-build.#!/bin/sh
 ```
 
 Start the containers with docker-compose
 
-`$ docker compose up -d`
+```bash
+$ docker-compose up -d
+```
 
 Download exchange data
 
