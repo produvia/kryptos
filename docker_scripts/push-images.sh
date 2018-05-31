@@ -1,7 +1,7 @@
 #!/bin/bash
 
-docker build -t gcr.io/kryptos-204204/krpytos-deps:latest -f Dockerfile-deps .
-docker build -t gcr.io/kryptos-204204/krpytos-main:latest -f Dockerfile .
+chmod a+x docker_scripts/prod-build.sh
+/bin/bash docker_scripts/prod-build.sh
 
 docker push gcr.io/kryptos-204204/krpytos-deps:latest
 docker push gcr.io/kryptos-204204/krpytos-main:latest
