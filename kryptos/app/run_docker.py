@@ -1,6 +1,7 @@
 from flask.helpers import get_debug_flag
 from kryptos.app.app import create_app
-from kryptos.app.settings import DevConfig, ProdConfig
+from kryptos.app.settings import DevConfig, DockerDevConfig, ProdConfig
+from kryptos.platform.utils.outputs import in_docker
 
 
 class ReverseProxied(object):
@@ -26,7 +27,15 @@ class ReverseProxied(object):
             environ["HTTP_HOST"] = server
         return self.app(environ, start_response)
 
-config = DevConfig if get_debug_flag() else ProdConfig
+
+if not in_docker():
+    config = DevConfig
+
+elif get_debug_flag():
+    config = DockerDevConfig
+
+else:
+    config = ProdConfig
+
 app = create_app(config)
 app.wsgi_app = ReverseProxied(app.wsgi_app, script_name="/flask")
-
