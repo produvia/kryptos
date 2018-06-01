@@ -73,6 +73,7 @@ class Strategy(object):
 
         self._signal_buy_func = lambda context, data: None
         self._signal_sell_func = lambda context, data: None
+        self._override_indicator_signals = False
 
         self._buy_func = None
         self._sell_func = None
@@ -138,13 +139,35 @@ class Strategy(object):
         """Calls the wrapped function if indicators signal to sell"""
         self._sell_func = f
 
-    def signal_sell(self, f):
-        """Calls the wrapped function when weighing signals to define extra signal logic"""
-        self._signal_sell_func = f
+    def signal_sell(self, override=False):
+        """
+        Calls the wrapped function when weighing signals to define extra signal logic
 
-    def signal_buy(self, f):
-        """Calls the wrapped function when weighing signals to define extra signal logic"""
-        self._signal_buy_func = f
+        Args:
+            override: don't weigh any indicator default signals
+        """
+        self._override_indicator_signals = override
+
+        def decorator(f):
+            self._signal_sell_func = f
+            return f
+
+        return decorator
+
+    def signal_buy(self, override=False):
+        """
+        Calls the wrapped function when weighing signals to define extra signal logic
+
+        Args:
+            override: don't weigh any indicator default signals
+        """
+        self._override_indicator_signals = override
+
+        def decorator(f):
+            self._signal_buy_func = f
+            return f
+
+        return decorator
 
     def load_from_dict(self, strat_dict):
         trade_config = strat_dict.get("trading", {})
@@ -237,7 +260,7 @@ class Strategy(object):
             i.record()
 
         self._extra_handle(context, data)
-        self.weigh_signals(context, data)
+        self._count_signals(context, data)
 
     @property
     def total_plots(self):
@@ -284,7 +307,6 @@ class Strategy(object):
 
         self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
-
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
         if isinstance(indicator, str):
@@ -308,9 +330,21 @@ class Strategy(object):
         data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
         self._datasets[dataset_name] = data_manager
 
-    def weigh_signals(self, context, data):
+    def _count_signals(self, context, data):
         """Processes indicator to determine buy/sell opportunities"""
         sells, buys, neutrals = 0, 0, 0
+        if self._signal_buy_func(context, data):
+            self.log.debug("Custom: BUY")
+            buys += 1
+        elif self._signal_sell_func(context, data):
+            self.log.debug("Custom: SELL")
+            sells += 1
+        else:
+            neutrals += 1
+
+        if self._override_indicator_signals:
+            return self._weigh_signals(context, buys, sells, neutrals)
+
         for i in self._market_indicators:
             if i.outputs is None:
                 continue
@@ -334,15 +368,9 @@ class Strategy(object):
                 else:
                     neutrals += 1
 
-        if self._signal_buy_func(context, data):
-            self.log.debug("Custom: BUY")
-            buys += 1
-        elif self._signal_sell_func(context, data):
-            self.log.debug("Custom: SELL")
-            sells += 1
-        else:
-            neutrals += 1
+        self._weigh_signals(context, buys, sells, neutrals)
 
+    def _weigh_signals(self, context, buys, sells, neutrals):
         self.log.debug(
             "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
         )
