@@ -1,6 +1,18 @@
 import os
 from kryptos.platform.settings import PERF_DIR, DEFAULT_CONFIG as CONFIG
 
+def in_docker():
+    if not os.path.exists('/proc/self/cgroup'):
+        return False
+    with open('/proc/self/cgroup', 'r') as procfile:
+        for line in procfile:
+            fields = line.strip().split('/')
+            if 'docker' in fields:
+                print('**Inside Docker container, will disable visualization**')
+                return True
+
+    return False
+
 
 def dump_to_csv(filename, results, context=None):
     results.rename_axis("date").to_csv(filename + ".csv")

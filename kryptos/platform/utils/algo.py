@@ -59,7 +59,7 @@ def run_algo(initialize, handle_data, analyze):
             handle_data=handle_data,
             analyze=analyze,
             exchange_name=CONFIG["EXCHANGE"],
-            base_currency=CONFIG["BASE_CURRENCY"],
+            quote_currency=CONFIG["BASE_CURRENCY"],
             start=pd.to_datetime(CONFIG["START"], utc=True),
             end=pd.to_datetime(CONFIG["END"], utc=True),
         )

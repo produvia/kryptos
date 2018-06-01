@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 numpy = "==1.14.3"
-enigma-catalyst = "==0.5.8"
 matplotlib = "*"
 ta-lib = "*"
 quandl = "*"
@@ -16,6 +15,8 @@ colorama = "*"
 flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
+rq-dashboard = "*"
+enigma-catalyst = "*"
 jupyterlab = "*"
 
 [dev-packages]

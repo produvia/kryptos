@@ -69,6 +69,7 @@ class Strategy(object):
         self._extra_analyze = lambda context, results, pos: None
         self._extra_plots = 0
         self.viz = True
+        self.quant_results = None
 
         self._signal_buy_func = lambda context, data: None
         self._signal_sell_func = lambda context, data: None
@@ -279,12 +280,10 @@ class Strategy(object):
         """Plots results of algo performance, external data, and indicators"""
         if self.viz:
             self._make_plots(context, results)
+            quant.dump_plots_to_file(self.name, results)
 
-        output_file = os.path.join(outputs.get_algo_dir(self.name), "backtest")
-        self.log.info("Dumping result to {}.csv".format(output_file))
-        outputs.dump_to_csv(output_file, results)
-        quant.dump_summary_table(self.name, self.trading_info, results)
-        quant.dump_plots_to_file(self.name, results)
+        self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
+
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
@@ -313,6 +312,8 @@ class Strategy(object):
         """Processes indicator to determine buy/sell opportunities"""
         sells, buys, neutrals = 0, 0, 0
         for i in self._market_indicators:
+            if i.outputs is None:
+                continue
             if i.signals_buy:
                 self.log.debug("{}: BUY".format(i.name))
                 buys += 1
@@ -446,7 +447,7 @@ class Strategy(object):
                 handle_data=self._process_data,
                 analyze=self._analyze,
                 exchange_name=self.trading_info["EXCHANGE"],
-                base_currency=self.trading_info["BASE_CURRENCY"],
+                quote_currency=self.trading_info["BASE_CURRENCY"],
                 start=pd.to_datetime(self.trading_info["START"], utc=True),
                 end=pd.to_datetime(self.trading_info["END"], utc=True),
             )
@@ -467,7 +468,7 @@ class Strategy(object):
             exchange_name=self.trading_info["EXCHANGE"],
             live=True,
             algo_namespace=self.name,
-            base_currency=self.trading_info["BASE_CURRENCY"],
+            quote_currency=self.trading_info["BASE_CURRENCY"],
             live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,

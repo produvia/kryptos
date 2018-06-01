@@ -171,7 +171,7 @@ if __name__ == "__main__":
         analyze=analyze,
         exchange_name="poloniex",
         algo_namespace=algo_namespace,
-        base_currency="btc",
+        quote_currency="btc",
         start=pd.to_datetime("2017-9-1", utc=True),
         end=pd.to_datetime("2017-10-1", utc=True),
     )
