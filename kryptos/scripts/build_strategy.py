@@ -13,6 +13,7 @@ from kryptos.platform.strategy import Strategy
 from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
 from kryptos.platform.utils.outputs import in_docker
+from kryptos.platform.utils.load import get_strat
 
 from kryptos.app.settings import DevConfig, ProdConfig, DockerDevConfig
 
@@ -33,12 +34,17 @@ setup_logging()
 @click.option("--columns", "-c", multiple=True, help="Target columns for specified dataset")
 @click.option("--data-indicators", "-i", multiple=True, help="Dataset indicators")
 @click.option("--json-file", "-f")
+@click.option('--python-script', '-p')
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
 @click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
-def run(market_indicators, dataset, columns, data_indicators, json_file, paper, rpc, hosted):
+def run(market_indicators, dataset, columns, data_indicators, json_file, python_script, paper, rpc, hosted):
 
     strat = Strategy()
+
+    if python_script is not None:
+        strat = get_strat(python_script)
+
 
     columns = list(columns)
 
@@ -53,21 +59,6 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
 
     if json_file is not None:
         strat.load_from_json(json_file)
-
-    @strat.init
-    def initialize(context):
-        log.info("Initializing strategy")
-        pass
-
-    @strat.handle_data
-    def handle_data(context, data):
-        # log.debug('Doing extra stuff for handling data')
-        pass
-
-    @strat.analyze()
-    def analyze(context, results, pos):
-        log.info("Analyzing strategy")
-        pass
 
     click.secho(strat.serialize(), fg="white")
 
