@@ -2,7 +2,7 @@ version: '3'
 services:
   web:
     container_name: web
-    image: kryptos-main
+    # image: kryptos-main
     build:
       context: .
       dockerfile: Dockerfile
@@ -27,7 +27,7 @@ services:
     command: ['flask', 'run', '--host=0.0.0.0']
 
   worker:
-    image: kryptos-main
+    # image: kryptos-main
     container_name: worker
     build:
       context: .
