@@ -17,6 +17,7 @@ flask-jsonrpc = "*"
 rq = "*"
 rq-dashboard = "*"
 enigma-catalyst = "*"
+jupyterlab = "*"
 
 [dev-packages]
 black = "==18.4a4"
