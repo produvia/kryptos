@@ -34,17 +34,26 @@ setup_logging()
 @click.option("--columns", "-c", multiple=True, help="Target columns for specified dataset")
 @click.option("--data-indicators", "-i", multiple=True, help="Dataset indicators")
 @click.option("--json-file", "-f")
-@click.option('--python-script', '-p')
+@click.option("--python-script", "-p")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
 @click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
-def run(market_indicators, dataset, columns, data_indicators, json_file, python_script, paper, rpc, hosted):
+def run(
+    market_indicators,
+    dataset,
+    columns,
+    data_indicators,
+    json_file,
+    python_script,
+    paper,
+    rpc,
+    hosted,
+):
 
     strat = Strategy()
 
     if python_script is not None:
         strat = get_strat(python_script)
-
 
     columns = list(columns)
 
@@ -75,6 +84,17 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, python_
     else:
         viz = not in_docker()
         strat.run(live=paper, viz=viz)
+        result_json = strat.quant_results.to_json()
+        display_summary(result_json)
+
+
+def display_summary(result_json):
+    click.secho("\n\nResults:\n", fg="magenta")
+    result_dict = json.loads(result_json)
+    for k, v in result_dict.items():
+        # nested dict with trading type as key
+        metric, val = k, v["Backtest"]
+        click.secho("{}: {}".format(metric, val), fg="green")
 
 
 def run_rpc(strat, api_url):
@@ -115,11 +135,5 @@ def poll_status(strat_id, api_url):
         click.secho("status: {}".format(status), fg=colors.get(status))
         time.sleep(2)
 
-    print('\n\n')
-    click.secho('Results:\n', fg='magenta')
-    result_json = res['result'].get('strat_results')
-    result_dict = json.loads(result_json)
-    for k, v in json.loads(result_json).items():
-        # nested dict with trading type as key
-        metric, val = k, v['Backtest']
-        click.secho('{}: {}'.format(metric, val), fg='blue')
+    result_json = res["result"].get("strat_results")
+    display_summary(result_json)
