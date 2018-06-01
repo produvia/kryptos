@@ -1,0 +1,49 @@
+version: '3'
+services:
+  web:
+    container_name: web
+    # image: gcr.io/kryptos-204204/krpytos-main:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+     - "80:80"
+    # volumes:
+     # - .:/app
+     # - ~/.catalyst:/root/catalyst #to store exhange data and auth
+    environment:
+      - FLASK_DEBUG=0
+      - REDIS_HOST=redis
+
+    networks:
+      - kryptos-net
+    depends_on:
+      - redis
+    # Infinite loop, to keep it alive, for debugging
+    # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
+    # command: ['flask', 'run']
+
+  worker:
+    # image: gcr.io/kryptos-204204/krpytos-main:latest
+    container_name: worker
+    # volumes:
+    #   - ~/.catalyst:/root/catalyst #to store exhange data and auth
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    entrypoint: ["rqworker", "-u", "redis://redis:6379"]
+    networks:
+      - kryptos-net
+
+    depends_on:
+    - redis
+
+  redis:
+    container_name: redis
+    image: redis:4.0.5-alpine
+    networks:
+      - kryptos-net
+
+networks:
+  kryptos-net:

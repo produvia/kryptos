@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from crypto_platform import __version__
+from kryptos import __version__
 from setuptools import setup, find_packages
 
 #
@@ -23,7 +23,7 @@ def package_files(directory):
             yield os.path.join('..', path, filename)
 
 
-package_name = "crypto-trading_platform"
+package_name = "kryptos"
 base_dir = os.path.abspath(os.path.dirname(__file__))
 # Get the long description from the README file
 with open(os.path.join(base_dir, 'README.md'), 'rb') as f:
@@ -43,14 +43,14 @@ setup(
     install_requires=requires,
     entry_points='''
         [console_scripts]
-        benchmark=crypto_platform.scripts.run_benchmark:benchmark
-        compare_all_strategies=crypto_platform.scripts.run_strategies:run
-        metrics=crypto_platform.scripts.run_metrics:run
-        compare=crypto_platform.scripts.compare:run
-        ta=crypto_platform.scripts.run_ta:run
-        bchain=crypto_platform.scripts.bchain_activity:run
-        trends=crypto_platform.scripts.trends:run
-        strat=crypto_platform.scripts.build_strategy:run
+        benchmark=kryptos.scripts.run_benchmark:benchmark
+        compare_all_strategies=kryptos.scripts.run_strategies:run
+        metrics=kryptos.scripts.run_metrics:run
+        compare=kryptos.scripts.compare:run
+        ta=kryptos.scripts.run_ta:run
+        bchain=kryptos.scripts.bchain_activity:run
+        trends=kryptos.scripts.trends:run
+        strat=kryptos.scripts.build_strategy:run
     ''',
     zip_safe=False,
 )

@@ -1,5 +1,5 @@
-from crypto_platform.strategy import Strategy
-from crypto_platform.strategy.indicators import technical
+from kryptos.platform.strategy import Strategy
+from kryptos.platform.strategy.indicators import technical
 
 import logbook
 

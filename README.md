@@ -1,4 +1,4 @@
-# Cryptocurrency Trading Platform
+# Kryptos
 
 ## Installation
 
@@ -8,10 +8,24 @@ $ git clone https://github.com/produvia/cryptocurrency-trading-platform.git
 $ cd cryptocurrency-trading-platform
 ```
 
-#### Install with [pipenv](https://github.com/pypa/pipenv#installation) (recommended):
+#### Install with [pipenv](https://github.com/pypa/pipenv#installation)
 ```bash
 $ pipenv install
 ```
+
+or
+
+#### Install with Docker
+For a hassle-free containerized installation:
+```bash
+$ bash docker_scripts/dev-build.sh
+```
+
+Then finish setting up the environment by downloading exchange dataset before running strategies
+```bash
+$ bash docker_scripts/ingest.sh
+```
+
 
 ## Using the platform
 
@@ -24,6 +38,11 @@ Before running the commands, ensure your virtualenv is activated:
 If installed via pipenv:
 ```bash
 $ pipenv shell
+```
+
+If installed via docker:
+```bash
+$ bash docker_scripts/dev-start.sh
 ```
 
 ### Configuration
@@ -44,7 +63,7 @@ Strategies are composed of a number of different inputs:
 
 These options can be defined via the CLI, JSON objects, the python API or a combination of the three interfaces.
 
-### Running Stratgies from the CLI
+### Running Strategies from the CLI
 ```bash
 Usage: strat [OPTIONS]
 
@@ -54,6 +73,9 @@ Options:
   -c, --columns TEXT             Target columns for specified dataset
   -i, --data-indicators TEXT     Dataset indicators
   -f, --json-file TEXT
+  --paper                        Run the strategy in Paper trading mode
+  --rpc                          Run the strategy via JSONRPC
+  -h, --hosted                   Run via rpc using remote server
   --help                         Show this message and exit.
 ```
 
@@ -171,7 +193,7 @@ bbands = technical.get_indicator('BBANDS')
 stoch = technical.get_indicator('STOCH')
 
 # override default params
-bbands.update_param('matype', 'EMA') 
+bbands.update_param('matype', 'EMA')
 
 # attach indicators to strategy
 strat.add_market_indicator(bbands)
@@ -206,7 +228,7 @@ def handle_data(context, data):
 
 @strat.analyze()
 def analyze(context, results, pos):
-"""Executed once after algorthim ends"""
+"""Executed once after algorithm ends"""
     print('Completed for {} trading periods'.format(context.i))
 
 ```
@@ -226,61 +248,125 @@ def signal_buy(context, data):
     return utils.cross_above(sma_fast.outputs.SMA_FAST, sma_slow.outputs.SMA_SLOW)
   ```
 
-## Running example (pre-built) strategies
-This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/). 
+## JSONRPC Server
 
-#### compare
+A simple JSONRPC server is accessible to enable running strategies remotely. Simply add the `--rpc` flag to the `strat` command
 
-Use the `compare` command to compare a select number of algos. 
-
-```bash
-$ compare [ALGOS]
-```
-
-The resulting percent return of each strategy is plotted against the benchmark.
-
-The command optionally accepts metrics to compare via the `-m` flag, similar to with the `metrics` command
+### Remote Server
+To use the hosted server on Google Cloud Platform, add the `-h` (hosted) flag
 
 ```bash
-$ compare macdfix sma_crossover -m sharpe -m pnl
-```
-
-If no metrics are given the command defaults to the metrics enabled in *config.py*
-
-#### compare_all_straegies
-Use the `compare_all_straegies` command to run all exmaple strategies.
-
-The portfolio of each strategy will be plotted against the benchmark.
-The results will be saved to a new  *performance_results/* directory and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
-
-This command does not accept any arguments.
-
-#### benchmark
-
-The `benchmark` command will plot the percent return of a single algorithim against the benchmark of bitcoin price (*btc_usdt*)
-
-```bash
-$ benchmark ALGO_NAME
+$ strat -ta macdfix --rpc -h
 ```
 
 
-#### metrics
+### Using the local server
 
-The `metrics` command will plot performance metrics over the trading period for a given algo.
-
-If no metrics are specified, the metrics defined in _config.py_ will be used.
+#### Inside Docker
+If you are using docker, there is no setup needed. Simply add the `--rpc` flag.
 
 ```bash
-$ metrics ALGO_NAME
+$ strat -ta macdfix --rpc
 ```
 
-Optionally specify performance metrics via the `-m` flag
+#### Outside Docker
+
+If running outside of Docker, first set up the flask app environment
 ```bash
-$ metrics buy_and_hodl -m sharpe -m sortino -m max_drawdown
+$ export FLASK_APP=autoapp.py
+$ export FLASK_DEBUG=1
+$ export FLASK_ENV=development
 ```
 
+Then start the server
+```bash
+$ flask run
+```
+
+Then use the `strat` command in a seperate terminal
+```bash
+$ strat -ta macdfix --rpc
+```
+
+Note that vizualization will not be shown when using `--rpc`
 
 
+## Using Docker
 
+### Local development
 
+Install [Docker](https://docs.docker.com/compose/install/#prerequisites)(and Docker Compose)
 
+Build the containers
+
+`$ bash docker_scripts/dev-build.sh`
+
+Run and connect to the containers
+
+`$ bash docker_scripts/dev-start.sh`
+
+To stop everything
+```bash
+$ docker-compose stop
+```
+
+### Deploy to Google Cloud Platform
+
+Connect to the Google Cloud Compute instance
+
+```
+gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compose"
+```
+
+#### Initial instance setup
+Ensure firewall allows http on port 80
+
+Because the app runs on a containerized OS, we need to use the docker-compose *image* inside docker instead of installing
+
+```bash
+$ docker run docker/compose:1.13.0 version
+```
+
+then make an alias
+
+```bash
+$ echo alias docker-compose="'"'docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$PWD:/rootfs/$PWD" \
+    -w="/rootfs/$PWD" \
+    docker/compose:1.13.0'"'" >> ~/.bashrc
+```
+
+docker-compose should now be accessible
+
+Next, configure docker to pull from GCR
+
+```bash
+docker-credential-gcr configure-docker
+```
+
+#### Run for production
+
+Pull the latest changes from github, and build the images
+
+```bash
+$ bash docker_scripts/prod-build.#!/bin/sh
+```
+
+Start the containers with docker-compose
+
+```bash
+$ docker-compose up -d
+```
+
+Download exchange data
+
+```bash
+$ bash docker_scripts/ingest.sh
+```
+
+Test deployment using rpc from local machine
+
+```
+$ strat -ta macd --rpc -h
+```

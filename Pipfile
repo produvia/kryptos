@@ -1,13 +1,10 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
-enigma-catalyst = "==0.5.8"
+numpy = "==1.14.3"
 matplotlib = "*"
 ta-lib = "*"
 quandl = "*"
@@ -15,18 +12,18 @@ click = "*"
 pytrends = "*"
 "e1839a8" = {path = ".", editable = true}
 colorama = "*"
-
+flask = "*"
+flask-jsonrpc = "*"
+rq = "*"
+rq-dashboard = "*"
+enigma-catalyst = "*"
+jupyterlab = "*"
 
 [dev-packages]
-
-black = "*"
-
+black = "==18.4a4"
 
 [requires]
-
 python_version = "3.6"
 
-
 [pipenv]
-
 allow_prereleases = true
