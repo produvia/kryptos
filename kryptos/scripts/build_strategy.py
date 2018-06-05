@@ -7,13 +7,14 @@ from flask.helpers import get_debug_flag
 import click
 import logbook
 from flask_jsonrpc.proxy import ServiceProxy
+import pandas as pd
 
 from kryptos.platform.strategy import Strategy
 from kryptos.platform.data.manager import AVAILABLE_DATASETS
 from kryptos.platform import setup_logging
+from kryptos.platform.utils.outputs import in_docker
 
-from kryptos.app.settings import DevConfig, ProdConfig
-
+from kryptos.app.settings import DevConfig, ProdConfig, DockerDevConfig
 
 log = logbook.Logger("Platform")
 setup_logging()
@@ -80,17 +81,19 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
 
     click.secho(strat.serialize(), fg="white")
 
+    if hosted:
+        CONFIG = ProdConfig
+
+    else:
+        CONFIG = DockerDevConfig if in_docker() else DevConfig
+
     if rpc:
-        CONFIG = DevConfig if get_debug_flag() else ProdConfig
-
-        if hosted:
-            CONFIG = ProdConfig  # to run on remote during dev
-
         strat_id = run_rpc(strat, CONFIG.API_URL)
         poll_status(strat_id, CONFIG.API_URL)
 
     else:
-        strat.run(live=paper)
+        viz = not in_docker()
+        strat.run(live=paper, viz=viz)
 
 
 def run_rpc(strat, api_url):
@@ -130,3 +133,12 @@ def poll_status(strat_id, api_url):
         status = res["result"]["status"]
         click.secho("status: {}".format(status), fg=colors.get(status))
         time.sleep(2)
+
+    print('\n\n')
+    click.secho('Results:\n', fg='magenta')
+    result_json = res['result'].get('strat_results')
+    result_dict = json.loads(result_json)
+    for k, v in json.loads(result_json).items():
+        # nested dict with trading type as key
+        metric, val = k, v['Backtest']
+        click.secho('{}: {}'.format(metric, val), fg='blue')

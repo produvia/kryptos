@@ -8,7 +8,7 @@ $ git clone https://github.com/produvia/cryptocurrency-trading-platform.git
 $ cd cryptocurrency-trading-platform
 ```
 
-#### Install with [pipenv](https://github.com/pypa/pipenv#installation) (recommended):
+#### Install with [pipenv](https://github.com/pypa/pipenv#installation)
 ```bash
 $ pipenv install
 ```
@@ -16,9 +16,14 @@ $ pipenv install
 or
 
 #### Install with Docker
-For a containerized installation:
+For a hassle-free containerized installation:
 ```bash
-$ bash ./install_docker
+$ bash docker_scripts/dev-build.sh
+```
+
+Then finish setting up the environment by downloading exchange dataset before running strategies
+```bash
+$ bash docker_scripts/ingest.sh
 ```
 
 
@@ -37,7 +42,7 @@ $ pipenv shell
 
 If installed via docker:
 ```bash
-$ docker exec -i -t kryptos_web_1 /bin/bash
+$ bash docker_scripts/dev-start.sh
 ```
 
 ### Configuration
@@ -244,106 +249,124 @@ def signal_buy(context, data):
   ```
 
 ## JSONRPC Server
-A simple JSONRPC server is accessible to enable running strategies remotely.
 
-First set up the flask app environment
-```bash
-$ export FLASK_APP=server/autoapp.py
-$ export FLASK_DEVUG=1
-```
+A simple JSONRPC server is accessible to enable running strategies remotely. Simply add the `--rpc` flag to the `strat` command
 
-Start the Server
-```bash
-$ flask run
-```
+### Remote Server
+To use the hosted server on Google Cloud Platform, add the `-h` (hosted) flag
 
-To call the server, use the `strat` command in a separate terminal
-```bash
-$ strat -ta macdfix --rpc
-```
-
-To run the strategy on the hosted EC2 instance, used the --hosted/-h flag
 ```bash
 $ strat -ta macdfix --rpc -h
 ```
 
-Note that visualization will not be shown.
 
-## Deployment with Docker
+### Using the local server
+
+#### Inside Docker
+If you are using docker, there is no setup needed. Simply add the `--rpc` flag.
+
+```bash
+$ strat -ta macdfix --rpc
+```
+
+#### Outside Docker
+
+If running outside of Docker, first set up the flask app environment
+```bash
+$ export FLASK_APP=autoapp.py
+$ export FLASK_DEBUG=1
+$ export FLASK_ENV=development
+```
+
+Then start the server
+```bash
+$ flask run
+```
+
+Then use the `strat` command in a seperate terminal
+```bash
+$ strat -ta macdfix --rpc
+```
+
+Note that vizualization will not be shown when using `--rpc`
+
+
+## Using Docker
+
+### Local development
 
 Install [Docker](https://docs.docker.com/compose/install/#prerequisites)(and Docker Compose)
 
-For Linux:
+Build the containers
+
+`$ bash docker_scripts/dev-build.sh`
+
+Run and connect to the containers
+
+`$ bash docker_scripts/dev-start.sh`
+
+To stop everything
 ```bash
-$ sudo curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
-$ sudo chmod +x /usr/local/bin/docker-compose
+$ docker-compose stop
 ```
 
-Start docker and Build the images
-```bash
-# this will take a while
-$ bash ./init_docker.sh
+### Deploy to Google Cloud Platform
+
+Connect to the Google Cloud Compute instance
+
+```
+gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compose"
 ```
 
-Run `docker-compose up` to start start kryptos
+#### Initial instance setup
+Ensure firewall allows http on port 80
 
-To enter into the container's shell:
-`$ sudo docker exec -i -t kryptos_web_1 /bin/bash`
-
-
-To stop everything:
-`$ docker-compose stop`
-
-
-## Running example (pre-built) strategies
-This repo contains a set of [example catalyst trading strategies](crypto_platform/algos/).
-
-#### compare
-
-Use the `compare` command to compare a select number of algos.
+Because the app runs on a containerized OS, we need to use the docker-compose *image* inside docker instead of installing
 
 ```bash
-$ compare [ALGOS]
+$ docker run docker/compose:1.13.0 version
 ```
 
-The resulting percent return of each strategy is plotted against the benchmark.
-
-The command optionally accepts metrics to compare via the `-m` flag, similar to with the `metrics` command
+then make an alias
 
 ```bash
-$ compare macdfix sma_crossover -m sharpe -m pnl
+$ echo alias docker-compose="'"'docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v "$PWD:/rootfs/$PWD" \
+    -w="/rootfs/$PWD" \
+    docker/compose:1.13.0'"'" >> ~/.bashrc
 ```
 
-If no metrics are given the command defaults to the metrics enabled in *config.py*
+docker-compose should now be accessible
 
-#### compare_all_strategies
-Use the `compare_all_strategies` command to run all example strategies.
-
-The portfolio of each strategy will be plotted against the benchmark.
-The results will be saved to a new  *performance_results/* directory and include a csv file as well as a pickled pandas Dataframe object to be used comparison/analysis.
-
-This command does not accept any arguments.
-
-#### benchmark
-
-The `benchmark` command will plot the percent return of a single algorithm against the benchmark of bitcoin price (*btc_usdt*)
+Next, configure docker to pull from GCR
 
 ```bash
-$ benchmark ALGO_NAME
+docker-credential-gcr configure-docker
 ```
 
+#### Run for production
 
-#### metrics
-
-The `metrics` command will plot performance metrics over the trading period for a given algo.
-
-If no metrics are specified, the metrics defined in _config.py_ will be used.
+Pull the latest changes from github, and build the images
 
 ```bash
-$ metrics ALGO_NAME
+$ bash docker_scripts/prod-build.#!/bin/sh
 ```
 
-Optionally specify performance metrics via the `-m` flag
+Start the containers with docker-compose
+
 ```bash
-$ metrics buy_and_hodl -m sharpe -m sortino -m max_drawdown
+$ docker-compose up -d
+```
+
+Download exchange data
+
+```bash
+$ bash docker_scripts/ingest.sh
+```
+
+Test deployment using rpc from local machine
+
+```
+$ strat -ta macd --rpc -h
 ```
