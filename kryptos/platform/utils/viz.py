@@ -54,7 +54,10 @@ def add_twin_legends(axes):
 def plot_portfolio(context, results, name=None, pos=211):
     # Get the base_currency that was passed as a parameter to the simulation
     exchange = list(context.exchanges.values())[0]
-    base_currency = exchange.base_currency.upper()
+    if exchange.base_currency:
+        base_currency = exchange.base_currency.upper
+    else:
+        base_currency = ''
 
     # First chart: Plot portfolio value using base_currency
     ax = plt.subplot(pos)

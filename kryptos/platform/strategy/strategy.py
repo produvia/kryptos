@@ -12,7 +12,7 @@ from catalyst.api import symbol, set_benchmark, record, order, order_target_perc
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
 from kryptos.platform.utils import load, viz, outputs
-from kryptos.platform.strategy.indicators import technical
+from kryptos.platform.strategy.indicators import technical, ml
 from kryptos.platform.data.manager import get_data_manager
 from kryptos.platform import logger_group
 from kryptos.platform.settings import DEFAULT_CONFIG
@@ -62,6 +62,7 @@ class Strategy(object):
         self.name = name
         self.trading_info = DEFAULT_CONFIG
         self._market_indicators = []
+        self._ml_models = []
         self.signals = {}
         self._datasets = {}
         self._extra_init = lambda context: None
@@ -235,6 +236,9 @@ class Strategy(object):
             i.calculate(context.prices)
             i.record()
 
+        for i in self._ml_models:
+            i.calculate(context.prices)
+
         self._extra_handle(context, data)
         self.weigh_signals(context, data)
 
@@ -304,6 +308,12 @@ class Strategy(object):
         data_manager = self._datasets[dataset]
         data_manager.attach_indicator(indicator, col)
 
+    def add_ml_models(self, indicator):
+        """Use ML models to take decissions"""
+        if isinstance(indicator, str):
+            indicator = ml.get_indicator(indicator)
+        self._ml_models.append(indicator)
+
     def use_dataset(self, dataset_name, columns):
         """Registers an external dataset to be integrated into algo"""
         data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
@@ -313,6 +323,16 @@ class Strategy(object):
         """Processes indicator to determine buy/sell opportunities"""
         sells, buys, neutrals = 0, 0, 0
         for i in self._market_indicators:
+            if i.signals_buy:
+                self.log.debug("{}: BUY".format(i.name))
+                buys += 1
+            elif i.signals_sell:
+                self.log.debug("{}: SELL".format(i.name))
+                sells += 1
+            else:
+                neutrals += 1
+
+        for i in self._ml_models:
             if i.signals_buy:
                 self.log.debug("{}: BUY".format(i.name))
                 buys += 1

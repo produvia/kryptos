@@ -36,6 +36,7 @@ METRICS = [
 ]
 
 
+# Technical Analysis Settings
 class TAConfig(object):
 
     # global
@@ -95,3 +96,11 @@ class TAConfig(object):
 
     STOCH_OVERBOUGHT = 80
     STOCH_OVERSOLD = 20
+
+
+# Machine Learning Settings
+class MLConfig(object):
+
+    FE_DATES = True # True to add feature engineering
+    PERCENT_UP = 0.015 # up signal %
+    PERCENT_DOWN = 0.015 # down signal %

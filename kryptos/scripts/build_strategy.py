@@ -27,6 +27,12 @@ setup_logging()
     help="Market Indicators listed in order of priority",
 )
 @click.option(
+    "--machine-learning-models",
+    "-ml",
+    multiple=True,
+    help="Machine Learning Models",
+)
+@click.option(
     "--dataset", "-d", type=click.Choice(AVAILABLE_DATASETS), help="Include asset in keyword list"
 )
 @click.option("--columns", "-c", multiple=True, help="Target columns for specified dataset")
@@ -35,7 +41,8 @@ setup_logging()
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
 @click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
-def run(market_indicators, dataset, columns, data_indicators, json_file, paper, rpc, hosted):
+
+def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, paper, rpc, hosted):
 
     strat = Strategy()
 
@@ -43,6 +50,9 @@ def run(market_indicators, dataset, columns, data_indicators, json_file, paper, 
 
     for i in market_indicators:
         strat.add_market_indicator(i.upper())
+
+    for i in machine_learning_models:
+        strat.add_ml_models(i.upper())
 
     # currently assigns -i indicator to the column provided at the same index
     if dataset is not None:

@@ -17,6 +17,8 @@ flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
 jupyterlab = "*"
+xgboost = "*"
+sklearn = "*"
 
 [dev-packages]
 black = "==18.4a4"
