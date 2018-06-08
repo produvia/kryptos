@@ -8,7 +8,6 @@
 # Simple TALib Example showing how to use various indicators
 # in you strategy. Based loosly on
 # https://github.com/mellertson/talib-macd-example/blob/master/talib-macd-matplotlib-example.py
-
 import numpy as np
 import pandas as pd
 import talib as ta

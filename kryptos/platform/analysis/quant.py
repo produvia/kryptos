@@ -49,6 +49,8 @@ def dump_summary_table(namespace, config, df):
         df_quant.T.to_csv(f)
         log.info("Wrote Summary Table to {}".format(f_path))
 
+    return df_quant
+
 
 def dump_summary_table_all_strategies(config, list_dfs, output_dir):
     if not isinstance(config, dict):
