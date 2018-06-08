@@ -179,9 +179,6 @@ class Strategy(object):
         context.asset = symbol(self.trading_info["ASSET"])
         if not self.is_live:
             set_benchmark(context.asset)
-        context.ORDER_SIZE = 0.5
-        context.SLIPPAGE_ALLOWED = 0.05
-        context.BARS = 365
         context.i = 0
         context.errors = []
         for k, v in self.trading_info.items():
