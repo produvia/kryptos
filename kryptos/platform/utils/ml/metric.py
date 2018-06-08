@@ -1,13 +1,20 @@
+import os
 from sklearn.metrics import *
+from kryptos.platform.utils.outputs import get_algo_dir
 
-# TODO: eliminar el último...
-def classification_metrics(y_true, y_pred, y_pred_proba=False):
+def classification_metrics(namespace, y_true, y_pred, y_pred_proba=False):
     target_names = ['KEEP', 'UP', 'DOWN']
-    if y_pred_proba is not False:
-        print('Cross Entropy: {}'.format(log_loss(y_true, y_pred_proba)))
-    print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
-    print('Coefficient Kappa: {}'.format(cohen_kappa_score(y_true, y_pred)))
-    print('Classification Report:')
-    print(classification_report(y_true.values, y_pred, target_names=target_names))
-    print("Confussion Matrix:")
-    print(confusion_matrix(y_true, y_pred))
+    algo_dir = get_algo_dir(namespace)
+    file_name = 'xgboost_confussion_matrix.txt'
+    f_path = os.path.join(algo_dir, file_name)
+
+    with open(f_path, "a") as f:
+        f.write('Accuracy: {}'.format(accuracy_score(y_true, y_pred)) + '\n')
+        f.write('Coefficient Kappa: {}'.format(cohen_kappa_score(y_true, y_pred)) + '\n')
+        f.write('Classification Report:' + '\n')
+        f.write(classification_report(y_true, y_pred, target_names=target_names))
+        f.write('\n')
+        f.write("Confussion Matrix:" + '\n')
+        f.write(str(confusion_matrix(y_true, y_pred)))
+        f.write('\n')
+        f.close()
