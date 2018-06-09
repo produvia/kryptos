@@ -49,7 +49,8 @@ class AbstractIndicator(object):
         self.outputs = None
         self.current_date = None
         self.result = None
-        self.results = [] # TODO: to analyze at the end
+        self.results_pred = []
+        self.results_real = []
         self.idx = -1
 
         self.log = IndicatorLogger(self)

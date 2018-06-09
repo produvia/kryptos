@@ -305,11 +305,17 @@ class Strategy(object):
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
-        if self.viz:
-            self._make_plots(context, results)
-            quant.dump_plots_to_file(self.name, results)
+        try:
+            if self.viz:
+                self._make_plots(context, results)
+                quant.dump_plots_to_file(self.name, results)
+        except:
+            pass
 
         self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
+
+        for i in self._ml_models:
+            i.analyze(self.name)
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""

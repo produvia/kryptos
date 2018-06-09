@@ -7,6 +7,7 @@ from kryptos.platform.strategy.indicators import AbstractIndicator
 from kryptos.platform.strategy.signals import utils
 from kryptos.platform.utils.ml.model import *
 from kryptos.platform.utils.ml.preprocessing import *
+from kryptos.platform.utils.ml.metric import *
 
 
 def get_indicator(name, **kw):
@@ -31,11 +32,9 @@ class MLIndicator(AbstractIndicator):
         the signals_buy and signals_sell methods.
         """
 
-    # TODO: hacerlo property para implementarlo dentro de la subclase xgboost
     def calculate(self, df, **kw):
         """"""
         pass
-
 
     @property
     def signals_buy(self):
@@ -69,9 +68,7 @@ class XGBOOST(MLIndicator):
 
     def calculate(self, df, **kw):
         self.idx += 1
-
         self.current_date = df.iloc[-1].name.date()
-        print(str(self.idx) + ' - ' + str(self.current_date))
 
         # Prepare data to machine learning problem
         X_train, y_train, X_test = preprocessing_data(df)
@@ -81,9 +78,13 @@ class XGBOOST(MLIndicator):
 
         # Predict results
         self.result = int(xgboost_test(model, X_test)[0])
-        self.results.append(self.result)
+        self.results_pred.append(self.result)
+        self.results_real.append(int(df.iloc[-1].target))
 
         if self.signals_buy:
             self.log.debug("Signals BUY")
         elif self.signals_sell:
             self.log.debug("Signals SELL")
+
+    def analyze(self, namespace):
+        classification_metrics(namespace, self.results_real, self.results_pred)
