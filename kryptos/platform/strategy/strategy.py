@@ -80,6 +80,7 @@ class Strategy(object):
         self._sell_func = None
 
         self.trading_info.update(kw)
+        self.is_live = False
 
         self.log = StratLogger(self)
         logger_group.add_logger(self.log)
@@ -200,11 +201,9 @@ class Strategy(object):
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
         context.asset = symbol(self.trading_info["ASSET"])
-        context.market = symbol(self.trading_info["ASSET"])
-        set_benchmark(context.asset)
-        context.ORDER_SIZE = 0.5
-        context.SLIPPAGE_ALLOWED = 0.05
-        context.BARS = 365
+        if not self.is_live:
+            set_benchmark(context.asset)
+        context.i = 0
         context.errors = []
         for k, v in self.trading_info.items():
             if "__" not in k:
@@ -226,6 +225,7 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
+        context.i += 1
         # set date first for logging purposes
         self.current_date = context.blotter.current_dt.date()
 
@@ -305,6 +305,9 @@ class Strategy(object):
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
+        ending_cash = results.cash[-1]
+        self.log.info('Ending cash: ${}'.format(ending_cash))
+        self.log.info('Completed for {} trading periods'.format(context.i))
         try:
             if self.viz:
                 self._make_plots(context, results)
@@ -513,9 +516,10 @@ class Strategy(object):
             )
 
     def run_live(self, simulate_orders=True):
-        # import pdb; pdb.set_trace()
+        self.is_live = True
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
+            data_frequency=self.trading_info["DATA_FREQ"],
             initialize=self._init_func,
             handle_data=self._process_data,
             analyze=self._analyze,
