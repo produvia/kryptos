@@ -77,7 +77,7 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
         CONFIG = DockerDevConfig if in_docker() else DevConfig
 
     if rpc:
-        strat_id = run_rpc(strat, CONFIG.API_URL)
+        strat_id = run_rpc(strat, CONFIG.API_URL, live=paper, simulate_orders=True)
         poll_status(strat_id, CONFIG.API_URL)
 
     else:
@@ -96,7 +96,7 @@ def display_summary(result_json):
         click.secho("{}: {}".format(metric, val), fg="green")
 
 
-def run_rpc(strat, api_url):
+def run_rpc(strat, api_url, live=False, simulate_orders=True):
     click.secho(
         """
         *************
@@ -110,7 +110,7 @@ def run_rpc(strat, api_url):
     )
     rpc_service = ServiceProxy(api_url)
     strat_json = strat.serialize()
-    res = rpc_service.Strat.run(strat_json)
+    res = rpc_service.Strat.run(strat_json, live, simulate_orders)
     log.info(res)
 
     if res.get("error"):
