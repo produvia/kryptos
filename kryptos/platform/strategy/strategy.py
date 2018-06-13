@@ -257,8 +257,12 @@ class Strategy(object):
             manager.record_data(context)
 
         for i in self._market_indicators:
-            i.calculate(context.prices)
-            i.record()
+            try:
+                i.calculate(context.prices)
+                i.record()
+            except Exception as e:
+                self.log.error(e)
+                self.log.error('Error calculating {}, skipping...'.format(i.name))
 
         for i in self._ml_models:
             i.calculate(context.prices)
