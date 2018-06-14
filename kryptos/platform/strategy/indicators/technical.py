@@ -298,16 +298,50 @@ class STOCH(TAIndicator):
     def signals_sell(self):
         return self.overbought
 
+class _MovingAverage(TAIndicator):
+    def __init__(self, name, **kw):
+        super().__init__(name.upper(), **kw)
 
-class SMA(TAIndicator):
+    # @property
+    # def signals_buy(self):
+    #     return utils.increasing(self.outputs.get(self.label))
+    #
+    # @property
+    # def signals_sell(self):
+    #     return utils.decreasing(self.outputs.get(self.label))
 
-    def __init__(self, **kw):
-        super(SMA, self).__init__("SMA", **kw)
+class SMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__('SMA', **kw)
 
-    @property
-    def signals_buy(self):
-        return utils.increasing(self.outputs.get(self.label))
+class EMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("EMA", **kw)
 
-    @property
-    def signals_sell(self):
-        return utils.decreasing(self.outputs.get(self.label))
+class WMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("WMA", **kw)
+
+class DEMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("DEMA", **kw)
+
+class TEMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("TEMA", **kw)
+
+class TRIMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("TRIMA", **kw)
+
+class KAMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("KAMA", **kw)
+
+class MAMA(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("MAMA", **kw)
+
+class T3(_MovingAverage):
+    def __init__(self, *args, **kw):
+        super().__init__("T3", **kw)
