@@ -405,7 +405,15 @@ class Strategy(object):
             if isinstance(params[arg], int):
                 kwargs[arg] = params[arg]
 
-            else: #get series from indicator outputs
+            # use a specific output column
+            elif '.' in params[arg]:
+                [indicator_label, output] = params[arg].split('.')
+                indicator = self.indicator(indicator_label)
+                output_col = indicator.outputs[output]
+                kwargs[arg] = output_col
+
+            # use label as output col if only "real" output
+            else:
                 indicator_label = params[arg]
                 indicator = self.indicator(indicator_label)
                 kwargs[arg] = indicator.outputs[indicator_label]
