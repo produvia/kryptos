@@ -72,8 +72,8 @@ class Strategy(object):
         self.viz = True
         self.quant_results = None
 
-        self._signal_buy_func = lambda context, data: None
-        self._signal_sell_func = lambda context, data: None
+        self._signal_buy_funcs = []
+        self._signal_sell_funcs = []
         self._override_indicator_signals = False
 
         self._buy_func = None
@@ -151,7 +151,7 @@ class Strategy(object):
         self._override_indicator_signals = override
 
         def decorator(f):
-            self._signal_sell_func = f
+            self._signal_sell_funcs.append(f)
             return f
 
         return decorator
@@ -166,7 +166,7 @@ class Strategy(object):
         self._override_indicator_signals = override
 
         def decorator(f):
-            self._signal_buy_func = f
+            self._signal_buy_funcs.append(f)
             return f
 
         return decorator
@@ -356,14 +356,20 @@ class Strategy(object):
     def _count_signals(self, context, data):
         """Processes indicator to determine buy/sell opportunities"""
         sells, buys, neutrals = 0, 0, 0
-        if self._signal_buy_func(context, data):
-            self.log.debug("Custom: BUY")
-            buys += 1
-        elif self._signal_sell_func(context, data):
-            self.log.debug("Custom: SELL")
-            sells += 1
-        else:
-            neutrals += 1
+
+        for f in self._signal_buy_funcs:
+            if f(context, data):
+                self.log.debug("Custom: BUY")
+                buys += 1
+            else:
+                neutrals += 1
+
+        for f in self._signal_sell_funcs:
+            if f(context, data):
+                self.log.debug("Custom: SELL")
+                sells += 1
+            else:
+                neutrals += 1
 
         if self._override_indicator_signals:
             return self._weigh_signals(context, buys, sells, neutrals)
