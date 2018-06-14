@@ -61,6 +61,10 @@ class AbstractIndicator(object):
     def default_params(self):
         return {}
 
+    @property
+    def output_names(self):
+        return []
+
     def update_param(self, param, val):
         self._parse_params({param: val})
 
@@ -71,6 +75,7 @@ class AbstractIndicator(object):
             "dataset": self.dataset,
             "label": self.label,
             "params": self.params,
+            "outputs": self.output_names
         }
         return d
 

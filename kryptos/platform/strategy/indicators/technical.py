@@ -45,6 +45,10 @@ class TAIndicator(AbstractIndicator):
     def default_params(self):
         return self.func.parameters
 
+    @property
+    def output_names(self):
+        return self.func.output_names
+
     def calculate(self, df, **kw):
         """Applies the indicator calculation on the provided data
 
