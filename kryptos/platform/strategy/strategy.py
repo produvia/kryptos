@@ -99,7 +99,7 @@ class Strategy(object):
             "trading": self.trading_info,
             "datasets": self.dataset_info,
             "indicators": self.indicator_info,
-            "signals": self.signals,
+            "signals": self._dump_signals(),
         }
         return json.dumps(d, indent=3)
 
@@ -192,6 +192,12 @@ class Strategy(object):
             self.use_dataset(ds["name"], ds["columns"])
             for i in ds.get("indicators", []):
                 self.add_data_indicator(ds["name"], i["name"], col=i["symbol"])
+
+    def _dump_signals(self):
+        res = {}
+        res['buy'] = self._buy_signal_objs
+        res['sell'] = self._sell_signal_objs
+        return res
 
     def _load_signals(self, strat_dict):
         signals = strat_dict.get('signals', {})
