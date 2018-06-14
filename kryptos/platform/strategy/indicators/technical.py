@@ -206,8 +206,14 @@ class OBV(TAIndicator):
 
 class RSI(TAIndicator):
 
-    def __init__(self, timeperiod=14, **kw):
-        super(RSI, self).__init__("RSI", timeperiod=timeperiod, **kw)
+    def __init__(self, timeperiod=14, oversold=30, overbought=70, **kw):
+        super(RSI, self).__init__("RSI", timeperiod=timeperiod, oversold=oversold, overbought=overbought, **kw)
+
+        if self.params.get('oversold') is None:
+            self.params['oversold'] = oversold
+
+        if self.params.get('overbought') is None:
+            self.params['overbought'] = overbought
 
     def record(self):
         super().record()
@@ -217,8 +223,8 @@ class RSI(TAIndicator):
         y_label = "RSI"
         ax = viz.plot_column(results, "RSI", pos, y_label=y_label, label="RSI")
 
-        overbought_line = [CONFIG.RSI_OVERBOUGHT for i in results.index]
-        oversold_line = [CONFIG.RSI_OVERSOLD for i in results.index]
+        overbought_line = [self.params['overbought'] for i in results.index]
+        oversold_line = [self.params['oversold'] for i in results.index]
         ax.plot(results.index, overbought_line)
         ax.plot(results.index, oversold_line)
 
@@ -231,11 +237,11 @@ class RSI(TAIndicator):
 
     @property
     def overbought(self):
-        return utils.cross_above(self.outputs.RSI, CONFIG.RSI_OVERBOUGHT)
+        return utils.cross_above(self.outputs.RSI, self.params['overbought'])
 
     @property
     def oversold(self):
-        return utils.cross_below(self.outputs.RSI, CONFIG.RSI_OVERSOLD)
+        return utils.cross_below(self.outputs.RSI, self.params['oversold'])
 
     @property
     def signals_buy(self):
