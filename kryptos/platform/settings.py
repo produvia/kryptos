@@ -1,6 +1,6 @@
 import os
 import json
-
+from tsfresh.feature_extraction import *
 
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
@@ -101,6 +101,13 @@ class TAConfig(object):
 # Machine Learning Settings
 class MLConfig(object):
 
-    FE_DATES = True # True to add feature engineering
     PERCENT_UP = 0.015 # up signal %
     PERCENT_DOWN = 0.015 # down signal %
+    FE_DATES = True # True to add dates feature engineering
+    
+    # tsfresh configuration
+    FE_TSFRESH = {
+        'enabled': True,
+        'kind': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
+        'window': 30,
+    }

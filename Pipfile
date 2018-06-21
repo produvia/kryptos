@@ -20,6 +20,7 @@ enigma-catalyst = "*"
 jupyterlab = "*"
 xgboost = "*"
 sklearn = "*"
+tsfresh = "*"
 
 [dev-packages]
 black = "==18.4a4"
