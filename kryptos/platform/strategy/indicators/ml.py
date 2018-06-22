@@ -87,4 +87,5 @@ class XGBOOST(MLIndicator):
             self.log.debug("Signals SELL")
 
     def analyze(self, namespace):
-        classification_metrics(namespace, self.results_real, self.results_pred)
+        file_name = 'xgboost_confussion_matrix.txt'
+        classification_metrics(namespace, file_name, self.results_real, self.results_pred)

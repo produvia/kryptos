@@ -2,10 +2,9 @@ import os
 from sklearn.metrics import *
 from kryptos.platform.utils.outputs import get_algo_dir
 
-def classification_metrics(namespace, y_true, y_pred, y_pred_proba=False):
+def classification_metrics(namespace, file_name, y_true, y_pred, y_pred_proba=False):
     target_names = ['KEEP', 'UP', 'DOWN']
     algo_dir = get_algo_dir(namespace)
-    file_name = 'xgboost_confussion_matrix.txt'
     f_path = os.path.join(algo_dir, file_name)
 
     with open(f_path, "a") as f:
