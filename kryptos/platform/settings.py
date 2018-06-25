@@ -101,13 +101,37 @@ class TAConfig(object):
 # Machine Learning Settings
 class MLConfig(object):
 
+    """
+        2 - Binary Classification (DOWN / UP)
+        3 - Multiclass Classification (DOWN / KEEP / UP)
+    """
+    CLASSIFICATION_TYPE = 3
+
     PERCENT_UP = 0.015 # up signal %
     PERCENT_DOWN = 0.015 # down signal %
+
     FE_DATES = True # True to add dates feature engineering
-    
+
     # tsfresh configuration
     FE_TSFRESH = {
         'enabled': True,
         'kind': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
         'window': 30,
     }
+
+    # ta-lib configuration
+    FE_TA = {
+        'enabled': True,
+        'overlap': True,
+        'momentum': True,
+        'volume': True,
+        'volatility': True,
+        'price': True,
+        'cycle': True,
+        'pattern': True,
+        'statistic': True,
+        'math_transforms': False,
+        'math_operators': False,
+    }
+
+    FE_UTILS = True

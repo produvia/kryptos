@@ -71,7 +71,10 @@ class XGBOOST(MLIndicator):
         self.current_date = df.iloc[-1].name.date()
 
         # Prepare data to machine learning problem
-        X_train, y_train, X_test = preprocessing_data(df)
+        if CONFIG.CLASSIFICATION_TYPE == 3:
+            X_train, y_train, X_test = preprocessing_multiclass_data(df)
+        elif CONFIG.CLASSIFICATION_TYPE == 2:
+            X_train, y_train, X_test = preprocessing_binary_data(df)
 
         # Train XGBoost
         model = xgboost_train(X_train, y_train)
