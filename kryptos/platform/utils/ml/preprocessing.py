@@ -27,13 +27,18 @@ def preprocessing_multiclass_data(df):
     df = df.dropna()
     df['target'] = df['target'].astype('int')
 
+    y = df['target']
+    excl = ['target', 'pred', 'id']
+    cols = [c for c in df.columns if c not in excl]
+
     # Adding different features (feature engineering)
-    df = add_fe(df)
-    df = df.dropna()
+    X = add_fe(df[cols])
+
+    # Drop nan values after feature engineering process
+    X, y = dropna_after_fe(X, y)
 
     # Prepare data struct
-    excl = ['target', 'pred', 'id', 'timestamp']
-    X_train, y_train, X_test = prepare_ml_data(df, excl, 'target')
+    X_train, y_train, X_test = prepare_ml_data(X, y)
 
     return X_train, y_train, X_test
 
@@ -58,12 +63,30 @@ def add_fe(df):
     if CONFIG.FE_UTILS:
         df = add_utils_features(df)
 
-    return df
-
-
-def prepare_ml_data(df, excl, target):
+    excl = ['timestamp']
     cols = [c for c in df.columns if c not in excl]
-    X_train = df[cols].iloc[:-1]
-    y_train = df[target].iloc[:-1]
-    X_test = df[cols].iloc[-1:]
+
+    return df[cols]
+
+
+def dropna_after_fe(X, y):
+    """It drops Nan values on dataset from feature engineering process. Target
+    column (y) needs the same size to X.
+
+    Args:
+        X(pandas.DataFrame): X dataset.
+        y(pandas.DataFrame): target.
+    Returns:
+        X(pandas.DataFrame): X dataset without nan values.
+        y(pandas.DataFrame): target same size to X.
+    """
+    X = X.dropna()
+    y = y[len(y)-X.shape[0]:len(y)]
+    return X, y
+
+
+def prepare_ml_data(X, y):
+    X_train = X.iloc[:-1]
+    y_train = y.iloc[:-1]
+    X_test = X.iloc[-1:]
     return X_train, y_train, X_test
