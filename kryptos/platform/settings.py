@@ -106,6 +106,7 @@ class MLConfig(object):
         3 - Multiclass Classification (DOWN / KEEP / UP)
     """
     CLASSIFICATION_TYPE = 3
+    MIN_ROWS_TO_ML = 50
 
     PERCENT_UP = 0.015 # up signal %
     PERCENT_DOWN = 0.015 # down signal %

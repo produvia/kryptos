@@ -8,7 +8,7 @@ from kryptos.platform.strategy.signals import utils
 from kryptos.platform.utils.ml.model import *
 from kryptos.platform.utils.ml.preprocessing import *
 from kryptos.platform.utils.ml.metric import *
-
+from kryptos.platform.settings import MLConfig as CONFIG
 
 def get_indicator(name, **kw):
     subclass = globals().get(name.upper())
@@ -67,8 +67,6 @@ class XGBOOST(MLIndicator):
             return False
 
     def calculate(self, df, **kw):
-        self.idx += 1
-        self.current_date = df.iloc[-1].name.date()
 
         # Prepare data to machine learning problem
         if CONFIG.CLASSIFICATION_TYPE == 3:
@@ -76,11 +74,14 @@ class XGBOOST(MLIndicator):
         elif CONFIG.CLASSIFICATION_TYPE == 2:
             X_train, y_train, X_test = preprocessing_binary_data(df)
 
-        # Train XGBoost
-        model = xgboost_train(X_train, y_train)
+        if X_train.shape[0] > CONFIG.MIN_ROWS_TO_ML:
+            # Train XGBoost
+            model = xgboost_train(X_train, y_train)
+            # Predict results
+            self.result = int(xgboost_test(model, X_test)[0])
+        else:
+            self.result = 0
 
-        # Predict results
-        self.result = int(xgboost_test(model, X_test)[0])
         self.results_pred.append(self.result)
         self.results_real.append(int(df.iloc[-1].target))
 
