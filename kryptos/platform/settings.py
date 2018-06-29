@@ -106,10 +106,18 @@ class MLConfig(object):
         3 - Multiclass Classification (DOWN / KEEP / UP)
     """
     CLASSIFICATION_TYPE = 3
-    MIN_ROWS_TO_ML = 50
-
     PERCENT_UP = 0.015 # up signal %
     PERCENT_DOWN = 0.015 # down signal %
+
+    MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
+    SIZE_TEST_TO_OPTIMIZE = 20 # Size of test dataframe to optimize model params
+    ITERATIONS_OPTIMIZE = 30 # Number of iterations to optimize model params
+    N_HYPEROPT_EVALS = 250 # Number of evaluations to hyperopt
+    XGBOOST_SEED = 17
+    OPTIMIZE_PARAMS = True
+
+    # Check if size test dataframe is less than total dataframe
+    assert SIZE_TEST_TO_OPTIMIZE < MIN_ROWS_TO_ML
 
     FE_DATES = True # True to add dates feature engineering
 

@@ -21,6 +21,8 @@ jupyterlab = "*"
 xgboost = "*"
 sklearn = "*"
 tsfresh = "*"
+hyperopt = "*"
+networkx = "==1.11"
 
 [dev-packages]
 black = "==18.4a4"

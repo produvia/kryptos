@@ -3,7 +3,8 @@ pd.options.mode.chained_assignment = None # Disable chained assignments
 
 from kryptos.platform.settings import MLConfig as CONFIG
 from kryptos.platform.utils.ml.feature_engineering import *
-
+from kryptos.platform.utils import merge_two_dicts
+from kryptos.platform.utils.ml.models import xgb
 
 def preprocessing_binary_data(df):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
@@ -13,7 +14,16 @@ def preprocessing_binary_data(df):
     pass
 
 
-def preprocessing_multiclass_data(df):
+def clean_params(params):
+    """
+    """
+    del params['num_boost_rounds']
+    params['max_depth'] = int(params['max_depth'])
+    ml_params = merge_two_dicts(params, xgb.FIXED_PARAMS_DEFAULT)
+    return ml_params
+
+
+def preprocessing_multiclass_data(df, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
     learning problem.
     """
@@ -27,18 +37,20 @@ def preprocessing_multiclass_data(df):
     df = df.dropna()
     df['target'] = df['target'].astype('int')
 
-    y = df['target']
     excl = ['target', 'pred', 'id']
     cols = [c for c in df.columns if c not in excl]
+    y = df['target']
+    X = df[cols]
 
-    # Adding different features (feature engineering)
-    X = add_fe(df[cols])
+    if not to_optimize:
+        # Adding different features (feature engineering)
+        X = add_fe(X)
 
-    # Drop nan values after feature engineering process
-    X, y = dropna_after_fe(X, y)
+        # Drop nan values after feature engineering process
+        X, y = dropna_after_fe(X, y)
 
     # Prepare data struct
-    X_train, y_train, X_test = prepare_ml_data(X, y)
+    X_train, y_train, X_test = prepare_ml_data(X, y, to_optimize)
 
     return X_train, y_train, X_test
 
@@ -85,8 +97,24 @@ def dropna_after_fe(X, y):
     return X, y
 
 
-def prepare_ml_data(X, y):
-    X_train = X.iloc[:-1]
-    y_train = y.iloc[:-1]
-    X_test = X.iloc[-1:]
+def prepare_ml_data(X, y, to_optimize=False):
+    """Divide dataset on train and test dataset.
+
+    Args:
+        X(pandas.DataFrame): X dataset.
+        y(pandas.DataFrame): target.
+        optimize(bool): if False, size of test equals 1; if True equals
+        CONFIG.SIZE_TEST_TO_OPTIMIZE.
+
+    Returns:
+        X_train(pandas.DataFrame): X_train.
+        y_train(pandas.DataFrame): y_train.
+        X_test(pandas.DataFrame): X_test.
+    """
+    size_test = 1
+    if to_optimize:
+        size_test = CONFIG.SIZE_TEST_TO_OPTIMIZE
+    X_train = X.iloc[:-size_test]
+    y_train = y.iloc[:-size_test]
+    X_test = X.iloc[-size_test:]
     return X_train, y_train, X_test
