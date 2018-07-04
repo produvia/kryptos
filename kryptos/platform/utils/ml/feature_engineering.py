@@ -34,7 +34,7 @@ def add_tsfresh_features(df, tsfresh_settings):
     df_tsfresh = pd.merge(df, extracted_features, on=['time'])
 
     excl = ['id', 'time']
-    cols = [c for c in df.columns if c not in excl]
+    cols = [c for c in df_tsfresh.columns if c not in excl]
 
     return df_tsfresh[cols]
 
