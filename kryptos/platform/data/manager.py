@@ -62,7 +62,7 @@ class DataManager(object):
         Data Managers are responsible for all operations related to
         to external datasets, including fetching and visualizing.
 
-        These objects are utilized by Strategy objects during algroithm execution to access
+        These objects are utilized by Strategy objects during algorithm execution to access
         and integrate external data into algorithm logic.
 
         The following three methods are to be called during algo execution
@@ -317,7 +317,7 @@ class GoogleTrendDataManager(DataManager):
     def fetch_data(self):
         self.log.warn(
             """
-            The GoogleTrend Dataset is not yet reliable for obtaining daily data over large timespans.
+            The GoogleTrend Dataset is not yet reliable for obtaining daily data over large timestamps.
             This may result in innacurate peaks in trend volume
             """
         )
