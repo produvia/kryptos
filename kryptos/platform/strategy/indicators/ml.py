@@ -74,11 +74,11 @@ class XGBOOST(MLIndicator):
             if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_OPTIMIZE) == 0:
                 X_train_optimize, y_train_optimize, X_test_optimize = preprocessing_multiclass_data(df, to_optimize=True)
                 y_test_optimize = df['target'].tail(CONFIG.SIZE_TEST_TO_OPTIMIZE).values
-                print('opmizing...')
+                # print('opmizing...')
                 params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-                print(params)
+                # print(params)
                 self.num_boost_rounds = int(params['num_boost_rounds'])
-                self.params = clean_params(params)
+                self.hyper_params = clean_params(params)
 
             # Prepare data to machine learning problem
             if CONFIG.CLASSIFICATION_TYPE == 3:
@@ -87,7 +87,7 @@ class XGBOOST(MLIndicator):
                 X_train, y_train, X_test = preprocessing_binary_data(df)
 
             # Train XGBoost
-            model = xgboost_train(X_train, y_train, self.params, self.num_boost_rounds)
+            model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
 
             # Predict results
             self.result = int(xgboost_test(model, X_test)[0])

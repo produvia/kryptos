@@ -52,7 +52,7 @@ class AbstractIndicator(object):
         self.results_pred = []
         self.results_real = []
         self.idx = -1
-        self.params = None
+        self.hyper_params = None
         self.num_boost_rounds = None
 
         self.log = IndicatorLogger(self)
