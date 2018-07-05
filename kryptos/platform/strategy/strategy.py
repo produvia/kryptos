@@ -257,10 +257,7 @@ class Strategy(object):
             # Add external datasets (Google Search Volume and Blockchain Info) as features
             for i in self._ml_models:
                 for dataset, manager in self._datasets.items():
-                    names = []
-                    for j in manager.df.columns:
-                        names.append(str(dataset) + '_' + j)
-                    manager.df.columns = names
+                    context.prices.index.tz = None
                     context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
                 i.calculate(context.prices)
         else:
