@@ -392,32 +392,36 @@ class Strategy(object):
         data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
         self._datasets[dataset_name] = data_manager
 
-
-    def _construct_signal(self, obj):
-        func = getattr(signal_utils, obj['func'])
-        params = obj.get('params', {})
-
-        func_spec = inspect.getfullargspec(func)
+    def _get_kw_from_signal_params(self, sig_params, func):
+        """Returns a dict of arguments to be passed to a signals util function"""
         kwargs = {}
+        func_spec = inspect.getfullargspec(func)
 
         for arg in func_spec.args:
 
-            if isinstance(params[arg], int):
-                kwargs[arg] = params[arg]
+            if isinstance(sig_params[arg], int):
+                kwargs[arg] = sig_params[arg]
 
             # use a specific output column
-            elif '.' in params[arg]:
-                [indicator_label, output] = params[arg].split('.')
+            # MY_BBANDS.middleband
+            elif '.' in sig_params[arg]:
+                [indicator_label, output] = sig_params[arg].split('.')
                 indicator = self.indicator(indicator_label)
                 output_col = indicator.outputs[output]
                 kwargs[arg] = output_col
 
             # use label as output col if only "real" output
             else:
-                indicator_label = params[arg]
+                indicator_label = sig_params[arg]
                 indicator = self.indicator(indicator_label)
                 kwargs[arg] = indicator.outputs[indicator_label]
+        return kwargs
 
+    def _construct_signal(self, obj):
+        func = getattr(signal_utils, obj['func'])
+        params = obj.get('params', {})
+
+        kwargs = self._get_kw_from_signal_params(params, func)
         self.log.info('Calculating {}'.format(func.__name__))
         return func(**kwargs)
 
