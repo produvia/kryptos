@@ -5,11 +5,10 @@ import pandas as pd
 from kryptos.platform.utils import viz
 from kryptos.platform.strategy.indicators import AbstractIndicator
 from kryptos.platform.strategy.signals import utils
-from kryptos.platform.utils.ml.models.xgb import *
+from kryptos.platform.utils.ml.model import *
 from kryptos.platform.utils.ml.preprocessing import *
 from kryptos.platform.utils.ml.metric import *
-from kryptos.platform.settings import MLConfig as CONFIG
-from kryptos.platform.utils import merge_two_dicts
+
 
 def get_indicator(name, **kw):
     subclass = globals().get(name.upper())
@@ -69,35 +68,18 @@ class XGBOOST(MLIndicator):
 
     def calculate(self, df, **kw):
         self.idx += 1
+        self.current_date = df.iloc[-1].name.date()
 
-        if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
-            if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_OPTIMIZE) == 0:
-                X_train_optimize, y_train_optimize, X_test_optimize = preprocessing_multiclass_data(df, to_optimize=True)
-                y_test_optimize = df['target'].tail(CONFIG.SIZE_TEST_TO_OPTIMIZE).values
-                # print('opmizing...')
-                params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-                # print(params)
-                self.num_boost_rounds = int(params['num_boost_rounds'])
-                self.hyper_params = clean_params(params)
+        # Prepare data to machine learning problem
+        X_train, y_train, X_test = preprocessing_data(df)
 
-            # Prepare data to machine learning problem
-            if CONFIG.CLASSIFICATION_TYPE == 3:
-                X_train, y_train, X_test = preprocessing_multiclass_data(df)
-            elif CONFIG.CLASSIFICATION_TYPE == 2:
-                X_train, y_train, X_test = preprocessing_binary_data(df)
+        # Train XGBoost
+        model = xgboost_train(X_train, y_train)
 
-            # Train XGBoost
-            model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-
-            # Predict results
-            self.result = int(xgboost_test(model, X_test)[0])
-
-            # Results
-            self.results_pred.append(self.result)
-            self.results_real.append(int(df.iloc[-1].target))
-
-        else:
-            self.result = 0
+        # Predict results
+        self.result = int(xgboost_test(model, X_test)[0])
+        self.results_pred.append(self.result)
+        self.results_real.append(int(df.iloc[-1].target))
 
         if self.signals_buy:
             self.log.debug("Signals BUY")
@@ -105,5 +87,4 @@ class XGBOOST(MLIndicator):
             self.log.debug("Signals SELL")
 
     def analyze(self, namespace):
-        file_name = 'xgboost_confussion_matrix.txt'
-        classification_metrics(namespace, file_name, self.results_real, self.results_pred)
+        classification_metrics(namespace, self.results_real, self.results_pred)

@@ -2,8 +2,7 @@ import json
 import uuid
 import shutil
 import os
-import datetime
-import copy
+
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -253,21 +252,16 @@ class Strategy(object):
             frequency=context.HISTORY_FREQ,
         )
 
-        if self._ml_models:
-            # Add external datasets (Google Search Volume and Blockchain Info) as features
-            for i in self._ml_models:
-                for dataset, manager in self._datasets.items():
-                    context.prices.index.tz = None
-                    context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
-                i.calculate(context.prices)
-        else:
-            for dataset, manager in self._datasets.items():
-                manager.calculate(context)
-                manager.record_data(context)
+        for dataset, manager in self._datasets.items():
+            manager.calculate(context)
+            manager.record_data(context)
 
-            for i in self._market_indicators:
-                i.calculate(context.prices)
-                i.record()
+        for i in self._market_indicators:
+            i.calculate(context.prices)
+            i.record()
+
+        for i in self._ml_models:
+            i.calculate(context.prices)
 
         self._extra_handle(context, data)
         self._count_signals(context, data)
@@ -277,6 +271,7 @@ class Strategy(object):
         dataset_inds = 0
         for d, m in self._datasets.items():
             dataset_inds += len(m._indicators)
+
         return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
 
     def _make_plots(self, context, results):
@@ -295,13 +290,12 @@ class Strategy(object):
             i.plot(results, pos)
             pos += 1
 
-        if not self._ml_models:
-            for dataset, manager in self._datasets.items():
-                manager.plot(results, pos, skip_indicators=True)
+        for dataset, manager in self._datasets.items():
+            manager.plot(results, pos, skip_indicators=True)
+            pos += 1
+            for i in manager._indicators:
+                i.plot(results, pos)
                 pos += 1
-                for i in manager._indicators:
-                    i.plot(results, pos)
-                    pos += 1
 
         self._extra_analyze(context, results, pos)
         pos += self._extra_plots
@@ -340,9 +334,9 @@ class Strategy(object):
             raise LookupError(
                 "{} dataset not registered, register with .use_dataset() before adding indicators"
             )
-        if not self._ml_models:
-            data_manager = self._datasets[dataset]
-            data_manager.attach_indicator(indicator, col)
+
+        data_manager = self._datasets[dataset]
+        data_manager.attach_indicator(indicator, col)
 
     def add_ml_models(self, indicator):
         """Use ML models to take decissions"""
@@ -352,13 +346,7 @@ class Strategy(object):
 
     def use_dataset(self, dataset_name, columns):
         """Registers an external dataset to be integrated into algo"""
-        if self._ml_models:
-            # Using from CONFIG.START date - CONFIG.BARS days to CONFIG.END date
-            config = copy.deepcopy(self.trading_info)
-            config['START'] = (datetime.datetime.strptime(config['START'], '%Y-%m-%d') + datetime.timedelta(days=-config['BARS'])).strftime("%Y-%m-%d")
-            data_manager = get_data_manager(dataset_name, cols=columns, config=config)
-        else:
-            data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
+        data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
         self._datasets[dataset_name] = data_manager
 
     def _count_signals(self, context, data):

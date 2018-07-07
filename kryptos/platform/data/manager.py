@@ -62,7 +62,7 @@ class DataManager(object):
         Data Managers are responsible for all operations related to
         to external datasets, including fetching and visualizing.
 
-        These objects are utilized by Strategy objects during algorithm execution to access
+        These objects are utilized by Strategy objects during algroithm execution to access
         and integrate external data into algorithm logic.
 
         The following three methods are to be called during algo execution
@@ -317,7 +317,7 @@ class GoogleTrendDataManager(DataManager):
     def fetch_data(self):
         self.log.warn(
             """
-            The GoogleTrend Dataset is not yet reliable for obtaining daily data over large timestamps.
+            The GoogleTrend Dataset is not yet reliable for obtaining daily data over large timespans.
             This may result in innacurate peaks in trend volume
             """
         )
@@ -342,12 +342,6 @@ class GoogleTrendDataManager(DataManager):
             trend_data.append(d)
 
         self.df = self.normalize_data(trend_data)
-        
-        # tune columns name
-        names = []
-        for col in self.df.columns:
-            names.append('google_' + col)
-        self.df.columns = names
 
     def normalize_data(self, trend_data):
         df = pd.DataFrame(index=pd.date_range(self.START, self.END))
@@ -419,13 +413,7 @@ class QuandleDataManager(DataManager):
             quandl_client.fetch_all()
 
         df.index = pd.date_range(start=df.iloc[0].name, end=df.iloc[-1].name, freq="D")
-        self.df = df[self.columns]
-
-        # tune columns name
-        names = []
-        for col in self.df.columns:
-            names.append('quandl_' + col)
-        self.df.columns = names
+        self.df = df
 
         self.pretty_names = {}
         self._build_name_map()
