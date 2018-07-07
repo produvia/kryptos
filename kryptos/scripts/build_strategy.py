@@ -77,8 +77,8 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
         CONFIG = DockerDevConfig if in_docker() else DevConfig
 
     if rpc:
-        strat_id = run_rpc(strat, CONFIG.API_URL, live=paper, simulate_orders=True)
-        poll_status(strat_id, CONFIG.API_URL)
+        strat_id, queue_name = run_rpc(strat, CONFIG.API_URL, live=paper, simulate_orders=True)
+        poll_status(strat_id, queue_name, CONFIG.API_URL)
 
     else:
         viz = not in_docker()
@@ -118,18 +118,19 @@ def run_rpc(strat, api_url, live=False, simulate_orders=True):
 
     result = res["result"]
     strat_id = result["data"]["strat_id"]
+    queue_name = result["data"]['queue']
     status = result["status"]
     click.secho("Job Started. Strategy job ID: {}".format(strat_id))
     click.secho("status: {}".format(status), fg="magenta")
-    return strat_id
+    return strat_id, queue_name
 
 
-def poll_status(strat_id, api_url):
+def poll_status(strat_id, queue_name, api_url):
     rpc_service = ServiceProxy(api_url)
     status = None
     colors = {"started": "green", "failed": "red", "finished": "blue"}
     while status not in ["finished", "failed"]:
-        res = rpc_service.Strat.status(strat_id)
+        res = rpc_service.Strat.status(strat_id, queue_name)
         status = res["result"]["status"]
         click.secho("status: {}".format(status), fg=colors.get(status))
         time.sleep(2)

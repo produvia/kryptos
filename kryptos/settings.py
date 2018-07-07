@@ -10,6 +10,8 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
 
+QUEUE_NAMES = ['paper', 'live', 'backtest']
+
 with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = json.load(f)
 
