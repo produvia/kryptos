@@ -32,6 +32,7 @@ class MLIndicator(AbstractIndicator):
         To signal trade opportunities, subclassed objects can implement
         the signals_buy and signals_sell methods.
         """
+        self.hyper_params = None
 
     def calculate(self, df, **kw):
         """"""
@@ -52,6 +53,7 @@ class XGBOOST(MLIndicator):
 
     def __init__(self, **kw):
         super(XGBOOST, self).__init__("XGBOOST", **kw)
+        self.num_boost_rounds = None
 
     @property
     def signals_buy(self):
