@@ -18,16 +18,6 @@ def start_worker():
     from kryptos.app.extensions import jsonrpc
     from kryptos.utils.outputs import in_docker
 
-    def run_strat(strat_json, live=False, simulate_orders=True):
-        strat_dict = json.loads(strat_json)
-        strat = Strategy()
-        strat.load_from_dict(strat_dict)
-        strat.run(viz=False, live=live, simulate_orders=simulate_orders)
-
-        # serialize results for job result
-        result_df = strat.quant_results
-        return result_df.to_json()
-
     with Connection(CONN):
         worker = Worker(map(Queue, QUEUE_NAMES))
         worker.work()
