@@ -143,4 +143,9 @@ class MLConfig(object):
         'math_operators': False,
     }
 
+    # fbprophet configuration
+    FE_FBPROPHET = {
+        'enabled': True
+    }
+
     FE_UTILS = True

@@ -3,9 +3,34 @@ import numpy as np
 import pandas as pd
 import talib as ta
 from datetime import datetime
-
 from tsfresh import extract_features, extract_relevant_features
 from tsfresh.utilities.dataframe_functions import roll_time_series
+from fbprophet import Prophet
+
+from kryptos.platform.settings import DEFAULT_CONFIG_FILE
+
+
+def add_fbprophet_features(df, fbprophet_settings):
+
+    df_prophet = df[['timestamp', 'price']]
+    df_prophet.columns = ['ds', 'y']
+
+    m = Prophet()
+    m.fit(df_prophet)
+
+    if DEFAULT_CONFIG_FILE["DATA_FREQ"] == "daily":
+        freq = 'D'
+    else:
+        freq = 'min'
+
+    future = m.make_future_dataframe(periods=1, freq=freq)
+    forecast = m.predict(future)
+    # forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail()
+    df_prophet.shift(1) # hacia arriba
+    df = pd.concat([df, df_prophet], axis=1, join_axes=[df.index]) # merge
+
+    return df
+
 
 def add_tsfresh_features(df, tsfresh_settings):
     """

@@ -71,6 +71,10 @@ def add_fe(df):
     if CONFIG.FE_TA['enabled']:
         df = add_ta_features(df, CONFIG.FE_TA)
 
+    # Add fbprophet features
+    if CONFIG.FE_FBPROPHET['enabled']:
+        df = add_fbprophet_features(df, CONFIG.FE_FBPROPHET)
+
     # Add utils features
     if CONFIG.FE_UTILS:
         df = add_utils_features(df)
