@@ -2,6 +2,7 @@ import json
 import uuid
 import shutil
 import os
+import inspect
 
 import logbook
 import matplotlib.pyplot as plt
@@ -13,6 +14,7 @@ from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
 from kryptos.platform.utils import load, viz, outputs
 from kryptos.platform.strategy.indicators import technical, ml
+from kryptos.platform.strategy.signals import utils as signal_utils
 from kryptos.platform.data.manager import get_data_manager
 from kryptos.platform import logger_group
 from kryptos.platform.settings import DEFAULT_CONFIG
@@ -72,8 +74,13 @@ class Strategy(object):
         self.viz = True
         self.quant_results = None
 
-        self._signal_buy_func = lambda context, data: None
-        self._signal_sell_func = lambda context, data: None
+        self._signal_buy_funcs = []
+        self._signal_sell_funcs = []
+
+        # from JSON obj
+        self._buy_signal_objs = []
+        self._sell_signal_objs = []
+
         self._override_indicator_signals = False
 
         self._buy_func = None
@@ -92,7 +99,7 @@ class Strategy(object):
             "trading": self.trading_info,
             "datasets": self.dataset_info,
             "indicators": self.indicator_info,
-            "signals": self.signals,
+            "signals": self._dump_signals(),
         }
         return json.dumps(d, indent=3)
 
@@ -151,7 +158,7 @@ class Strategy(object):
         self._override_indicator_signals = override
 
         def decorator(f):
-            self._signal_sell_func = f
+            self._signal_sell_funcs.append(f)
             return f
 
         return decorator
@@ -166,10 +173,49 @@ class Strategy(object):
         self._override_indicator_signals = override
 
         def decorator(f):
-            self._signal_buy_func = f
+            self._signal_buy_funcs.append(f)
             return f
 
         return decorator
+
+    def _load_indicators(self, strat_dict):
+        indicators = strat_dict.get("indicators", {})
+        for i in indicators:
+            if i.get("dataset") in [None, "market"]:
+                ind = technical.get_indicator(**i)
+                if ind not in self._market_indicators:
+                    self.add_market_indicator(ind)
+
+    def _load_datasets(self, strat_dict):
+        datasets = strat_dict.get("datasets", {})
+        for ds in datasets:
+            self.use_dataset(ds["name"], ds["columns"])
+            for i in ds.get("indicators", []):
+                self.add_data_indicator(ds["name"], i["name"], col=i["symbol"])
+
+    def _dump_signals(self):
+        res = {}
+        res['buy'] = self._buy_signal_objs
+        res['sell'] = self._sell_signal_objs
+        return res
+
+    def _load_signals(self, strat_dict):
+        signals = strat_dict.get('signals', {})
+        for s in signals.get('buy', []):
+            sig_func = getattr(signal_utils, s['func'], None)
+            if not sig_func:
+                raise Exception('JSON defined signals require a defined function')
+
+            # store json repr so we can load params during execution
+            self._buy_signal_objs.append(s)
+
+        for s in signals.get('sell', []):
+            sig_func = getattr(signal_utils, s['func'], None)
+            if not sig_func:
+                raise Exception('JSON defined signals require a defined function')
+
+            # store json repr so we can load params during execution
+            self._sell_signal_objs.append(s)
 
     def load_from_dict(self, strat_dict):
         trade_config = strat_dict.get("trading", {})
@@ -180,18 +226,11 @@ class Strategy(object):
         if self.trading_info["EXCHANGE"] == "poloniex":
             self.trading_info["TICK_SIZE"] = 1000.0
 
-        indicators = strat_dict.get("indicators", {})
-        for i in indicators:
-            if i.get("dataset") in [None, "market"]:
-                ind = technical.get_indicator(**i)
-                if ind not in self._market_indicators:
-                    self.add_market_indicator(ind)
+        self._load_indicators(strat_dict)
+        self._load_datasets(strat_dict)
+        self._load_signals(strat_dict)
 
-        datasets = strat_dict.get("datasets", {})
-        for ds in datasets:
-            self.use_dataset(ds["name"], ds["columns"])
-            for i in ds.get("indicators", []):
-                self.add_data_indicator(ds["name"], i["name"], col=i["symbol"])
+
 
     def load_from_json(self, json_file):
         with open(json_file, "r") as f:
@@ -257,8 +296,12 @@ class Strategy(object):
             manager.record_data(context)
 
         for i in self._market_indicators:
-            i.calculate(context.prices)
-            i.record()
+            try:
+                i.calculate(context.prices)
+                i.record()
+            except Exception as e:
+                self.log.error(e)
+                self.log.error('Error calculating {}, skipping...'.format(i.name))
 
         for i in self._ml_models:
             i.calculate(context.prices)
@@ -349,17 +392,76 @@ class Strategy(object):
         data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
         self._datasets[dataset_name] = data_manager
 
+    def _get_kw_from_signal_params(self, sig_params, func):
+        """Returns a dict of arguments to be passed to a signals util function"""
+        kwargs = {}
+        func_spec = inspect.getfullargspec(func)
+
+        for arg in func_spec.args:
+
+            if isinstance(sig_params[arg], int):
+                kwargs[arg] = sig_params[arg]
+
+            # use a specific output column
+            # MY_BBANDS.middleband
+            elif '.' in sig_params[arg]:
+                [indicator_label, output] = sig_params[arg].split('.')
+                indicator = self.indicator(indicator_label)
+                output_col = indicator.outputs[output]
+                kwargs[arg] = output_col
+
+            # use label as output col if only "real" output
+            else:
+                indicator_label = sig_params[arg]
+                indicator = self.indicator(indicator_label)
+                kwargs[arg] = indicator.outputs[indicator_label]
+        return kwargs
+
+    def _construct_signal(self, obj):
+        func = getattr(signal_utils, obj['func'])
+        params = obj.get('params', {})
+
+        kwargs = self._get_kw_from_signal_params(params, func)
+        self.log.info('Calculating {}'.format(func.__name__))
+        return func(**kwargs)
+
+    def _calculate_custom_signals(self, context, data):
+        sells, buys, neutrals = 0, 0, 0
+        for i in self._buy_signal_objs:
+            if self._construct_signal(i):
+                buys += 1
+                self.log.debug("Custom: BUY")
+            else:
+                neutrals += 1
+
+        for i in self._sell_signal_objs:
+            if self._construct_signal(i):
+                sells += 1
+                self.log.debug("Custom: SELL")
+            else:
+                neutrals += 1
+
+        return sells, buys, neutrals
+
+
     def _count_signals(self, context, data):
         """Processes indicator to determine buy/sell opportunities"""
-        sells, buys, neutrals = 0, 0, 0
-        if self._signal_buy_func(context, data):
-            self.log.debug("Custom: BUY")
-            buys += 1
-        elif self._signal_sell_func(context, data):
-            self.log.debug("Custom: SELL")
-            sells += 1
-        else:
-            neutrals += 1
+
+        sells, buys, neutrals = self._calculate_custom_signals(context, data)
+
+        for f in self._signal_buy_funcs:
+            if f(context, data):
+                self.log.debug("Custom: BUY")
+                buys += 1
+            else:
+                neutrals += 1
+
+        for f in self._signal_sell_funcs:
+            if f(context, data):
+                self.log.debug("Custom: SELL")
+                sells += 1
+            else:
+                neutrals += 1
 
         if self._override_indicator_signals:
             return self._weigh_signals(context, buys, sells, neutrals)

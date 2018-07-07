@@ -51,8 +51,7 @@ setup(
         bchain=kryptos.scripts.bchain_activity:run
         trends=kryptos.scripts.trends:run
         strat=kryptos.scripts.build_strategy:run
+        compare_all_ta=kryptos.scripts.run_all_ta:run
     ''',
     zip_safe=False,
 )
-
-   

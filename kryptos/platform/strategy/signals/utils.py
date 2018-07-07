@@ -4,22 +4,22 @@ from logbook import Logger
 log = Logger("SIGNALS")
 
 
-def cross_above(signal_series, trigger):
+def cross_above(series, trigger):
     if isinstance(trigger, int):
         trigger = [trigger] * 3
     try:
-        return signal_series[-2] <= trigger[-2] and signal_series[-1] > trigger[-1]
+        return series[-2] <= trigger[-2] and series[-1] > trigger[-1]
 
     except IndexError:
         log.warn("Not enough data to calculate cross above")
         return False
 
 
-def cross_below(signal_series, trigger):
+def cross_below(series, trigger):
     if isinstance(trigger, int):
         trigger = [trigger] * 3
     try:
-        return signal_series[-2] >= trigger[-2] and signal_series[-1] < trigger[-2]
+        return series[-2] >= trigger[-2] and series[-1] < trigger[-2]
 
     except IndexError:
         log.warn("Not enough data to calculate cross above")
