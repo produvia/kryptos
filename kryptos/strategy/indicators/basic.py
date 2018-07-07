@@ -1,9 +1,9 @@
 from catalyst.api import record
 from logbook import Logger
 
-from kryptos.platform.utils import viz
-from kryptos.platform.strategy.indicators import AbstractIndicator
-from kryptos.platform import logger_group
+from kryptos.utils import viz
+from kryptos.strategy.indicators import AbstractIndicator
+from kryptos import logger_group
 
 log = Logger("BasicIndicator")
 logger_group.add_logger(log)

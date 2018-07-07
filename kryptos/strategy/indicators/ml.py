@@ -2,12 +2,12 @@ from catalyst.api import record
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from kryptos.platform.utils import viz
-from kryptos.platform.strategy.indicators import AbstractIndicator
-from kryptos.platform.strategy.signals import utils
-from kryptos.platform.utils.ml.model import *
-from kryptos.platform.utils.ml.preprocessing import *
-from kryptos.platform.utils.ml.metric import *
+from kryptos.utils import viz
+from kryptos.strategy.indicators import AbstractIndicator
+from kryptos.strategy.signals import utils
+from kryptos.utils.ml.model import *
+from kryptos.utils.ml.preprocessing import *
+from kryptos.utils.ml.metric import *
 
 
 def get_indicator(name, **kw):

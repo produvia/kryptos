@@ -14,13 +14,13 @@ from pytrends.request import TrendReq
 import quandl
 
 
-# from kryptos.platform.config import self.config
-from kryptos.platform.data import csv_data
-from kryptos.platform.data.clients import quandl_client
-from kryptos.platform.utils import viz
-from kryptos.platform.strategy.indicators import basic, technical
-from kryptos.platform.strategy import DEFAULT_CONFIG
-from kryptos.platform import logger_group
+# from kryptos.config import self.config
+from kryptos.data import csv_data
+from kryptos.data.clients import quandl_client
+from kryptos.utils import viz
+from kryptos.strategy.indicators import basic, technical
+from kryptos.strategy import DEFAULT_CONFIG
+from kryptos import logger_group
 
 from logbook import Logger
 

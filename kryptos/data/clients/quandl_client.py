@@ -2,7 +2,7 @@ import os
 import csv
 import quandl
 
-from kryptos.platform.data import csv_data
+from kryptos.data import csv_data
 
 API_KEY = os.getenv("QUANDL_API_KEY")
 DATA_DIR = os.path.dirname(os.path.abspath(csv_data.__file__))

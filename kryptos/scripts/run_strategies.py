@@ -4,9 +4,9 @@ in scripts/performance_results
 """
 
 from logbook import Logger
-from kryptos.platform.utils import load, outputs, viz, algo
-from kryptos.platform.settings import DEFAULT_CONFIG as CONFIG
-from kryptos.platform.analysis import quant
+from kryptos.utils import load, outputs, viz, algo
+from kryptos.settings import DEFAULT_CONFIG as CONFIG
+from kryptos.analysis import quant
 
 import click
 

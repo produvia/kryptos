@@ -1,7 +1,7 @@
 import logbook
 
-from kryptos.platform import logger_group
-from kryptos.platform.strategy import DEFAULT_CONFIG
+from kryptos import logger_group
+from kryptos.strategy import DEFAULT_CONFIG
 
 
 MA_TYPE_MAP = {

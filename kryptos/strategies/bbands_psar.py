@@ -1,6 +1,6 @@
 import talib as ta
-from kryptos.platform.strategy import Strategy
-from kryptos.platform.strategy.indicators import technical
+from kryptos.strategy import Strategy
+from kryptos.strategy.indicators import technical
 from catalyst.api import order_target_percent, order, record, get_open_orders
 
 import logbook

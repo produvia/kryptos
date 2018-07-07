@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from logbook import Logger
-from kryptos.platform.analysis.utils import quant_utils
-from kryptos.platform.utils.outputs import get_algo_dir
-from kryptos.platform import logger_group
+from kryptos.analysis.utils import quant_utils
+from kryptos.utils.outputs import get_algo_dir
+from kryptos import logger_group
 
 
 log = Logger("QUANT")

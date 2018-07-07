@@ -12,13 +12,13 @@ from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
-from kryptos.platform.utils import load, viz, outputs
-from kryptos.platform.strategy.indicators import technical, ml
-from kryptos.platform.strategy.signals import utils as signal_utils
-from kryptos.platform.data.manager import get_data_manager
-from kryptos.platform import logger_group
-from kryptos.platform.settings import DEFAULT_CONFIG
-from kryptos.platform.analysis import quant
+from kryptos.utils import load, viz, outputs
+from kryptos.strategy.indicators import technical, ml
+from kryptos.strategy.signals import utils as signal_utils
+from kryptos.data.manager import get_data_manager
+from kryptos import logger_group
+from kryptos.settings import DEFAULT_CONFIG
+from kryptos.analysis import quant
 
 
 class StratLogger(logbook.Logger):

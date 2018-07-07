@@ -9,11 +9,11 @@ import logbook
 from flask_jsonrpc.proxy import ServiceProxy
 import pandas as pd
 
-from kryptos.platform.strategy import Strategy
-from kryptos.platform.data.manager import AVAILABLE_DATASETS
-from kryptos.platform import setup_logging
-from kryptos.platform.utils.outputs import in_docker
-from kryptos.platform.utils.load import get_strat
+from kryptos.strategy import Strategy
+from kryptos.data.manager import AVAILABLE_DATASETS
+from kryptos import setup_logging
+from kryptos.utils.outputs import in_docker
+from kryptos.utils.load import get_strat
 
 from kryptos.app.settings import DevConfig, ProdConfig, DockerDevConfig
 

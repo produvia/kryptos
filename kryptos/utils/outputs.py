@@ -1,5 +1,5 @@
 import os
-from kryptos.platform.settings import PERF_DIR, DEFAULT_CONFIG as CONFIG
+from kryptos.settings import PERF_DIR, DEFAULT_CONFIG as CONFIG
 
 def in_docker():
     if not os.path.exists('/proc/self/cgroup'):

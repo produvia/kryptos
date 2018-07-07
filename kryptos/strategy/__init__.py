@@ -8,4 +8,4 @@ with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = json.load(f)
 
 
-from kryptos.platform.strategy.strategy import Strategy
+from kryptos.strategy.strategy import Strategy

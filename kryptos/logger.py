@@ -3,7 +3,7 @@ import sys
 import logbook
 from logbook.more import ColorizedStderrHandler
 
-from kryptos.platform.settings import LOG_DIR
+from kryptos.settings import LOG_DIR
 
 logger_group = logbook.LoggerGroup()
 # logger_group.level = logbook.INFO

@@ -4,9 +4,9 @@ from flask import Blueprint
 import redis
 from rq import Queue, Connection
 
-from kryptos.platform.strategy import Strategy
+from kryptos.strategy import Strategy
 from kryptos.app.extensions import jsonrpc
-from kryptos.platform.utils.outputs import in_docker
+from kryptos.utils.outputs import in_docker
 
 host = 'redis' if in_docker() else 'localhost'
 conn = redis.Redis(host=host, port=6379)

@@ -1,6 +1,6 @@
 import os
 from sklearn.metrics import *
-from kryptos.platform.utils.outputs import get_algo_dir
+from kryptos.utils.outputs import get_algo_dir
 
 def classification_metrics(namespace, y_true, y_pred, y_pred_proba=False):
     target_names = ['KEEP', 'UP', 'DOWN']

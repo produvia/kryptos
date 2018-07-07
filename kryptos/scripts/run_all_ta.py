@@ -5,9 +5,9 @@ import click
 from multiprocessing import Pool
 import pandas as pd
 
-from kryptos.platform.strategy import Strategy
-from kryptos.platform.strategy.indicators import technical
-from kryptos.platform.settings import PERF_DIR
+from kryptos.strategy import Strategy
+from kryptos.strategy.indicators import technical
+from kryptos.settings import PERF_DIR
 from kryptos.analysis.utils import quant_utils
 
 

@@ -4,8 +4,8 @@ import os
 from catalyst.exchange.utils.stats_utils import extract_transactions
 from logbook import Logger
 
-from kryptos.platform import logger_group
-from kryptos.platform.settings import PERF_DIR
+from kryptos import logger_group
+from kryptos.settings import PERF_DIR
 
 log = Logger("VIZ")
 logger_group.add_logger(log)

@@ -1,10 +1,10 @@
 import click
 from logbook import Logger
 
-from kryptos.platform.utils import load, outputs, viz, algo
-from kryptos.platform.analysis import quant
-from kryptos.platform import add_logger
-from kryptos.platform.settings import METRICS, DEFAULT_CONFIG as CONFIG, TAConfig
+from kryptos.utils import load, outputs, viz, algo
+from kryptos.analysis import quant
+from kryptos import add_logger
+from kryptos.settings import METRICS, DEFAULT_CONFIG as CONFIG, TAConfig
 
 log = Logger("Comparison")
 add_logger(log)

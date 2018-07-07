@@ -5,10 +5,10 @@ import pandas as pd
 from catalyst.api import record
 
 
-from kryptos.platform.settings import TAConfig as CONFIG
-from kryptos.platform.utils import viz
-from kryptos.platform.strategy.indicators import AbstractIndicator
-from kryptos.platform.strategy.signals import utils
+from kryptos.settings import TAConfig as CONFIG
+from kryptos.utils import viz
+from kryptos.strategy.indicators import AbstractIndicator
+from kryptos.strategy.signals import utils
 
 
 def get_indicator(name, **kw):

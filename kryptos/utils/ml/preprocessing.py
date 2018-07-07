@@ -2,7 +2,7 @@ from datetime import datetime
 import pandas as pd
 pd.options.mode.chained_assignment = None # disable chained assignments
 
-from kryptos.platform.settings import MLConfig as CONFIG
+from kryptos.settings import MLConfig as CONFIG
 
 
 def preprocessing_data(df):
