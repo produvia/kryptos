@@ -618,10 +618,10 @@ class Strategy(object):
             )
 
     def run_live(self, simulate_orders=True):
+        self.log.info('Running live trading, suimulating orders: {}'.format(simulate_orders))
         self.is_live = True
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
-            data_frequency=self.trading_info["DATA_FREQ"],
             initialize=self._init_func,
             handle_data=self._process_data,
             analyze=self._analyze,
