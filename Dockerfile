@@ -25,6 +25,23 @@ RUN pip install 'numpy==1.14.3'
 RUN pip install -r /app/requirements.txt
 RUN pip install --pre xgboost
 
+RUN apt-get -y install \
+	build-essential \
+	python-dev \
+	python-setuptools \
+    python-pip
+
+#Install scikit-learn dependancies
+RUN apt-get -y install \
+	python-numpy \
+	python-scipy \
+	libatlas-dev \
+    libatlas3-base
+
+    #Install scikit-learn
+RUN pip install -U scikit-learn
+
+
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
