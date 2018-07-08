@@ -52,7 +52,7 @@ setup(
         trends=kryptos.scripts.trends:run
         strat=kryptos.scripts.build_strategy:run
         compare_all_ta=kryptos.scripts.run_all_ta:run
-        worker=kryptos.worker.worker:start_worker
+        workers=kryptos.worker.worker:manage_workers
     ''',
     zip_safe=False,
 )
