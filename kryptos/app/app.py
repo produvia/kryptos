@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """The flask app module, containing the app factory function."""
 from flask import Flask
+import rq_dashboard
 
 from kryptos.app import web, rpc
 from kryptos.app.extensions import jsonrpc
@@ -13,6 +14,7 @@ def create_app(config_object=ProdConfig):
     :param config_object: The configuration object to use.
     """
     app = Flask(__name__.split(".")[0])
+    app.config.from_object(rq_dashboard.default_settings)
     app.config.from_object(config_object)
     app.logger.warn("Using {}".format(config_object))
     register_extensions(app)
@@ -42,4 +44,6 @@ def register_blueprints(app):
     """
     app.register_blueprint(web.views.blueprint)
     app.register_blueprint(rpc.views.api)
+    app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
+
     return None

@@ -17,6 +17,8 @@ class Config(object):
     CLIENT_ACCESS_TOKEN = os.getenv("CLIENT_ACCESS_TOKEN")
     DEV_ACCESS_TOKEN = os.getenv("DEV_ACCESS_TOKEN")
     ASSIST_ACTIONS_ON_GOOGLE = True
+    REDIS_HOST = os.getenv('REDIS_HOST')
+    RQ_POLL_INTERVAL = 1000
 
 
 class ProdConfig(Config):
