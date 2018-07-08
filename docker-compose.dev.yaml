@@ -37,7 +37,7 @@ services:
       - ~/.catalyst:/root/.catalyst
     environment:
       - FLASK_DEBUG=1
-    entrypoint: ["rqworker", "-u", "redis://redis:6379"]
+    entrypoint: ['python', 'kryptos/worker/worker.py']
     networks:
       - kryptos-net
 
