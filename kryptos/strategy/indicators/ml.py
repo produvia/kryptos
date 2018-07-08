@@ -5,9 +5,9 @@ import pandas as pd
 from kryptos.utils import viz
 from kryptos.strategy.indicators import AbstractIndicator
 from kryptos.strategy.signals import utils
-from kryptos.utils.ml.model import *
-from kryptos.utils.ml.preprocessing import *
-from kryptos.utils.ml.metric import *
+from kryptos.ml.model import *
+from kryptos.ml.preprocessing import *
+from kryptos.ml.metric import *
 
 
 def get_indicator(name, **kw):
