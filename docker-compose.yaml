@@ -26,12 +26,11 @@ services:
   worker:
     # image: gcr.io/kryptos-204204/krpytos-main:latest
     container_name: worker
-    # volumes:
-    #   - ~/.catalyst:/root/catalyst #to store exhange data and auth
     build:
       context: .
       dockerfile: Dockerfile
-
+    volumes:
+      - ~/.catalyst:/root/.catalyst
     entrypoint: ['python', 'kryptos/worker/worker.py']
     networks:
       - kryptos-net
