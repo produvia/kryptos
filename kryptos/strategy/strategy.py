@@ -7,6 +7,7 @@ import inspect
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
+from rq import get_current_job
 
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
@@ -30,6 +31,11 @@ class StratLogger(logbook.Logger):
     def process_record(self, record):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
+
+        if self.strat.in_job:
+            job = get_current_job()
+            job.meta['output'] = record.msg
+            job.save_meta()
 
 
 class Strategy(object):
@@ -268,6 +274,10 @@ class Strategy(object):
         context.i += 1
         # set date first for logging purposes
         self.current_date = context.blotter.current_dt.date()
+
+        job = get_current_job()
+        job.meta['DATE'] = self.current_date
+        job.save_meta()
 
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
