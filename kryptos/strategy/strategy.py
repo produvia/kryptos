@@ -34,7 +34,7 @@ class StratLogger(logbook.Logger):
 
         if self.strat.in_job:
             job = get_current_job()
-            job.meta['output'] = record.msg
+            job.meta['Strategy'] = record.msg
             job.save_meta()
 
 
@@ -276,7 +276,7 @@ class Strategy(object):
         self.current_date = context.blotter.current_dt.date()
 
         job = get_current_job()
-        job.meta['DATE'] = self.current_date
+        job.meta['date'] = self.current_date
         job.save_meta()
 
         self.log.debug("Processing algo iteration")

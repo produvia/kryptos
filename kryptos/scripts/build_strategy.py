@@ -132,7 +132,9 @@ def poll_status(strat_id, queue_name, api_url):
     while status not in ["finished", "failed"]:
         res = rpc_service.Strat.status(strat_id, queue_name)
         status = res["result"]["status"]
-        click.secho("status: {}".format(status), fg=colors.get(status))
+        meta = res["result"]["data"]['meta']
+
+        click.secho(json.dumps(meta, indent=2))
         time.sleep(2)
 
     result_json = res["result"].get("strat_results")

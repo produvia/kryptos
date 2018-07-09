@@ -1,4 +1,5 @@
 import logbook
+from rq import get_current_job
 
 from kryptos import logger_group
 from kryptos.strategy import DEFAULT_CONFIG
@@ -28,6 +29,12 @@ class IndicatorLogger(logbook.Logger):
         record.extra["trade_date"] = self.indicator.current_date
         record.extra["ind_data"] = self.indicator.data
         record.extra["ind_outputs"] = self.indicator.outputs
+        job = get_current_job()
+        if job is not None:
+            job.meta[self.indicator.name] = record.msg
+            job.save_meta()
+
+
 
 
 class AbstractIndicator(object):
