@@ -73,6 +73,7 @@ class Strategy(object):
         self._extra_plots = 0
         self.viz = True
         self.quant_results = None
+        self.in_job = False
 
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
@@ -577,13 +578,14 @@ class Strategy(object):
 
     # Save the prices and analysis to send to analyze
 
-    def run(self, live=False, simulate_orders=True, viz=True):
+
+    def run(self, live=False, simulate_orders=True, viz=True, as_job=False):
         """Executes the trade strategy as a catalyst algorithm
 
         Basic algorithm behavior is defined cia the config object, while
         iterative logic is managed by the Strategy object.
         """
-
+        self.in_job = True
         self.viz = viz
         try:
             if live or self.trading_info.get("LIVE", False):
