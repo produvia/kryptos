@@ -28,7 +28,8 @@ def run(strat_json, live=False, simulate_orders=True):
 def get_status(strat_id, queue_name):
     q = worker.get_queue(queue_name)
     job = q.fetch_job(strat_id)
-    resp = {"status": job.status, "data": {"strat_id": job.get_id()}}
+
+    resp = {"status": job.status, "data": {"strat_id": job.get_id(), "meta": job.meta}}
     if job.is_finished:
         resp['strat_results'] = job.result
     return resp
