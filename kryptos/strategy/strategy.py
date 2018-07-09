@@ -595,7 +595,7 @@ class Strategy(object):
         Basic algorithm behavior is defined cia the config object, while
         iterative logic is managed by the Strategy object.
         """
-        self.in_job = True
+        self.in_job = as_job
         self.viz = viz
         try:
             if live or self.trading_info.get("LIVE", False):
