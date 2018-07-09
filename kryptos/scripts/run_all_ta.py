@@ -43,6 +43,8 @@ def run():
     best_profit_pct = 0
     best_indicator = None
 
+    if not os.path.exists(RESULT_FILE):
+        os.makedirs(PERF_DIR, exist_ok=True)
 
     with open(RESULT_FILE, 'a') as f:
         writer = csv.DictWriter(f, fieldnames=field_names)
