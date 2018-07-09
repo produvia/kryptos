@@ -275,9 +275,10 @@ class Strategy(object):
         # set date first for logging purposes
         self.current_date = context.blotter.current_dt.date()
 
-        job = get_current_job()
-        job.meta['date'] = self.current_date
-        job.save_meta()
+        if self.in_job:
+            job = get_current_job()
+            job.meta['date'] = self.current_date
+            job.save_meta()
 
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
