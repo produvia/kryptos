@@ -1,7 +1,6 @@
 import os
 import json
 
-
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
 PERF_DIR = os.path.join(BASE_DIR, "performance_results")
@@ -101,6 +100,51 @@ class TAConfig(object):
 # Machine Learning Settings
 class MLConfig(object):
 
-    FE_DATES = True # True to add feature engineering
+    """
+        2 - Binary Classification (DOWN / UP)
+        3 - Multiclass Classification (DOWN / KEEP / UP)
+    """
+    CLASSIFICATION_TYPE = 3
     PERCENT_UP = 0.015 # up signal %
     PERCENT_DOWN = 0.015 # down signal %
+
+    MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
+    SIZE_TEST_TO_OPTIMIZE = 20 # Size of test dataframe to optimize model params
+    ITERATIONS_OPTIMIZE = 30 # Number of iterations to optimize model params
+    N_HYPEROPT_EVALS = 250 # Number of evaluations to hyperopt
+    XGBOOST_SEED = 17
+    OPTIMIZE_PARAMS = False
+
+    # Check if size test dataframe is less than total dataframe
+    assert SIZE_TEST_TO_OPTIMIZE < MIN_ROWS_TO_ML
+
+    FE_DATES = True # True to add dates feature engineering
+
+    # tsfresh configuration
+    FE_TSFRESH = {
+        'enabled': True,
+        # 'kind': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
+        'window': 30,
+    }
+
+    # ta-lib configuration
+    FE_TA = {
+        'enabled': True,
+        'overlap': True,
+        'momentum': True,
+        'volume': True,
+        'volatility': True,
+        'price': True,
+        'cycle': True,
+        'pattern': True,
+        'statistic': True,
+        'math_transforms': False,
+        'math_operators': False,
+    }
+
+    # fbprophet configuration
+    FE_FBPROPHET = {
+        'enabled': True
+    }
+
+    FE_UTILS = True

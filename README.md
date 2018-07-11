@@ -105,6 +105,34 @@ Calculate a basic indicator for external data
 $ strat -d google -c 'btc usd' -i 'relchange'
 ```
 
+### Runing Machine Learning Strategies from the CLI
+
+To create a strategy using ML models:
+```bash
+$ strat -ml xgboost
+```
+
+By default, Machine Learning models use:
+
+* Feature Engineering techniques, using tsfresh and technical analysis (ta-lib) libraries.
+* Hyperopt library to optimize models hyper parameters chosen.
+
+You can add external datasets as features too:
+
+Google Trends
+```bash
+$ strat -d google -c "bitcoin" -c "btc" -ml xgboost
+or
+$ strat -ml xgboost -d google -c "bitcoin" -c "btc"
+```
+
+Quandle
+```bash
+$ strat -d quandl -c 'MKTCP' -c 'NTRAN' -ml xgboost
+or
+$ strat -ml xgboost -d quandl -c 'MKTCP' -c 'NTRAN'
+```
+
 ### JSON Format
 The `strat` command also accepts a JSON file. The JSON object represents all the inputs used to create a strategy. The JSON representation is displayed anytime the `strat` command is run, so you can use save it as a file and fine tune inputs such as indicator parameters.
 
