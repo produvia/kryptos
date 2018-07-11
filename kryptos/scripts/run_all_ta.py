@@ -8,7 +8,7 @@ import pandas as pd
 from kryptos.platform.strategy import Strategy
 from kryptos.platform.strategy.indicators import technical
 from kryptos.platform.settings import PERF_DIR
-from kryptos.analysis.utils import quant_utils
+from kryptos.platform.analysis.utils import quant_utils
 
 
 RESULT_FILE = os.path.join(PERF_DIR, 'all_ta.csv')
