@@ -347,7 +347,13 @@ docker-credential-gcr configure-docker
 
 #### Run for production
 
-Pull the latest changes from github, and build the images
+Pull the latest changes from github or use gcloud to scp the repo
+
+```bash
+gcloud compute scp . kryptos-compose:~/kryptos --recurse
+```
+
+build the images
 
 ```bash
 $ bash docker_scripts/prod-build.#!/bin/sh
