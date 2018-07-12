@@ -30,7 +30,8 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ~/.catalyst:/root/.catalyst
+      - catalyst:/root/.catalyst
+
     entrypoint: ['python', 'kryptos/worker/worker.py']
     networks:
       - kryptos-net
@@ -46,3 +47,6 @@ services:
 
 networks:
   kryptos-net:
+
+volumes:
+  catalyst:
