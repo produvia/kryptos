@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t krpytos-main -f Dockerfile .
+docker build -t krpytos-dev -f Dockerfile .

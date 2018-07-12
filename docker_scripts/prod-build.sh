@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t krpytos-main:latest -f Dockerfile .
+docker build -t kryptos-prod:latest -f Dockerfile .
