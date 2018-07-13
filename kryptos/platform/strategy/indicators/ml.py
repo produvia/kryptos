@@ -6,6 +6,7 @@ from kryptos.platform.utils import viz
 from kryptos.platform.strategy.indicators import AbstractIndicator
 from kryptos.platform.strategy.signals import utils
 from kryptos.platform.utils.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
+from kryptos.platform.utils.ml.feature_selection.xgb import embedding_feature_selection
 from kryptos.platform.utils.ml.preprocessing import preprocessing_multiclass_data, clean_params, add_fe
 from kryptos.platform.utils.ml.metric import classification_metrics
 from kryptos.platform.settings import MLConfig as CONFIG
@@ -33,6 +34,7 @@ class MLIndicator(AbstractIndicator):
         the signals_buy and signals_sell methods.
         """
         self.hyper_params = None
+        self.feature_selected_columns = []
 
     def calculate(self, df, **kw):
         """"""
@@ -72,13 +74,14 @@ class XGBOOST(MLIndicator):
     def calculate(self, df, **kw):
         self.idx += 1
 
+        # Dataframe size is enough to apply Machine Learning
         if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
-            if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_OPTIMIZE) == 0:
+
+            # Optimize Hyper Params for Xgboost model
+            if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_PARAMS_OPTIMIZE) == 0:
                 X_train_optimize, y_train_optimize, X_test_optimize = preprocessing_multiclass_data(df, to_optimize=True)
                 y_test_optimize = df['target'].tail(CONFIG.SIZE_TEST_TO_OPTIMIZE).values
-                # print('opmizing...')
                 params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-                # print(params)
                 self.num_boost_rounds = int(params['num_boost_rounds'])
                 self.hyper_params = clean_params(params)
 
@@ -87,6 +90,17 @@ class XGBOOST(MLIndicator):
                 X_train, y_train, X_test = preprocessing_multiclass_data(df)
             elif CONFIG.CLASSIFICATION_TYPE == 2:
                 X_train, y_train, X_test = preprocessing_binary_data(df)
+
+            # Feature Selection
+            if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
+                model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
+                print(len(X_train.columns))
+                self.feature_selected_columns = embedding_feature_selection(model, 'all', 0.9)
+                print(len(self.feature_selected_columns))
+
+            if self.feature_selected_columns:
+                X_train = X_train[self.feature_selected_columns]
+                X_test = X_test[self.feature_selected_columns]
 
             # Train XGBoost
             model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)

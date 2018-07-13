@@ -110,10 +110,12 @@ class MLConfig(object):
 
     MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
     SIZE_TEST_TO_OPTIMIZE = 20 # Size of test dataframe to optimize model params
-    ITERATIONS_OPTIMIZE = 30 # Number of iterations to optimize model params
+    ITERATIONS_PARAMS_OPTIMIZE = 30 # Number of iterations to optimize model params
+    ITERATIONS_FEATURE_SELECTION = 30 # Number of iterations to perform feature selection
     N_HYPEROPT_EVALS = 250 # Number of evaluations to hyperopt
     XGBOOST_SEED = 17
-    OPTIMIZE_PARAMS = False
+    OPTIMIZE_PARAMS = False # OPTIMIZE HYPER MODEL PARAMS
+    PERFORM_FEATURE_SELECTION = True # APPLY FEATURE SELECTION
 
     # Check if size test dataframe is less than total dataframe
     assert SIZE_TEST_TO_OPTIMIZE < MIN_ROWS_TO_ML
