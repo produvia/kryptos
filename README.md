@@ -113,11 +113,42 @@ $ strat -ml xgboost
 ```
 
 By default, Machine Learning models use:
+  * MIN_ROWS_TO_ML -> Minimum number of rows in the dataset to apply Machine Learning
+  * LABELLING -> [UP, KEEP, DOWN]
 
-* Feature Engineering techniques, using tsfresh and technical analysis (ta-lib) libraries.
-* Hyperopt library to optimize models hyper parameters chosen.
+#### Feature Engineering techniques
 
-You can add external datasets as features too:
+Using dates features, tsfresh, fbprophet and technical analysis (ta-lib) libraries.
+
+You need to set the next setting variables:
+FE_DATES = -> True to add dates features; False don't add any feature.
+FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
+FE_TA -> True to add ta features; False don't add any feature.
+FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
+FE_UTILS -> True to add utils features; False don't add any feature.
+
+
+#### Hyper parameters optimization
+
+Using Hyperopt library.
+
+You need to set the next setting variables:
+  * SIZE_TEST_TO_OPTIMIZE -> Test dataframe size to optimize model params
+  * N_HYPEROPT_EVALS -> Number of evaluations to hyperopt
+  * OPTIMIZE_PARAMS -> True to optimize; False don't optimize
+  * ITERATIONS_PARAMS_OPTIMIZE -> Number of iterations to optimize model params
+
+
+#### Feature Selection techniques
+
+Using embedded, filter and wrapper methods: https://machinelearningmastery.com/an-introduction-to-feature-selection/
+
+You need to set the next setting variables:
+  * PERFORM_FEATURE_SELECTION -> True to apply feature selection; False to don't apply feature selection.
+  * ITERATIONS_FEATURE_SELECTION -> Number of iterations to perform feature selection.
+  * TYPE_FEATURE_SELECTION -> {'embedded', 'filter', 'wrapper'}
+
+Also, you can add external datasets as features too:
 
 Google Trends
 ```bash

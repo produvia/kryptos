@@ -1,7 +1,8 @@
 import operator
 import random
 
-def embedding_feature_selection(model, importance_type='all', percentage=0.9):
+
+def embedded_feature_selection(model, importance_type='all', percentage=0.9):
     """Perform feature selection using XGBoost embedded method.
 
     Args:
@@ -17,6 +18,13 @@ def embedding_feature_selection(model, importance_type='all', percentage=0.9):
         list: Name columns selected.
     """
 
+    # Check input values
+    if importance_type != 'weight' and importance_type != 'gain' and importance_type != 'cover' and importance_type != 'all':
+        raise ValueError("'importance_type' value is not valid ['weight', 'gain', 'cover', 'all']")
+    if percentage > 1.0 or percentage < 0.0:
+        raise ValueError("'percentage' value is not valid [0, 1]")
+
+    # Feature selection
     if importance_type == 'weight' or importance_type == 'all':
         used_cols_weight = _get_colums_score(model, 'weight')
         selected_cols = _get_percentage_selected_cols(used_cols_weight, percentage)

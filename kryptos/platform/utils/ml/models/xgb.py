@@ -6,6 +6,8 @@ from kryptos.platform.utils.ml.preprocessing import clean_params
 from kryptos.platform.utils import merge_two_dicts
 from kryptos.platform.settings import MLConfig as CONFIG
 
+XGBOOST_SEED = 17
+
 FIXED_PARAMS_DEFAULT = {
     'objective': 'multi:softmax',
     'num_class' : 3,
@@ -13,7 +15,7 @@ FIXED_PARAMS_DEFAULT = {
     'base_score': 0,
     'tree_method': 'exact', # TODO: gpu_exact
     'silent': 1,
-    'seed': CONFIG.XGBOOST_SEED
+    'seed': XGBOOST_SEED
 }
 
 DEFAULT_PARAMS = {
