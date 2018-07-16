@@ -11,7 +11,7 @@
   <h1>Strategy Configuration</h1>
 
 
-  <form method="POST" action="http://localhost:5000/submit">
+  <form method="POST" action="{{ url_for('public.submit') }}">
       {{ form.csrf_token }}
       <p>{{ form.name.label }} {{ form.name(size=20) }} <br>
           {{ form.trade_type.label }} {{ form.trade_type }} <br>
@@ -26,7 +26,7 @@
           {{form.order_size.label}} {{form.order_size}} <br>
           {{form.slippage_allowed.label}} {{form.slippage_allowed}} <br>
 
-
+      </p>
 
 
       <input type="submit" value="Go">
