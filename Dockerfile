@@ -48,15 +48,14 @@ RUN pip install -U scikit-learn
 
 COPY . /app
 
+
 WORKDIR /app
 RUN pip install -e .
 
 
 ENV UWSGI_INI /app/kryptos/uwsgi.ini
+COPY kryptos_nginx.conf /etc/nginx/conf.d/kryptos_nginx.conf
 
-ENV STATIC_URL /static
-ENV STATIC_PATH /app/kryptos/app/static
-ENV STATIC_INDEX 1
 ENV REDIS_HOST REDIS
 
 
