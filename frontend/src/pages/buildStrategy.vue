@@ -1,6 +1,5 @@
 <template>
   <q-page padding>
-d2qdf2f2wf2
   <div class="row">
     <q-card glossy class="col">
     <q-card-title class='bg-primary text-white'>
