@@ -4,7 +4,7 @@ import pandas as pd
 import talib as ta
 from datetime import datetime
 
-from kryptos.platform.settings import DEFAULT_CONFIG_FILE
+from kryptos.settings import DEFAULT_CONFIG_FILE
 
 
 def add_utils_features(df):

@@ -1,6 +1,6 @@
 import os
 from sklearn.metrics import confusion_matrix, classification_report, cohen_kappa_score, accuracy_score
-from kryptos.platform.utils.outputs import get_algo_dir
+from kryptos.utils.outputs import get_algo_dir
 
 def classification_metrics(namespace, file_name, y_true, y_pred, y_pred_proba=False):
     target_names = ['KEEP', 'UP', 'DOWN']

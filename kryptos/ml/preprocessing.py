@@ -1,10 +1,10 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None # Disable chained assignments
 
-from kryptos.platform.settings import MLConfig as CONFIG
-from kryptos.platform.utils.ml.feature_engineering import add_ta_features, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
-from kryptos.platform.utils import merge_two_dicts
-from kryptos.platform.utils.ml.models import xgb
+from kryptos.settings import MLConfig as CONFIG
+from kryptos.ml.feature_engineering import add_ta_features, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
+from kryptos.utils import merge_two_dicts
+from kryptos.ml.models import xgb
 
 def preprocessing_binary_data(df):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine

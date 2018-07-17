@@ -2,17 +2,17 @@ from catalyst.api import record
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from kryptos.platform.utils import viz
-from kryptos.platform.strategy.indicators import AbstractIndicator
-from kryptos.platform.strategy.signals import utils
-from kryptos.platform.utils.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
-from kryptos.platform.utils.ml.feature_selection.xgb import embedded_feature_selection
-from kryptos.platform.utils.ml.feature_selection.filter import filter_feature_selection
-from kryptos.platform.utils.ml.feature_selection.wrapper import wrapper_feature_selection
-from kryptos.platform.utils.ml.preprocessing import preprocessing_multiclass_data, clean_params, add_fe
-from kryptos.platform.utils.ml.metric import classification_metrics
-from kryptos.platform.settings import MLConfig as CONFIG
-from kryptos.platform.utils import merge_two_dicts
+from kryptos.utils import viz
+from kryptos.strategy.indicators import AbstractIndicator
+from kryptos.strategy.signals import utils
+from kryptos.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
+from kryptos.ml.feature_selection.xgb import embedded_feature_selection
+from kryptos.ml.feature_selection.filter import filter_feature_selection
+from kryptos.ml.feature_selection.wrapper import wrapper_feature_selection
+from kryptos.ml.preprocessing import preprocessing_multiclass_data, clean_params, add_fe
+from kryptos.ml.metric import classification_metrics
+from kryptos.settings import MLConfig as CONFIG
+from kryptos.utils import merge_two_dicts
 
 
 def get_indicator(name, **kw):
