@@ -5,9 +5,9 @@
    "HISTORY_FREQ": "1d",
    "CAPITAL_BASE": 5000,
    "BASE_CURRENCY": "usd",
-   "START": "2017-10-10",
-   "END": "2018-3-28",
-   "BARS": 50,
+   "START": "2018-1-1",
+   "END": "2018-4-28",
+   "BARS": 100,
    "ORDER_SIZE": 0.5,
    "SLIPPAGE_ALLOWED": 0.05
 
