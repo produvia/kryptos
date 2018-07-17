@@ -24,6 +24,7 @@ sklearn = "*"
 flask-bootstrap = "*"
 flask-wtf = "*"
 setuptools = "==38.5.1"
+flask-cors = "*"
 
 [dev-packages]
 black = "==18.4a4"
