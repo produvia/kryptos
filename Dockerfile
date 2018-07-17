@@ -58,7 +58,8 @@ COPY kryptos_nginx.conf /etc/nginx/conf.d/kryptos_nginx.conf
 
 ENV REDIS_HOST REDIS
 
-
+ENV STATIC_INDEX 1
+ENV STATIC_PATH /app/kryptos/app/static/spa-mat
 # VOLUME ['~/.catalyst']
 # COPY ./nginx.conf /etc/nginx/conf.d/
 
