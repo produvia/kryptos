@@ -41,16 +41,31 @@ RUN apt-get -y install \
     #Install scikit-learn
 RUN pip install -U scikit-learn
 
+# install node to build frontend
+RUN apt-get install --yes curl
+RUN curl --silent --location https://deb.nodesource.com/setup_8.x | bash -
+RUN apt-get install --yes nodejs
+RUN npm install -g quasar-cli
+
+# npm install only run if frontend dependencies change
+COPY frontend/package.json /tmp/package.json
+RUN cd /tmp && npm install
+
 
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
 
 COPY . /app
-
+RUN cp -r /tmp/node_modules /app/frontend/node_modules/
+WORKDIR /app/frontend
+RUN node node_modules/quasar-cli/bin/quasar-build
 
 WORKDIR /app
 RUN pip install -e .
+
+
+RUN mkdir -p /app/krpytos/app/static/spa-mat && mv /app/frontend/dist/spa-mat /app/krpytos/app/static/spa-mat
 
 
 ENV UWSGI_INI /app/kryptos/uwsgi.ini
@@ -62,5 +77,7 @@ ENV STATIC_INDEX 1
 ENV STATIC_PATH /app/kryptos/app/static/spa-mat
 # VOLUME ['~/.catalyst']
 # COPY ./nginx.conf /etc/nginx/conf.d/
+
+
 
 EXPOSE 80

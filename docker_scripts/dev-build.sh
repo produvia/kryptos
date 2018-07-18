@@ -6,6 +6,5 @@ do
   docker stop $id && docker rm $id
 done
 
-bash docker_scripts/build-frontend.sh
 
 docker build -t krpytos-dev -f Dockerfile .
