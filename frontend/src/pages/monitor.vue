@@ -67,7 +67,7 @@ export default {
     }
   },
   mounted () {
-    const path = 'http://0.0.0.0:5000/api/monitor'
+    const path = process.env.API_URL + 'monitor'
     let stratid = this.stratId
     axios.get(path, {
       crossdomain: true,

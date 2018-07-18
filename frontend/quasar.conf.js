@@ -20,6 +20,13 @@ module.exports = function (ctx) {
       // distDir: '..static/',
       scopeHoisting: true,
       vueRouterMode: 'history',
+      env: ctx.dev
+        ? { // so on dev we'll have
+            API_URL: JSON.stringify('http://0.0.0.0:5000/api/'),
+          }
+        : { // and on build (production):
+            API_URL: JSON.stringify('http://0.0.0.0/api/')
+},
       // vueCompiler: true,
       // gzip: true,
       // analyze: true,

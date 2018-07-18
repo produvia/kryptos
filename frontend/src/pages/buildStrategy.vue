@@ -154,7 +154,7 @@ export default {
   methods: {
     submit () {
       console.log('Submitting strategy')
-      const path = 'http://0.0.0.0:5000/api/submit'
+      const path = process.env.API_URL + 'submit'
       axios.post(path, this.form, {crossdomain: true})
         .then(response => {
           this.stratId = response.data.job_id
