@@ -65,7 +65,7 @@ WORKDIR /app
 RUN pip install -e .
 
 
-RUN mkdir -p /app/krpytos/app/static/spa-mat && mv /app/frontend/dist/spa-mat /app/krpytos/app/static/spa-mat
+RUN mkdir -p /app/kryptos/app/static/spa-mat && mv /app/frontend/dist/spa-mat /app/kryptos/app/static/spa-mat
 
 
 ENV UWSGI_INI /app/kryptos/uwsgi.ini
