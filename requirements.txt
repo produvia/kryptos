@@ -1,5 +1,5 @@
 aiodns==1.1.1; python_version >= '3.5.3'
-aiohttp==3.2.1; python_version >= '3.5.3'
+aiohttp==3.3.0; python_version >= '3.5.3'
 alembic==0.9.9
 appnope==0.1.0; sys_platform == 'darwin'
 arrow==0.12.1
@@ -10,13 +10,13 @@ attrs==18.1.0
 backcall==0.1.0
 bcolz==0.12.1
 bleach==2.1.3
-boto3==1.7.30
-botocore==1.10.30
+boto3==1.7.32
+botocore==1.10.32
 bottleneck==1.2.1
 cchardet==2.1.1; python_version >= '3.5.3'
-ccxt==1.14.115
+ccxt==1.14.139
 certifi==2018.4.16
-cffi==1.11.5; platform_python_implementation != 'PyPy'
+cffi==1.11.5; platform_python_implementation != 'pypy'
 chardet==3.0.4
 click==6.7
 colorama==0.3.9
@@ -31,7 +31,6 @@ docutils==0.14
 empyrical==0.2.1
 enigma-catalyst==0.5.12
 entrypoints==0.2.3
-enum34==1.1.6; python_version == '3.3'
 eth-abi==1.1.1
 eth-account==0.2.3
 eth-hash==0.1.4
@@ -108,12 +107,14 @@ requests-toolbelt==0.8.0
 requests==2.18.4
 rlp==1.0.1
 rq-dashboard==0.3.11
-rq==0.10.0
+rq==0.11.0
 s3transfer==0.1.13
+scikit-learn==0.19.1
 scipy==1.1.0
 send2trash==1.5.0
 simplegeneric==0.8.1
 six==1.11.0
+sklearn==0.0
 sortedcontainers==2.0.3
 sqlalchemy==1.2.8
 statsmodels==0.9.0
@@ -131,4 +132,5 @@ webencodings==0.5.1
 websockets==5.0.1
 werkzeug==0.14.1
 wrapt==1.10.11
+xgboost==0.72
 yarl==1.1.0

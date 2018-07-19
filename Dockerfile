@@ -2,6 +2,8 @@ FROM tiangolo/uwsgi-nginx-flask:python3.6
 # If you're going to need to troubleshoot with vim
 # RUN apt-get -y update && apt-get -y install vim
 
+RUN git clone --recursive https://github.com/dmlc/xgboost \
+    && cd xgboost; make -j4
 
 # install TA_LIB and other dependencies
 RUN apt-get -y update \
@@ -21,6 +23,23 @@ COPY requirements.txt /app/requirements.txt
 # ensure numpy installed before ta-lib, matplotlib, etc
 RUN pip install 'numpy==1.14.3'
 RUN pip install -r /app/requirements.txt
+RUN pip install --pre xgboost
+
+RUN apt-get -y install \
+	build-essential \
+	python-dev \
+	python-setuptools \
+    python-pip
+
+#Install scikit-learn dependancies
+RUN apt-get -y install \
+	python-numpy \
+	python-scipy \
+	libatlas-dev \
+    libatlas3-base
+
+    #Install scikit-learn
+RUN pip install -U scikit-learn
 
 
 # Above lines represent the dependencies

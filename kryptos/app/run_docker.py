@@ -1,7 +1,7 @@
 from flask.helpers import get_debug_flag
 from kryptos.app.app import create_app
 from kryptos.app.settings import DevConfig, DockerDevConfig, ProdConfig
-from kryptos.platform.utils.outputs import in_docker
+from kryptos.utils.outputs import in_docker
 
 
 class ReverseProxied(object):

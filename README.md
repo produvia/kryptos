@@ -1,5 +1,9 @@
 # Kryptos
 
+## About
+
+Kryptos AI is a virtual investment assistant that manages your cryptocurrency portfolio. To learn more, check out the [Kryptos Slide Deck](https://docs.google.com/presentation/d/1O3BQ6fS9SuokJud8TZ1XPXX5QbjefAEiXNR3cxJIJwE/view) and the [Kryptos White Paper](https://docs.google.com/document/d/1Um9yoosEj-oZdEF3yMK2pt5TI0O2aRYhgkC0XJf_BVo/view).
+
 ## Installation
 
 Clone the repo:
@@ -99,6 +103,65 @@ $ strat -d quandl -c 'MKTCP' -c 'NTRAN'
 Calculate a basic indicator for external data
 ```bash
 $ strat -d google -c 'btc usd' -i 'relchange'
+```
+
+### Runing Machine Learning Strategies from the CLI
+
+To create a strategy using ML models:
+```bash
+$ strat -ml xgboost
+```
+
+By default, Machine Learning models use:
+  * MIN_ROWS_TO_ML -> Minimum number of rows in the dataset to apply Machine Learning
+  * LABELLING -> [UP, KEEP, DOWN]
+
+#### Feature Engineering techniques
+
+Using dates features, tsfresh, fbprophet and technical analysis (ta-lib) libraries.
+
+You need to set the next setting variables:
+FE_DATES = -> True to add dates features; False don't add any feature.
+FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
+FE_TA -> True to add ta features; False don't add any feature.
+FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
+FE_UTILS -> True to add utils features; False don't add any feature.
+
+
+#### Hyper parameters optimization
+
+Using Hyperopt library.
+
+You need to set the next setting variables:
+  * SIZE_TEST_TO_OPTIMIZE -> Test dataframe size to optimize model params
+  * N_HYPEROPT_EVALS -> Number of evaluations to hyperopt
+  * OPTIMIZE_PARAMS -> True to optimize; False don't optimize
+  * ITERATIONS_PARAMS_OPTIMIZE -> Number of iterations to optimize model params
+
+
+#### Feature Selection techniques
+
+Using embedded, filter and wrapper methods: https://machinelearningmastery.com/an-introduction-to-feature-selection/
+
+You need to set the next setting variables:
+  * PERFORM_FEATURE_SELECTION -> True to apply feature selection; False to don't apply feature selection.
+  * ITERATIONS_FEATURE_SELECTION -> Number of iterations to perform feature selection.
+  * TYPE_FEATURE_SELECTION -> {'embedded', 'filter', 'wrapper'}
+
+Also, you can add external datasets as features too:
+
+Google Trends
+```bash
+$ strat -d google -c "bitcoin" -c "btc" -ml xgboost
+or
+$ strat -ml xgboost -d google -c "bitcoin" -c "btc"
+```
+
+Quandle
+```bash
+$ strat -d quandl -c 'MKTCP' -c 'NTRAN' -ml xgboost
+or
+$ strat -ml xgboost -d quandl -c 'MKTCP' -c 'NTRAN'
 ```
 
 ### JSON Format
@@ -347,7 +410,13 @@ docker-credential-gcr configure-docker
 
 #### Run for production
 
-Pull the latest changes from github, and build the images
+Pull the latest changes from github or use gcloud to scp the repo
+
+```bash
+gcloud compute scp . kryptos-compose:~/kryptos --recurse
+```
+
+build the images
 
 ```bash
 $ bash docker_scripts/prod-build.#!/bin/sh

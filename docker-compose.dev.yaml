@@ -34,10 +34,10 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/app
-      - ~/.catalyst:/root/.catalyst
+      - catalyst:/root/.catalyst
     environment:
       - FLASK_DEBUG=1
-    entrypoint: ["rqworker", "-u", "redis://redis:6379"]
+    entrypoint: ['python', 'kryptos/worker/worker.py']
     networks:
       - kryptos-net
 
@@ -54,3 +54,6 @@ services:
 networks:
   kryptos-net:
       driver: bridge
+
+volumes:
+  catalyst:

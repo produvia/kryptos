@@ -1,8 +1,8 @@
 import click
 from logbook import Logger
 
-from kryptos.platform.utils import load, outputs, viz, algo
-from kryptos.platform.settings import DEFAULT_CONFIG as CONFIG
+from kryptos.utils import load, outputs, viz, algo
+from kryptos.settings import DEFAULT_CONFIG as CONFIG
 
 
 log = Logger("Benchmark Runner")

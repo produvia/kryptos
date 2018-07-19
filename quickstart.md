@@ -168,7 +168,7 @@ The kyrptos python library provides a simple api to extend upon the CLI and JSON
 Start by creating a strategy object
 
 ```python
-from kryptos.platform.strategy import Strategy
+from kryptos.strategy import Strategy
 
 import logbook
 
@@ -185,7 +185,7 @@ strat.load_from_json(config)
 Let's add an additional indicator
 
 ```Python
-from kryptos.platform.strategy.indicators import technical
+from kryptos.strategy.indicators import technical
 
 stoch = technical.get_indicator('STOCH')
 strat.add_market_indicator(stoch)

@@ -65,3 +65,9 @@ target/
 performance_results/
 logs/
 data/csv_data/
+
+# Mac
+.DS_Store
+
+# Notebooks
+.ipynb_checkpoints/

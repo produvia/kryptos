@@ -16,8 +16,11 @@ flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
 rq-dashboard = "*"
-enigma-catalyst = "*"
+#enigma-catalyst = "*"
+enigma-catalyst = "==0.5.14"
 jupyterlab = "*"
+xgboost = "*"
+sklearn = "*"
 
 [dev-packages]
 black = "==18.4a4"

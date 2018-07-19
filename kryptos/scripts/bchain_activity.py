@@ -3,10 +3,10 @@ import click
 # import matplotlib.pyplot as plt
 from logbook import Logger
 
-# from kryptos.platform.utils import viz, algo
-# from kryptos.platform.datasets.quandl_data.manager import QuandleDataManager
+# from kryptos.utils import viz, algo
+# from kryptos.datasets.quandl_data.manager import QuandleDataManager
 
-from kryptos.platform.strategy import Strategy
+from kryptos.strategy import Strategy
 
 
 log = Logger("Blockchain Activity")

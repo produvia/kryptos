@@ -1,8 +1,8 @@
 import click
 from logbook import Logger
 
-from kryptos.platform.settings import DEFAULT_CONFIG as CONFIG
-from kryptos.platform.strategy import Strategy
+from kryptos.settings import DEFAULT_CONFIG as CONFIG
+from kryptos.strategy import Strategy
 
 
 log = Logger("Blockchain Activity")
