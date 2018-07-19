@@ -2,7 +2,7 @@ version: '3'
 services:
   web:
     container_name: web
-    # image: kryptos-main
+    image: kryptos
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,7 +11,7 @@ services:
      - "5000:5000"
     volumes:
      - .:/app
-     - ~/.catalyst:/root/catalyst #to store exhange data and auth
+     - ~/.catalyst:/root/.catalyst #to store exhange data and auth
     environment:
       - FLASK_DEBUG=1
       - FLASK_ENV=development
@@ -27,7 +27,7 @@ services:
     command: ['flask', 'run', '--host=0.0.0.0']
 
   worker:
-    # image: kryptos-main
+    image: kryptos
     container_name: worker
     build:
       context: .

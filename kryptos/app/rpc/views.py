@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from flask import Blueprint
+from flask import Blueprint, request, jsonify
 import redis
 from rq import Queue, Connection
 
@@ -33,3 +33,35 @@ def get_status(strat_id, queue_name):
     if job.is_finished:
         resp['strat_results'] = job.result
     return resp
+
+
+
+@api.route('/submit', methods=['POST'])
+def run_strat():
+    strat_dict = request.json
+    trade_type = strat_dict['trade_type']
+    live = trade_type in ['live', 'paper']
+    simulate_orders = trade_type == 'live'
+
+    job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), live, simulate_orders)
+    return jsonify(job_id=job_id)
+
+
+@api.route('/monitor', methods=['GET'])
+def strat_status():
+    strat_id = request.args['strat_id']
+    queue_name = request.args['queue_name']
+
+    q = worker.get_queue(queue_name)
+    job = q.fetch_job(strat_id)
+    if job is None:
+        data = {'status': 'Not Found'}
+    else:
+        data = {
+            'status': job.status,
+            'meta': job.meta,
+            'started_at': job.started_at,
+            'result': job.result
+        }
+
+    return jsonify(strat_info=data)

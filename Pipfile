@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-numpy = "==1.14.3"
+numpy = "*"
 matplotlib = "*"
 ta-lib = "*"
 quandl = "*"
@@ -21,6 +21,8 @@ enigma-catalyst = "==0.5.14"
 jupyterlab = "*"
 xgboost = "*"
 sklearn = "*"
+setuptools = "==38.5.1"
+flask-cors = "*"
 
 [dev-packages]
 black = "==18.4a4"

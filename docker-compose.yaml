@@ -2,15 +2,12 @@ version: '3'
 services:
   web:
     container_name: web
-    # image: gcr.io/kryptos-204204/krpytos-main:latest
+    image: kryptos
     build:
       context: .
       dockerfile: Dockerfile
     ports:
      - "80:80"
-    # volumes:
-     # - .:/app
-     # - ~/.catalyst:/root/catalyst #to store exhange data and auth
     environment:
       - FLASK_DEBUG=0
       - REDIS_HOST=redis
@@ -24,7 +21,7 @@ services:
     # command: ['flask', 'run']
 
   worker:
-    # image: gcr.io/kryptos-204204/krpytos-main:latest
+    image: kryptos
     container_name: worker
     build:
       context: .
