@@ -121,7 +121,7 @@ class MLConfig(object):
     # Feature Selection
     PERFORM_FEATURE_SELECTION = True # APPLY FEATURE SELECTION
     ITERATIONS_FEATURE_SELECTION = 30 # Number of iterations to perform feature selection
-    TYPE_FEATURE_SELECTION = 'wrapper' # https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
+    TYPE_FEATURE_SELECTION = 'embedded' # https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
 
     # Feature Engineering: dates
     FE_DATES = True # True to add dates feature engineering
@@ -158,3 +158,6 @@ class MLConfig(object):
 
     # Check if size test dataframe is less than total dataframe
     assert SIZE_TEST_TO_OPTIMIZE < MIN_ROWS_TO_ML
+
+    # Check if min rows is less than dataframe size.
+    assert MIN_ROWS_TO_ML <= DEFAULT_CONFIG['BARS']
