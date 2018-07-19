@@ -10,7 +10,6 @@ from kryptos.strategy import Strategy
 from kryptos.app.extensions import jsonrpc
 from kryptos.utils.outputs import in_docker
 from kryptos.worker import worker
-from kryptos.app.web.forms import TradeInfoForm
 
 blueprint = Blueprint("public", __name__, url_prefix='/', static_folder='../static/spa-mat')
 

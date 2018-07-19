@@ -4,7 +4,7 @@ from flask import Flask
 import rq_dashboard
 
 from kryptos.app import web, rpc
-from kryptos.app.extensions import jsonrpc, bootstrap, cors
+from kryptos.app.extensions import jsonrpc, cors
 from kryptos.app.settings import ProdConfig
 
 
@@ -31,7 +31,6 @@ def register_extensions(app):
     """
     jsonrpc.init_app(app)
     jsonrpc._register_browse(app)
-    bootstrap.init_app(app)
     cors.init_app(app, resources={r"*": {"origins": "*"}})
     return None
 
