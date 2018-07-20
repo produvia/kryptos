@@ -1,7 +1,7 @@
 import logging
 from textwrap import dedent
 from flask import Blueprint, request
-from flask_assistant import Assistant, ask, tell, event, context_manager
+from flask_assistant import Assistant, tell, event, context_manager
 from flask_assistant.response import _Response
 import talib as ta
 import talib.abstract as ab
@@ -12,32 +12,8 @@ assist = Assistant(blueprint=blueprint)
 
 logging.getLogger('flask_assistant').setLevel(logging.DEBUG)
 
-class ask(_Response):
-    def __init__(self, speech, display_text=None):
-        """Returns a response to the user and keeps the current session alive. Expects a response from the user.
-        Arguments:
-            speech {str} --  Text to be pronounced to the user / shown on the screen
-        """
-        super(ask, self).__init__(speech, display_text)
-        self._response['data']['google']['expect_user_response'] = True
 
-    def reprompt(self, prompt):
-        self._response['data']['google'][
-            'no_input_prompts'] = [{'text_to_speech': prompt}]
 
-        return self
-
-    def with_quick_reply(self, *options, text=None):
-        if text is None:
-            text = self._speech
-        msg = {
-            'type': 2,
-            'platform': 'telegram',
-            'title': text,
-            'replies': options
-        }
-        self._response['messages'].append(msg)
-        return self
 
 def get_user_from_request():
     if not request.json.get('originalRequest'):
