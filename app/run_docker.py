@@ -1,6 +1,6 @@
 from flask.helpers import get_debug_flag
-from kryptos.app.app import create_app
-from kryptos.app.settings import DevConfig, DockerDevConfig, ProdConfig
+from app.app import create_app
+from app.settings import DevConfig, DockerDevConfig, ProdConfig
 from kryptos.utils.outputs import in_docker
 
 

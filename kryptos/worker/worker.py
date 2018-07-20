@@ -6,7 +6,6 @@ import multiprocessing
 import time
 
 from kryptos.strategy import Strategy
-from kryptos.app.extensions import jsonrpc
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
 
@@ -70,7 +69,7 @@ def workers_required():
 def manage_workers():
     # import before starting worker to loading during worker process
     # from kryptos.strategy import Strategy
-    # from kryptos.app.extensions import jsonrpc
+    # from app.extensions import jsonrpc
     # from kryptos.utils.outputs import in_docker
 
     #start main worker

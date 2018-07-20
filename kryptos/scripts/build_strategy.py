@@ -15,7 +15,7 @@ from kryptos import setup_logging
 from kryptos.utils.outputs import in_docker
 from kryptos.utils.load import get_strat
 
-from kryptos.app.settings import DevConfig, ProdConfig, DockerDevConfig
+from app.settings import DevConfig, ProdConfig, DockerDevConfig
 
 log = logbook.Logger("Platform")
 setup_logging()

@@ -1,15 +1,8 @@
 # -*- coding: utf-8 -*-
 """Public section, including homepage and signup."""
 import os
-import json
-from flask import current_app, send_file, Blueprint, Response, render_template, flash, url_for, request, redirect, jsonify
-import redis
-from rq import Queue, Connection
-
-from kryptos.strategy import Strategy
-from kryptos.app.extensions import jsonrpc
+from flask import send_file, Blueprint
 from kryptos.utils.outputs import in_docker
-from kryptos.worker import worker
 
 blueprint = Blueprint("public", __name__, url_prefix='/', static_folder='static/spa-mat')
 

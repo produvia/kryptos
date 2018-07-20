@@ -5,7 +5,7 @@ import redis
 from rq import Queue, Connection
 
 from kryptos.strategy import Strategy
-from kryptos.app.extensions import jsonrpc
+from app.extensions import jsonrpc
 from kryptos.utils.outputs import in_docker
 from kryptos.worker import worker
 

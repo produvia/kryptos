@@ -47,7 +47,7 @@ COPY . /app
 
 # MV does not work for dev, bc files moutned as a volume
 # Instead the dev-start script runs the quasar dev server seperately
-RUN mv -v /app/frontend/dist/spa-mat /app/kryptos/app/web/static
+RUN mv -v /app/frontend/dist/spa-mat /app/app/web/static
 
 # Install kryptos package
 WORKDIR /app
@@ -55,11 +55,11 @@ RUN pip install -e .
 
 
 # NGINX config
-ENV UWSGI_INI /app/kryptos/uwsgi.ini
-COPY kryptos_nginx.conf /etc/nginx/conf.d/kryptos_nginx.conf
+ENV UWSGI_INI /app/app/uwsgi.ini
+COPY app/kryptos_nginx.conf /etc/nginx/conf.d/kryptos_nginx.conf
 
 ENV REDIS_HOST REDIS
 
 ENV STATIC_INDEX 1
-ENV STATIC_PATH /app/kryptos/app/web/static/
+ENV STATIC_PATH /app/app/web/static/
 EXPOSE 80

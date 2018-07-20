@@ -3,9 +3,9 @@
 from flask import Flask
 import rq_dashboard
 
-from kryptos.app import web, rpc
-from kryptos.app.extensions import jsonrpc, cors
-from kryptos.app.settings import ProdConfig
+from app import web, rpc
+from app.extensions import jsonrpc, cors
+from app.settings import ProdConfig
 
 
 def create_app(config_object=ProdConfig):
