@@ -30,3 +30,46 @@ class ask(_Response):
         return self
 
 
+class inline_keyboard(ask):
+
+    def __init__(self, msg, buttons=None):
+        super().__init__(speech=msg)
+
+        if buttons is None:
+            buttons = []
+
+        self._buttons = buttons
+
+
+    def render_response(self):
+        self._response['messages'].append(self._custom_msg)
+        return super().render_response()
+
+    @property
+    def _custom_msg(self):
+        return {
+          "type": 4,
+          "platform": "telegram",
+          "payload": self._payload,
+        }
+
+
+
+    @property
+    def _payload(self):
+        return {
+           "telegram":{
+              "text": self._speech,
+              "reply_markup": {
+                 "inline_keyboard": self._buttons
+              }
+           }
+        }
+
+
+    def add_button(self, text, callback_data, **kw):
+        btn_row = [{
+           "text": text,
+           "callback_data": callback_data
+        }]
+        self._buttons.append(btn_row)
