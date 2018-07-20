@@ -4,7 +4,9 @@ from rq import Queue, Connection, Worker
 import click
 import multiprocessing
 import time
+import logbook
 
+from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
@@ -12,7 +14,8 @@ from kryptos.settings import QUEUE_NAMES
 host = 'redis' if in_docker() else 'localhost'
 CONN = redis.Redis(host=host, port=6379)
 
-
+log = logbook.Logger('WorkerManager')
+logger_group.add_logger(log)
 
 def get_queue(queue_name):
     if queue_name in ['paper', 'live']:
@@ -74,6 +77,7 @@ def manage_workers():
 
     #start main worker
     with Connection(CONN):
+        log.info('Starting initial workers')
         multiprocessing.Process(target=Worker(QUEUE_NAMES).work).start()
 
     # create live queus when needed
@@ -81,7 +85,9 @@ def manage_workers():
         queue_names = ['paper', 'live']
         with Connection(CONN):
             if workers_required() > 0:
+                log.info(f"{workers_required()} workers required")
                 for i in range(workers_required()):
+                    log.info("Creating live.paper worker")
                     multiprocessing.Process(target=Worker(queue_names).work, kwargs={'burst': True}).start()
             else:
                 time.sleep(5)
