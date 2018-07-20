@@ -26,12 +26,14 @@ class ProdConfig(Config):
 
     ENV = "prod"
     DEBUG = False
+    FRONTEND_URL = "http://35.233.156.192"
     API_URL = "http://35.233.156.192/api"
 
 
 class DockerDevConfig(object):
     ENV = "docker-dev"
     DEBUG = True
+    FRONTEND_URL = '0.0.0.0:8080'
     API_URL = "http://web:5000/api"
 
 
@@ -40,6 +42,7 @@ class DevConfig(Config):
 
     ENV = "dev"
     DEBUG = True
+    FRONTEND_URL = '0.0.0.0:8080'
     API_URL = "http://127.0.0.1:5000/api"
 
 
