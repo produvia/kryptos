@@ -1,14 +1,15 @@
 import logging
 from textwrap import dedent
-from flask import Flask, request
+from flask import Blueprint, request
 from flask_assistant import Assistant, ask, tell, event, context_manager
 from flask_assistant.response import _Response
 import talib as ta
 import talib.abstract as ab
 
+blueprint = Blueprint('bot', __name__, url_prefix='/bot')
+assist = Assistant(blueprint=blueprint)
 
-app = Flask(__name__)
-assist = Assistant(app)
+
 logging.getLogger('flask_assistant').setLevel(logging.DEBUG)
 
 class ask(_Response):
