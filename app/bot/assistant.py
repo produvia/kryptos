@@ -21,6 +21,14 @@ def get_user_from_request():
     return request.json['originalRequest']['data']['message']['from']
 
 
+@assist.action('Default Welcome Intent')
+def welcome_message():
+    user_name = get_user_from_request()['first_name']
+    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual assistant to buy and sell bitcoin and other coins."
+    return ask(msg)
+
+
+
 @assist.action('activity-menu')
 def show_menu():
     user_name = get_user_from_request()['first_name']
