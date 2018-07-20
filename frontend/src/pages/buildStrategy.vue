@@ -88,7 +88,7 @@ export default {
       stratID: null,
       form: {
         name: null,
-        trade_type: 'daily',
+        trade_type: 'backtest',
         start: '2017-10-10',
         end: '2018-3-28',
         base_currency: 'usd',
