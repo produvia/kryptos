@@ -67,9 +67,13 @@ class inline_keyboard(ask):
         }
 
 
-    def add_button(self, text, callback_data, **kw):
-        btn_row = [{
+    def add_button(self, text, callback_data=None, url=None):
+        if None not in [callback_data, url]:
+            raise ValueError('Buttons may only include one of callback_data or url')
+        btn = {
            "text": text,
-           "callback_data": callback_data
-        }]
+           "callback_data": callback_data,
+           "url": url
+        }
+        btn_row = [btn] # inline keybaord accepts array of button row arrays
         self._buttons.append(btn_row)
