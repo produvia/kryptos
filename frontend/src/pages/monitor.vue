@@ -46,7 +46,7 @@
                   Result:
                 </q-item-side>
                 <q-item-main>
-                  {{stratId/result}}
+                  {{stratInfo.result}}
                 </q-item-main>
               </q-item>
             </q-list>
@@ -63,7 +63,7 @@ export default {
   props: ['stratId'],
   data () {
     return {
-      stratInfo: null
+      stratInfo: {}
     }
   },
   mounted () {
