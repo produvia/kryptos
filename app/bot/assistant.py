@@ -1,12 +1,15 @@
 import logging
+import os
+import json
 from textwrap import dedent
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from flask_assistant import Assistant, tell, event, context_manager
 from flask_assistant.response import _Response
 import talib as ta
 import talib.abstract as ab
 
 from app.bot.response import ask, inline_keyboard
+from kryptos.worker import worker
 
 blueprint = Blueprint('bot', __name__, url_prefix='/bot')
 assist = Assistant(blueprint=blueprint)
@@ -80,6 +83,32 @@ def display_momentum_indicators():
         speech += f'\n{i+1}. {abbrev} - {name}'
     return ask(speech)
 
+@assist.action('new-strategy-select')
+def select_strategy(existing_strategy):
+    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?'
+    return ask(speech).with_quick_reply('yes', 'no')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@assist.action('new-strategy-select-yes')
+def launch_strategy(existing_strategy):
+    # will fill with default values
+    strat_dict = {
+        "indicators": [
+            {
+                "name": existing_strategy,
+            }
+        ]
+    }
+
+    job_id, _ = worker.queue_strat(json.dumps(strat_dict), live=False, simulate_orders=True)
+
+    #TODO run strat as paper/live and get past 7 days performance from backtest
+
+    speech = """\
+    Great! The strategy is live now and will run for the next 7 days.
+    Here’s a preview of how well this strategy performed in the last 7 days: kryptos.io/hk236g.\n\n
+    You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
+    """
+    url = os.path.join(current_app.config['FRONTEND_URL'], 'monitor', job_id)
+    resp = inline_keyboard(dedent(speech))
+    resp.add_button('View your Strategy', url=url)
+    return resp
