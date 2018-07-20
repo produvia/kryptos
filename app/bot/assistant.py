@@ -6,13 +6,23 @@ from flask_assistant.response import _Response
 import talib as ta
 import talib.abstract as ab
 
+from app.bot.response import ask, inline_keyboard
+
 blueprint = Blueprint('bot', __name__, url_prefix='/bot')
 assist = Assistant(blueprint=blueprint)
 
 
 logging.getLogger('flask_assistant').setLevel(logging.DEBUG)
 
-
+EXISTING_STRATS = [
+    ('Bollinger Bands (BBANDS)', 'BBANDS'),
+    ('Stop and Reverse (SAR)', 'SAR'),
+    ('Moving Average Convergence/Divergence (MACD)', 'MACD'),
+    ('Moving Average Convergence/Divergence Fix (MACDFIX)', 'MACDFIX'),
+    ('On Balance Volume (OBV)', 'OBV'),
+    ('Relative Strength Index (RSI)', 'RSI'),
+    ('Stochastic (STOCH)', 'STOCH')
+]
 
 
 def get_user_from_request():
@@ -38,20 +48,25 @@ def show_menu():
     2. Run Performance Report
     3. Update Goals
     4. Upgrade SKills
-    5 Adjust Kryptos"""
+    5. Adjust Kryptos"""
     return ask(speech).with_quick_reply('1', '2', '3', '4', '5')
 
 
 # @assist.context('activity-selection')
 @assist.action('new-strategy')
 def display_available_strats():
-    speech = """\
-    Great. Which strategy do you wish to try?
-    1. Simple Moving Average (SMA) Crossover
-    2. Relative Strength Index (RSI)
-    3. Explore Momentum Indicators
-    """
-    return ask(dedent(speech)).with_quick_reply('1', '2', '3')
+    # speech = """\
+    # Great. Which strategy do you wish to try?
+    # 1. Simple Moving Average (SMA) Crossover
+    # 2. Relative Strength Index (RSI)
+    # 3. Explore Momentum Indicators
+    # """
+    resp = inline_keyboard("Which strategy do you wish to try?")
+    for i in EXISTING_STRATS:
+        resp.add_button(*i)
+    return resp
+
+
 
 @assist.action('new-strategy-display-momentum')
 def display_momentum_indicators():
