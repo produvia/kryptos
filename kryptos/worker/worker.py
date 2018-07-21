@@ -82,7 +82,7 @@ def manage_workers():
         multiprocessing.Process(target=Worker(QUEUE_NAMES).work).start()
 
         # start seperate ingest worker
-        multiprocessing.Process(target=Worker('intgest').work).start()
+        multiprocessing.Process(target=Worker('ingest').work).start()
 
 
     # ingest data on start
@@ -104,14 +104,27 @@ def manage_workers():
                 time.sleep(5)
 
 
+def _ingest_exchange(exchange):
+    exchange_bundle = ExchangeBundle(exchange)
+    exchange_bundle.ingest(
+        'daily',
+        show_progress=True,
+        show_breakdown=True,
+        show_report=True
+    )
+    exchange_bundle.ingest(
+        'minute',
+        show_progress=True,
+        show_breakdown=True,
+        show_report=True
+    )
+
+
 
 def run_ingest(exchange):
-
-    exchange_bundle = ExchangeBundle(exchange)
     q = get_queue("ingest")
     log.error(f'Ingesting {exchange}')
-    q.enqueue(exchange_bundle.ingest, args=('daily',), kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
-    q.enqueue(exchange_bundle.ingest, args=('minute',), kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
+    q.enqueue(_ingest_exchange, exchange)
 
 
 
