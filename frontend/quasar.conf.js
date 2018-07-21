@@ -25,7 +25,7 @@ module.exports = function (ctx) {
             API_URL: JSON.stringify('http://0.0.0.0:5000/api/'),
           }
         : { // and on build (production):
-            API_URL: JSON.stringify('http://0.0.0.0/api/')
+            API_URL: JSON.stringify('http://35.233.156.192/api/')
 },
       // vueCompiler: true,
       // gzip: true,
