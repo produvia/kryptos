@@ -49,6 +49,8 @@ def run_strat():
 
 def pretty_result(result_json):
     string = ''
+    if result_json is None:
+        return None
     result_dict = json.loads(result_json)
     for k, v in result_dict.items():
         # nested dict with trading type as key
