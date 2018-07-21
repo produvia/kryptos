@@ -46,7 +46,7 @@
                   Result:
                 </q-item-side>
                 <q-item-main>
-                  {{stratInfo.result}}
+                  <pre>{{stratInfo.result}}</pre>
                 </q-item-main>
               </q-item>
             </q-list>
