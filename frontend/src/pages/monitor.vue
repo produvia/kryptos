@@ -73,7 +73,7 @@ export default {
       crossdomain: true,
       params: {
         strat_id: stratid,
-        queue_name: 'backtest'
+        queue_name: null // TODO change to route prop
       }
     })
       .then(response => {
