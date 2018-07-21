@@ -95,11 +95,14 @@ def display_momentum_indicators():
 def select_strategy(existing_strategy):
     backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
 
-    # back_start = datetime.datetime.today() - datetime.timedelta(days=40)
-    # back_end = datetime.datetime.today()
-    #
-    # backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
-    # backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
+    # Can't use today as the end date bc data bundles are updated daily,
+    # so current market data won't be avialable for backtest until the following day
+    # use past week up to yesterday
+    back_start = datetime.datetime.today() - datetime.timedelta(days=8)
+    back_end = datetime.datetime.today() - datetime.timedelta(days=1)
+
+    backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
+    backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
 
     backtest_id, _ = worker.queue_strat(json.dumps(backtest_dict), live=False, simulate_orders=True)
     backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'monitor', backtest_id)
