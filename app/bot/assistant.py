@@ -2,6 +2,8 @@ import logging
 import os
 import json
 from textwrap import dedent
+import datetime
+
 from flask import Blueprint, request, current_app
 from flask_assistant import Assistant, tell, event, context_manager
 from flask_assistant.response import _Response
@@ -91,27 +93,43 @@ def display_momentum_indicators():
 
 @assist.action('new-strategy-select')
 def select_strategy(existing_strategy):
-    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?'
-    return ask(speech).with_quick_reply('yes', 'no')
+    backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
+
+    # back_start = datetime.datetime.today() - datetime.timedelta(days=40)
+    # back_end = datetime.datetime.today()
+    #
+    # backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
+    # backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
+
+    backtest_id, _ = worker.queue_strat(json.dumps(backtest_dict), live=False, simulate_orders=True)
+    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'monitor', backtest_id)
+
+
+
+    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed in the last 7 days'
+
+    resp = inline_keyboard(dedent(speech))
+    resp.add_button('View Past Performance', url=backtest_url)
+
+    return resp.with_quick_reply('yes', 'no')
 
 @assist.action('new-strategy-select-yes')
 def launch_strategy(existing_strategy):
     # will fill with default values
-    strat_dict = {
-        "indicators": [
-            {
-                "name": existing_strategy,
-            }
-        ]
-    }
+    start = datetime.datetime.today()
+    end = start + datetime.timedelta(days=7)
 
-    job_id, _ = worker.queue_strat(json.dumps(strat_dict), live=False, simulate_orders=True)
 
-    #TODO run strat as paper/live and get past 7 days performance from backtest
+    strat_dict = {'indicators': [{"name": existing_strategy}]}
+    strat_dict['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
+    strat_dict['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
 
-    speech = """\
-    Great! The strategy is live now and will run for the next 7 days.
-    Here’s a preview of how well this strategy performed in the last 7 days: kryptos.io/hk236g.\n\n
+    job_id, _ = worker.queue_strat(json.dumps(strat_dict), live=True, simulate_orders=True)
+
+
+    speech = f"""\
+    Great! The strategy is now live and will run for the next 7 days.
+
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
     url = os.path.join(current_app.config['FRONTEND_URL'], 'monitor', job_id)
