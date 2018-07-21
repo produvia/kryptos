@@ -621,7 +621,7 @@ class Strategy(object):
             self.log.error('Requires data ingestion')
             self.log.warn(f"Starting ingest job for {self.trading_info['EXCHANGE']}")
             from kryptos.worker import worker
-            worker.run_ingest(self.trading_info['EXCHANGE'])
+            worker.run_ingest(self.trading_info['EXCHANGE'], symbol=self.trading_info['ASSET'])
             # load.ingest_exchange(self.trading_info)
             # self.log.warn("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)

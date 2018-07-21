@@ -104,16 +104,20 @@ def manage_workers():
                 time.sleep(5)
 
 
-def _ingest_exchange(exchange):
+def _ingest_exchange(exchange, symbol):
     exchange_bundle = ExchangeBundle(exchange)
+    log.info(f'Ingesting {exchange} daily data')
     exchange_bundle.ingest(
         'daily',
+        include_symbols=symbol,
         show_progress=True,
         show_breakdown=True,
         show_report=True
     )
+    log.info(f'Ingesting {exchange} minute data')
     exchange_bundle.ingest(
         'minute',
+        include_symbols=symbol,
         show_progress=True,
         show_breakdown=True,
         show_report=True
@@ -121,10 +125,14 @@ def _ingest_exchange(exchange):
 
 
 
-def run_ingest(exchange):
+def run_ingest(exchange, symbol=None):
+    if symbol is None:
+        log.warn(f'Ingesting {exchange} for all symbols')
+    else:
+        log.warn(f'Ingesting {exchange} for {symbol}')
+
     q = get_queue("ingest")
-    log.error(f'Ingesting {exchange}')
-    q.enqueue(_ingest_exchange, exchange)
+    q.enqueue(_ingest_exchange, args=(exchange, symbol,))
 
 
 
