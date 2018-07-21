@@ -5,6 +5,7 @@ import click
 import multiprocessing
 import time
 import logbook
+from catalyst.exchange.exchange_bundle import ExchangeBundle
 
 from kryptos import logger_group
 from kryptos.strategy import Strategy
@@ -80,8 +81,18 @@ def manage_workers():
         log.info('Starting initial workers')
         multiprocessing.Process(target=Worker(QUEUE_NAMES).work).start()
 
-    # create live queus when needed
+        # start seperate ingest worker
+        multiprocessing.Process(target=Worker('intgest').work).start()
+
+
+    # ingest data on start
+    for ex in ['bitfinex', 'bittrex', 'poloniex']:
+        run_ingest(ex)
+
+
+    # create paper/live queues when needed
     while True:
+
         queue_names = ['paper', 'live']
         with Connection(CONN):
             if workers_required() > 0:
@@ -91,6 +102,19 @@ def manage_workers():
                     multiprocessing.Process(target=Worker(queue_names).work, kwargs={'burst': True}).start()
             else:
                 time.sleep(5)
+
+
+
+def run_ingest(exchange):
+
+    exchange_bundle = ExchangeBundle(exchange)
+    q = get_queue("ingest")
+    log.error(f'Ingesting {exchange}')
+    q.enqueue(exchange_bundle.ingest, args='daily', kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
+    q.enqueue(exchange_bundle.ingest, args='minute', kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
+
+
+
 
 if __name__ == '__main__':
     manage_workers()
