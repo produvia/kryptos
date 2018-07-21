@@ -47,6 +47,15 @@ def run_strat():
     job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), live, simulate_orders)
     return jsonify(job_id=job_id)
 
+def pretty_result(result_json):
+    string = ''
+    result_dict = json.loads(result_json)
+    for k, v in result_dict.items():
+        # nested dict with trading type as key
+        metric, val = k, v["Backtest"]
+        string += f"{metric}: {val}\n"
+    return string
+
 
 @api.route('/monitor', methods=['GET'])
 def strat_status():
@@ -67,12 +76,13 @@ def strat_status():
 
     if job is None:
         data = {'status': 'Not Found'}
+
     else:
         data = {
             'status': job.status,
             'meta': job.meta,
             'started_at': job.started_at,
-            'result': job.result
+            'result': pretty_result(job.result)
         }
 
     return jsonify(strat_info=data)
