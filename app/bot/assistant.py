@@ -29,9 +29,15 @@ EXISTING_STRATS = [
 
 
 def get_user_from_request():
-    if not request.json.get('originalRequest'):
+    platform_data =  request.json.get('originalRequest', {}).get('data', {})
+    if not platform_data:
         return {'first_name': 'USER', 'id': 34567}
-    return request.json['originalRequest']['data']['message']['from']
+
+    if platform_data.get('message'):
+        return platform_data['message']['from']
+
+    elif platform_data.get('callback_query'):
+        return platform_data['callback_query']['from']
 
 
 @assist.action('Default Welcome Intent')
