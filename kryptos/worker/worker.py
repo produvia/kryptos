@@ -110,8 +110,8 @@ def run_ingest(exchange):
     exchange_bundle = ExchangeBundle(exchange)
     q = get_queue("ingest")
     log.error(f'Ingesting {exchange}')
-    q.enqueue(exchange_bundle.ingest, args='daily', kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
-    q.enqueue(exchange_bundle.ingest, args='minute', kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
+    q.enqueue(exchange_bundle.ingest, args=('daily',), kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
+    q.enqueue(exchange_bundle.ingest, args=('minute',), kwargs={'show_progress': True, 'show_breakdown': True, 'show_report': True})
 
 
 
