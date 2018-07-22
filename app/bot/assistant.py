@@ -123,9 +123,9 @@ def launch_strategy(existing_strategy):
     end = start + datetime.timedelta(days=7)
 
 
-    strat_dict = {'indicators': [{"name": existing_strategy}]}
-    strat_dict['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
-    strat_dict['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
+    strat_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
+    strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
+    strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
 
     job_id, _ = worker.queue_strat(json.dumps(strat_dict), live=True, simulate_orders=True)
 
