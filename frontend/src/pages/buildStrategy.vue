@@ -24,11 +24,11 @@
       </q-field>
 
       <q-field helper='Start Date'>
-        <q-datetime v-model='form.start' type='date' default-value='form.start'/>
+        <q-datetime v-model='form.start' type='date' default-value='form.start' format-model='string' format='YYYY-MM-DD'/>
       </q-field>
 
       <q-field helper='End Date'>
-        <q-datetime v-model='form.end' type='date' default-value='form.end'/>
+        <q-datetime v-model='form.end' type='date' :display-value='oneWeekAgo' format-model='string' format='YYYY-MM-DD' :max='oneWeekAgo'/>
       </q-field>
 
       <q-field helper='Base Currency'>
@@ -87,19 +87,20 @@ export default {
   data () {
     return {
       stratID: null,
+      endDate: this.oneWeekAgo,
       form: {
         name: null,
         trade_type: 'backtest',
         start: '2017-10-10',
-        end: date.formatDate(Date.now(), 'YYYY-MM-DD'),
+        end: null,
         base_currency: 'usd',
         asset: 'btc_usd',
         data_freq: 'daily',
         history_freq: '1d',
-        exchange: 'bittrex',
+        exchange: 'bitfinex',
         capital_base: 5000,
         bar_period: 50,
-        oerder_size: 0.5,
+        order_size: 0.5,
         slippage_allowed: 0.05
       },
       exchanges: [
@@ -152,11 +153,19 @@ export default {
       ]
     }
   },
+  computed: {
+    today () {
+      let today = Date.now()
+      return date.formatDate(today, 'YYYY-MM-DD')
+    },
+    oneWeekAgo () {
+      let weekAgo = date.subtractFromDate(this.today, { days: 7 })
+      return date.formatDate(weekAgo, 'YYYY-MM-DD')
+    }
+  },
   methods: {
     submit () {
       console.log('Submitting strategy')
-      this.form.start = date.formatDate(this.form.start, 'YYYY-MM-DD')
-      this.form.end = date.formatDate(this.form.end, 'YYYY-MM-DD')
 
       const path = process.env.API_URL + 'submit'
       axios.post(path, this.form, {crossdomain: true})
