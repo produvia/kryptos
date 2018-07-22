@@ -38,7 +38,7 @@ def run_strat(strat_json, strat_name, live=False, simulate_orders=True):
     return result_df.to_json()
 
 
-def queue_strat(strat_json, live=False, simulate_orders=True):
+def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
     strat_dict = json.loads(strat_json)
     strat = Strategy()
     strat.load_from_dict(strat_dict)
@@ -61,7 +61,8 @@ def queue_strat(strat_json, live=False, simulate_orders=True):
             'live': live,
             'simulate_orders': simulate_orders
         },
-        timeout=-1)
+        timeout=-1,
+        depends_on=depends_on)
 
     return job.id, q.name
 
