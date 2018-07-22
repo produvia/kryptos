@@ -13,6 +13,7 @@ from rq import get_current_job
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+from ccxt.base import errors as ccxt_errors
 
 from kryptos.utils import load, viz, outputs
 from kryptos.strategy.indicators import technical, ml
@@ -21,6 +22,8 @@ from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
 from kryptos.settings import DEFAULT_CONFIG
 from kryptos.analysis import quant
+
+from redo import retry
 
 
 class StratLogger(logbook.Logger):
@@ -262,6 +265,14 @@ class Strategy(object):
         self._extra_init(context)
         self.log.info("Initilized Strategy")
 
+    def _fetch_history(self, context, data):
+        context.prices = data.history(
+            context.asset,
+            bar_count=context.BARS,
+            fields=["price", "open", "high", "low", "close", "volume"],
+            frequency=context.HISTORY_FREQ,
+        )
+
     def _process_data(self, context, data):
         """Called at each algo iteration
 
@@ -297,12 +308,13 @@ class Strategy(object):
         # The frequency attribute determine the bar size. We use this convention
         # for the frequency alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        context.prices = data.history(
-            context.asset,
-            bar_count=context.BARS,
-            fields=["price", "open", "high", "low", "close", "volume"],
-            frequency=context.HISTORY_FREQ,
-        )
+
+        retry(self._fetch_history,
+              sleeptime=5,
+              retry_exceptions=(ccxt_errors.RequestTimeout),
+              args=(context, data),
+              cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+
 
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
