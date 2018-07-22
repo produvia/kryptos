@@ -617,11 +617,12 @@ class Strategy(object):
             else:
                 self.run_backtest()
 
-        except PricingDataNotLoadedError:
-            self.log.error('Requires data ingestion')
+        except PricingDataNotLoadedError as e:
+            self.log.error('Failed to run stratey Requires data ingestion')
             self.log.warn(f"Starting ingest job for {self.trading_info['EXCHANGE']}")
-            from kryptos.worker import worker
-            worker.run_ingest(self.trading_info['EXCHANGE'], symbol=self.trading_info['ASSET'])
+            raise e
+            # from kryptos.worker import ingester
+            # ingester.run_ingest(self.trading_info['EXCHANGE'], symbol=self.trading_info['ASSET'])
             # load.ingest_exchange(self.trading_info)
             # self.log.warn("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)
