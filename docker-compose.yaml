@@ -36,6 +36,20 @@ services:
     depends_on:
     - redis
 
+  ingester:
+    image: kryptos
+    container_name: ingester
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - catalyst:/root/.catalyst
+    entrypoint: ['python', 'kryptos/worker/ingester.py']
+    networks:
+      - kryptos-net
+    depends_on:
+    - worker
+
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
