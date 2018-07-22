@@ -81,6 +81,7 @@
 
 <script>
 import axios from 'axios'
+import {date} from 'quasar'
 export default {
   name: 'BuildStrategy',
   data () {
@@ -90,9 +91,9 @@ export default {
         name: null,
         trade_type: 'backtest',
         start: '2017-10-10',
-        end: '2018-3-28',
+        end: date.formatDate(Date.now(), 'YYYY-MM-DD'),
         base_currency: 'usd',
-        asset: 'btc',
+        asset: 'btc_usd',
         data_freq: 'daily',
         history_freq: '1d',
         exchange: 'bittrex',
@@ -154,6 +155,9 @@ export default {
   methods: {
     submit () {
       console.log('Submitting strategy')
+      this.form.start = date.formatDate(this.form.start, 'YYYY-MM-DD')
+      this.form.end = date.formatDate(this.form.end, 'YYYY-MM-DD')
+
       const path = process.env.API_URL + 'submit'
       axios.post(path, this.form, {crossdomain: true})
         .then(response => {
