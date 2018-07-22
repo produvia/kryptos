@@ -39,12 +39,17 @@ def get_status(strat_id, queue_name):
 
 @api.route('/submit', methods=['POST'])
 def run_strat():
-    strat_dict = request.json
-    trade_type = strat_dict['trade_type']
+    strat_payload = request.json
+    trade_type = strat_payload['trade_type']
     live = trade_type in ['live', 'paper']
     simulate_orders = trade_type == 'live'
 
-    job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), live, simulate_orders)
+    strat_config_dict  = {'trading': {}}
+    for k, v in strat_payload.items():
+        strat_config_dict['trading'][k.upper()] = v
+
+
+    job_id, queue_name = worker.queue_strat(json.dumps(strat_config_dict), live, simulate_orders)
     return jsonify(job_id=job_id)
 
 def pretty_result(result_json):
