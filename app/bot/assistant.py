@@ -17,7 +17,7 @@ blueprint = Blueprint('bot', __name__, url_prefix='/bot')
 assist = Assistant(blueprint=blueprint)
 
 
-logging.getLogger('flask_assistant').setLevel(logging.DEBUG)
+logging.getLogger('flask_assistant').setLevel(logging.INFO)
 
 EXISTING_STRATS = [
     ('Bollinger Bands (BBANDS)', 'BBANDS'),
@@ -91,15 +91,17 @@ def display_momentum_indicators():
         speech += f'\n{i+1}. {abbrev} - {name}'
     return ask(speech)
 
+@assist.context('new-strategy-select-followup')
 @assist.action('new-strategy-select')
 def select_strategy(existing_strategy):
-    backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
+    # TODO determine exchange
+    backtest_dict = {'trading': {'EXCHANGE': 'bitfinex'}, 'indicators': [{"name": existing_strategy}]}
 
     # Can't use today as the end date bc data bundles are updated daily,
     # so current market data won't be avialable for backtest until the following day
     # use past week up to yesterday
-    back_start = datetime.datetime.today() - datetime.timedelta(days=8)
-    back_end = datetime.datetime.today() - datetime.timedelta(days=1)
+    back_start = datetime.datetime.today() - datetime.timedelta(days=100)
+    back_end = datetime.datetime.today() - datetime.timedelta(days=7)
 
     backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
     backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
@@ -109,7 +111,7 @@ def select_strategy(existing_strategy):
 
 
 
-    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed in the last 7 days'
+    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 100 days'
 
     resp = inline_keyboard(dedent(speech))
     resp.add_button('View Past Performance', url=backtest_url)
