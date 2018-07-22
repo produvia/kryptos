@@ -69,6 +69,7 @@ def queue_strat(strat_json, live=False, simulate_orders=True):
 def workers_required():
     paper_q, live_q = get_queue('paper'), get_queue('live')
     total_queued = len(paper_q) + len(live_q)
+    log.warn(f'TOTAL QUEUED: {total_queued}')
     return total_queued
 
 
@@ -83,15 +84,13 @@ def manage_workers():
     #start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
-        multiprocessing.Process(target=Worker(QUEUE_NAMES).work).start()
 
-        # start seperate ingest worker
-        multiprocessing.Process(target=Worker('ingest').work).start()
+        log.info('Starting worker for BACKTEST queue')
+        multiprocessing.Process(target=Worker(['backtest']).work).start()
 
+        log.info('Starting worker for PAPER/LIVE queues')
+        multiprocessing.Process(target=Worker(['paper', 'live']).work).start()
 
-    # ingest data on start
-    for ex in ['bitfinex', 'bittrex', 'poloniex']:
-        run_ingest(ex)
 
 
     # create paper/live queues when needed
@@ -108,35 +107,7 @@ def manage_workers():
                 time.sleep(5)
 
 
-def _ingest_exchange(exchange, symbol):
-    exchange_bundle = ExchangeBundle(exchange)
-    log.info(f'Ingesting {exchange} daily data')
-    exchange_bundle.ingest(
-        'daily',
-        include_symbols=symbol,
-        show_progress=True,
-        show_breakdown=True,
-        show_report=True
-    )
-    log.info(f'Ingesting {exchange} minute data')
-    exchange_bundle.ingest(
-        'minute',
-        include_symbols=symbol,
-        show_progress=True,
-        show_breakdown=True,
-        show_report=True
-    )
 
-
-
-def run_ingest(exchange, symbol=None):
-    if symbol is None:
-        log.warn(f'Ingesting {exchange} for all symbols')
-    else:
-        log.warn(f'Ingesting {exchange} for {symbol}')
-
-    q = get_queue("ingest")
-    q.enqueue(_ingest_exchange, args=(exchange, symbol,))
 
 
 
