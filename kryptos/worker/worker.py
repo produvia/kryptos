@@ -15,6 +15,10 @@ from kryptos.settings import QUEUE_NAMES
 host = 'redis' if in_docker() else 'localhost'
 CONN = redis.Redis(host=host, port=6379)
 
+
+from logbook.compat import redirect_logging
+redirect_logging()
+
 log = logbook.Logger('WorkerManager')
 logger_group.add_logger(log)
 
