@@ -3,6 +3,7 @@ from logbook import Logger
 import multiprocessing
 from catalyst.exchange.exchange_bundle import ExchangeBundle
 from rq import Connection, Worker
+import pandas as pd
 
 from kryptos import logger_group
 from kryptos.worker.worker import CONN, get_queue
@@ -12,24 +13,32 @@ log = Logger("INGESTER")
 logger_group.add_logger(log)
 
 
-def ingest_exchange(exchange, symbol=None):
+def ingest_exchange(exchange, symbol=None, start=None, end=None):
     exchange_bundle = ExchangeBundle(exchange)
-    log.info(f'Ingesting {exchange} daily data')
     if symbol is None:
         log.warn(f'Queuing ingest {exchange} for all symbols')
     else:
         log.warn(f'Queuing ingest {exchange} for {symbol}')
+
+    log.warn(f'Will ingest timeframe {start} - {end}')
+
+    log.info(f'Ingesting {exchange} daily data')
     exchange_bundle.ingest(
         'daily',
+        start=pd.to_datetime(start, utc=True),
+        end=pd.to_datetime(end, utc=True),
         include_symbols=symbol,
         show_progress=True,
         show_breakdown=True,
         show_report=True
     )
     log.info(f'Done ingesting daily {exchange} data')
+
     log.info(f'Ingesting {exchange} minute data')
     exchange_bundle.ingest(
         'minute',
+        start=pd.to_datetime(start, utc=True),
+        end=pd.to_datetime(end, utc=True),
         include_symbols=symbol,
         show_progress=True,
         show_breakdown=True,
@@ -67,14 +76,14 @@ def ingest_from_trade_config(config):
         csv=None,
     )
 
-def queue_ingest(exchange, symbol=None):
+def queue_ingest(exchange, symbol=None, start=None, end=None):
     if symbol is None:
         log.warn(f'Queuing ingest {exchange} for all symbols')
     else:
         log.warn(f'Queuing ingest {exchange} for {symbol}')
 
     q = get_queue("ingest")
-    q.enqueue(load.ingest_exchange, args=(exchange, symbol,))
+    return q.enqueue(load.ingest_exchange, args=(exchange, symbol, start, end))
 
 
 
