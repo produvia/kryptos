@@ -37,6 +37,10 @@ def register_extensions(app):
     cors.init_app(app, resources={r"*": {"origins": "*"}})
     db.init_app(app)
     migrate.init_app(app, db, directory=app.config['MIGRATIONS_DIR'])
+
+     # Setup Flask-User and specify the User data-model
+    user_manager = UserManager(app, db, models.user.User)
+
     return None
 
 
