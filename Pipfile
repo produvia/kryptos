@@ -27,6 +27,7 @@ flask-assistant = "*"
 "aniso8601" = "*"
 flask-user = "*"
 flask-migrate = "*"
+"psycopg2" = "*"
 
 [dev-packages]
 black = "==18.4a4"
