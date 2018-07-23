@@ -4,7 +4,7 @@ from flask import Flask
 from flask_user import UserManager
 import rq_dashboard
 
-from app import web, rpc, bot, account, models
+from app import web, api, bot, account, models
 from app.extensions import jsonrpc, cors, db, migrate
 from app.settings import ProdConfig
 
@@ -53,7 +53,7 @@ def register_blueprints(app):
     If the entire flask app consists of only the Assistant, comment out the code below.
     """
     app.register_blueprint(web.views.blueprint)
-    app.register_blueprint(rpc.views.api)
+    app.register_blueprint(api.views.api)
     app.register_blueprint(account.views.blueprint)
     app.register_blueprint(bot.assistant.blueprint)
     app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")
