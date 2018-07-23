@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """The flask app module, containing the app factory function."""
 from flask import Flask
+from flask_user import UserManager
 import rq_dashboard
 
-from app import web, rpc, bot
-from app.extensions import jsonrpc, cors
+from app import web, rpc, bot, models
+from app.extensions import jsonrpc, cors, db, migrate
 from app.settings import ProdConfig
+
 
 
 def create_app(config_object=ProdConfig):
@@ -29,9 +31,12 @@ def register_extensions(app):
     Other extensions such as flask-sqlalchemy and flask-migrate are reigstered here.
     If the entire flask app consists of only the Assistant, uncomment the code below.
     """
+
     jsonrpc.init_app(app)
     jsonrpc._register_browse(app)
     cors.init_app(app, resources={r"*": {"origins": "*"}})
+    db.init_app(app)
+    migrate.init_app(app, db, directory=app.config['MIGRATIONS_DIR'])
     return None
 
 
