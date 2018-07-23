@@ -266,6 +266,10 @@ class Strategy(object):
         self.log.info("Initilized Strategy")
 
     def _fetch_history(self, context, data):
+        # Get price, open, high, low, close
+        # The frequency attribute determine the bar size. We use this convention
+        # for the frequency alias:
+        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         context.prices = data.history(
             context.asset,
             bar_count=context.BARS,
@@ -304,17 +308,17 @@ class Strategy(object):
 
         context.price = price
 
-        # Get price, open, high, low, close
-        # The frequency attribute determine the bar size. We use this convention
-        # for the frequency alias:
-        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+    
+        try:
+            retry(self._fetch_history,
+                  sleeptime=5,
+                  retry_exceptions=(ccxt_errors.RequestTimeout),
+                  args=(context, data),
+                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
 
-        retry(self._fetch_history,
-              sleeptime=5,
-              retry_exceptions=(ccxt_errors.RequestTimeout),
-              args=(context, data),
-              cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
-
+        except ccxt_errors.ExchangeNotAvailable:
+            self.log.error('Exchange API is currently unavailable, skipping trading step')
+            return
 
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
