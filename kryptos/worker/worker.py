@@ -54,7 +54,7 @@ def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
 
     job = q.enqueue(
         run_strat,
-        job_id=strat.name,
+        job_id=strat.id,
         kwargs={
             'strat_json': strat_json,
             'strat_name': strat.name, # pass to keep same id as the job_id

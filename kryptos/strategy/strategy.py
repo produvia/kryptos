@@ -650,7 +650,7 @@ class Strategy(object):
     def run_backtest(self):
         try:
             run_algorithm(
-                algo_namespace=self.name,
+                algo_namespace=self.id,
                 capital_base=self.trading_info["CAPITAL_BASE"],
                 data_frequency=self.trading_info["DATA_FREQ"],
                 initialize=self._init_func,
