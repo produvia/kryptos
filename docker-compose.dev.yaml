@@ -55,6 +55,8 @@ services:
     entrypoint: ['python', 'kryptos/worker/ingester.py']
     depends_on:
     - worker
+    logging:
+        driver: none
 
   db:
     container_name: db
