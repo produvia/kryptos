@@ -37,8 +37,8 @@ class Config(object):
     USER_APP_NAME = "Kryptos AI"  # Shown in and email templates and page footers
     USER_ENABLE_EMAIL = True        # Enable email authentication
     USER_ENABLE_USERNAME = False    # Disable username authentication
-    USER_ENABLE_CONFIRM_EMAIL = False
-    USER_SEND_REGISTERED_EMAIL = False
+    USER_ENABLE_CONFIRM_EMAIL = True
+    USER_SEND_REGISTERED_EMAIL = True
 
 class ProdConfig(Config):
     """Production configuration."""
