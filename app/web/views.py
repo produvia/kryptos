@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Public section, including homepage and signup."""
 import os
-from flask import send_file, Blueprint
+from flask import send_file, Blueprint, redirect, current_app, render_template
+from flask_user import current_user
 from kryptos.utils.outputs import in_docker
+import requests
 
-blueprint = Blueprint("public", __name__, url_prefix='/', static_folder='static/spa-mat')
+blueprint = Blueprint('main', __name__, url_prefix='/')
 
-
-@blueprint.route('/', defaults={'path': ''})
-@blueprint.route('/<path:path>')
-def route_frontend(path):
-    file_path = os.path.join(blueprint.static_folder, path)
-    if os.path.isfile(file_path):
-        return send_file(file_path)
-    # ...or should be handled by the SPA's "router" in front end
-    else:
-        index_path = os.path.join(blueprint.static_folder, 'index.html')
-        return send_file(index_path)
+@blueprint.route('/')
+def home_page():
+    return render_template('main/landing.html', current_user=current_user)
