@@ -8,24 +8,58 @@
 {% extends "flask_user_layout.html" %}
 {% block content %}
 <div id="app">
-
+    <h1 class="text-center">[[stratInfo.meta.config.name]]</h1>
 
     <div class="card">
         <div class="card-body">
             <h4 class="card-title">
-                Strategy [[strat_id]]
+                Status: [[stratInfo.status]]
+
             </h4>
         <div class="card-text">
-                Status: [[stratInfo.status]] <br>
-                Job started at: [[stratInfo.started_at]] <br>
-                Output: <pre>[[stratInfo.meta]]</pre> <br>
-                Output: <pre>[[stratInfo.result]]</pre> <br>
-        </div>
+            Strategy ID: <small>[[strat_id]]</small> <br>
+            Name: [[stratInfo.meta.config.name]] <br>
+            Job started at: [[stratInfo.started_at]] <br>
 
+        </div>
 
         </div>
     </div>
 
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">
+                Config
+            </h4>
+        <div class="card-text">
+            <pre>[[stratInfo.meta.config]]</pre>
+        </div>
+
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">
+                Logs
+            </h4>
+        <div class="card-text">
+                Date: <pre>[[stratInfo.meta.date]]</pre> <br>
+                Output: <pre>[[stratInfo.meta.output]]</pre> <br>
+        </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">
+                Result
+            </h4>
+        <div class="card-text">
+            <pre>[[stratInfo.meta.result]]</pre> <br>
+        </div>
+        </div>
+    </div>
 
 </div>
 <script>
@@ -33,7 +67,9 @@ new Vue({
   el: '#app',
   data: {
     strat_id: window.location.href.substr(window.location.href.lastIndexOf('/') + 1),
-    stratInfo: {}
+    stratInfo: {
+      meta: {}
+    }
   },
   delimiters: ['[[',']]'],
   methods: {
