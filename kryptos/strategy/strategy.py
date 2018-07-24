@@ -38,7 +38,7 @@ class StratLogger(logbook.Logger):
 
         if self.strat.in_job:
             job = get_current_job()
-            job.meta['Strategy'] = record.msg
+            job.meta['output'] = record.msg
             job.save_meta()
 
 
@@ -650,6 +650,12 @@ class Strategy(object):
         """
         self.in_job = as_job
         self.viz = viz
+
+        if self.in_job:
+            job = get_current_job()
+            job.meta['config'] = self.to_dict()
+            job.save_meta()
+
         try:
             if live or self.trading_info.get("LIVE", False):
                 self.run_live(simulate_orders=simulate_orders)

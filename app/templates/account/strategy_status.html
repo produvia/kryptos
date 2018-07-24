@@ -10,56 +10,67 @@
 <div id="app">
     <h1 class="text-center">[[stratInfo.meta.config.name]]</h1>
 
-    <div class="card">
-        <div class="card-body">
-            <h4 class="card-title">
-                Status: [[stratInfo.status]]
+    <div class="container text-center justify-left">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Status: [[stratInfo.status]]
 
-            </h4>
-        <div class="card-text">
-            Strategy ID: <small>[[strat_id]]</small> <br>
-            Name: [[stratInfo.meta.config.name]] <br>
-            Job started at: [[stratInfo.started_at]] <br>
+                </h4>
+            <div class="card-text">
+                Strategy ID: <small>[[strat_id]]</small> <br>
+                Name: [[stratInfo.meta.config.name]] <br>
+                Job started at: [[stratInfo.started_at]] <br>
 
-        </div>
+            </div>
 
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <h4 class="card-title">
-                Config
-            </h4>
-        <div class="card-text">
-            <pre>[[stratInfo.meta.config]]</pre>
-        </div>
+<div class="container-fluid row">
+    <div class="col-sm-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Config
+                </h4>
+            <div class="card-text">
+                <pre>[[stratInfo.meta.config]]</pre>
+            </div>
 
+            </div>
+        </div>
+        </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Logs
+                </h4>
+            <div class="card-text">
+                    Date: <pre>[[stratInfo.meta.date]]</pre> <br>
+                    Output: <pre>[[stratInfo.meta.output]]</pre> <br>
+            </div>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <h4 class="card-title">
-                Logs
-            </h4>
-        <div class="card-text">
-                Date: <pre>[[stratInfo.meta.date]]</pre> <br>
-                Output: <pre>[[stratInfo.meta.output]]</pre> <br>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Result
+                </h4>
+            <div class="card-text">
+                <pre>[[stratInfo.result]]</pre> <br>
+            </div>
+            </div>
         </div>
-        </div>
+    </div>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <h4 class="card-title">
-                Result
-            </h4>
-        <div class="card-text">
-            <pre>[[stratInfo.meta.result]]</pre> <br>
-        </div>
-        </div>
-    </div>
+
 
 </div>
 <script>
@@ -67,6 +78,7 @@ new Vue({
   el: '#app',
   data: {
     strat_id: window.location.href.substr(window.location.href.lastIndexOf('/') + 1),
+    stratConfig: {},
     stratInfo: {
       meta: {}
     }
@@ -90,6 +102,7 @@ new Vue({
       })
       .then(response => {
         this.stratInfo = response.data.strat_info
+        this.stratConfig = JSON.parse(this.stratInfo.meta.config)
         console.log(response)
       })
       .catch(error => {
