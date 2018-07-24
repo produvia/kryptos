@@ -18,6 +18,17 @@ class User(db.Model, UserMixin):
     email_confirmed_at = db.Column(db.DateTime())
 
     password = db.Column(db.String(255), nullable=False)
+
+
+    invoices = db.relationship("Strategy", backref="user", lazy=True)
     # User information
     # first_name = db.Column(db.String(100), nullable=False, server_default='')
     # last_name = db.Column(db.String(100), nullable=False, server_default='')
+
+
+class Strategy(db.Model):
+    id = db.Column(db.String(), nullable=False, unique=True, primary_key=True)
+    name = db.Column(db.String(), nullable=False, unique=False)
+    created_at = db.Column(db.DateTime())
+
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
