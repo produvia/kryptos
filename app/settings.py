@@ -24,6 +24,15 @@ class Config(object):
     REDIS_HOST = os.getenv('REDIS_HOST')
     RQ_POLL_INTERVAL = 1000
 
+    # Flask-Mail SMTP server settings
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 465
+    MAIL_USE_SSL = True
+    MAIL_USE_TLS = False
+    MAIL_USERNAME = 'testkryptos123@gmail.com'
+    MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
+    MAIL_DEFAULT_SENDER = '"Kryptos AI" <noreply@example.com>'
+
     # Flask-User settings
     USER_APP_NAME = "Kryptos AI"  # Shown in and email templates and page footers
     USER_ENABLE_EMAIL = True        # Enable email authentication
