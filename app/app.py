@@ -1,20 +1,40 @@
 # -*- coding: utf-8 -*-
 """The flask app module, containing the app factory function."""
-from flask import Flask
+from flask import Flask, current_app
+from flask.helpers import get_debug_flag
+import logging
+
 from flask_user import UserManager
 import rq_dashboard
 
 from app import web, api, bot, models
 from app.extensions import jsonrpc, cors, db, migrate
-from app.settings import ProdConfig
+from app.settings import DevConfig, DockerDevConfig, ProdConfig
+from kryptos.utils.outputs import in_docker
+
+logging.getLogger('flask_assistant').setLevel(logging.INFO)
 
 
+def get_config():
+    if not in_docker():
+        config = DevConfig
 
-def create_app(config_object=ProdConfig):
+    elif get_debug_flag():
+        config = DockerDevConfig
+
+    else:
+        config = ProdConfig
+
+    return config
+
+def create_app(config_object=None):
     """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
 
     :param config_object: The configuration object to use.
     """
+    if config_object is None:
+        config_object = get_config()
+
     app = Flask(__name__.split(".")[0])
     app.config.from_object(rq_dashboard.default_settings)
     app.config.from_object(config_object)
