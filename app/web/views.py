@@ -29,7 +29,7 @@ def build_strategy():
     form = TradeInfoForm()
     if form.validate_on_submit():
 
-        strat_dict = {
+        trading_dict = {
            "EXCHANGE": form.exchange.data,
            "ASSET": form.asset.data,
            "DATA_FREQ": form.data_freq.data,
@@ -43,6 +43,12 @@ def build_strategy():
            "SLIPPAGE_ALLOWED": form.slippage_allowed.data
 
         }
+
+        strat_dict = {
+            'name': form.name.data,
+            'trading': trading_dict
+        }
+
         live = form.trade_type in ['live', 'paper']
         simulate_orders = form.trade_type == 'live'
 

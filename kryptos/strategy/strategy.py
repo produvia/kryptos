@@ -246,7 +246,7 @@ class Strategy(object):
 
 
     def load_dict(self, strat_dict):
-        name = strat_dict.get('name')
+        self.name = strat_dict.get('name')
         self._load_trading(strat_dict)
         self._load_indicators(strat_dict)
         self._load_datasets(strat_dict)
