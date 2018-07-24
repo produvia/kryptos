@@ -4,7 +4,7 @@ from wtforms.validators import DataRequired, Required
 
 trade_types = [('backtest','backtest'), ('paper','paper'), ('live','live')]
 exchanges = [('bitfinex', 'bitfinex'), ('poloniex', 'poloniex'), ('bittrex', 'bittrex')]
-freqs = [('dailiy', 'daily'), ('minute', 'minute')]
+freqs = [('daily', 'daily'), ('minute', 'minute')]
 
 
 
