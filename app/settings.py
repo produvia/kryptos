@@ -62,7 +62,7 @@ class DevConfig(Config):
     ENV = "dev"
     DEBUG = True
     FRONTEND_URL = '0.0.0.0:8080'
-    API_URL = "http://127.0.0.1:5000/api"
+    API_URL = "http://0.0.0.0:5000/api"
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/kryptos'
 
 
