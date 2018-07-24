@@ -67,9 +67,11 @@ class Strategy(object):
         persisting data, and iterating through timeseries data) is handled by catalyst.
         """
 
+        self.id = str(uuid.uuid1())
+
         # name required for storing live algos
         if name is None:
-            name = "Strat-" + str(uuid.uuid1())
+            name = "Strat-" + self.id
 
         self.name = name
         self.trading_info = DEFAULT_CONFIG
@@ -107,6 +109,8 @@ class Strategy(object):
 
     def serialize(self):
         d = {
+            "id": self.id,
+            "name": self.name,
             "trading": self.trading_info,
             "datasets": self.dataset_info,
             "indicators": self.indicator_info,
