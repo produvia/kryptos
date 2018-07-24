@@ -108,6 +108,9 @@ class Strategy(object):
         self.current_date = None
 
     def serialize(self):
+        return json.dumps(self.to_dict(), indent=3)
+
+    def to_dict(self):
         d = {
             "id": self.id,
             "name": self.name,
@@ -116,7 +119,7 @@ class Strategy(object):
             "indicators": self.indicator_info,
             "signals": self._dump_signals(),
         }
-        return json.dumps(d, indent=3)
+        return d
 
     @property
     def indicator_info(self):
@@ -232,7 +235,7 @@ class Strategy(object):
             # store json repr so we can load params during execution
             self._sell_signal_objs.append(s)
 
-    def load_from_dict(self, strat_dict):
+    def _load_trading(self, strat_dict):
         trade_config = strat_dict.get("trading", {})
         self.trading_info.update(trade_config)
         # For all trading pairs in the poloniex bundle, the default denomination
@@ -241,16 +244,32 @@ class Strategy(object):
         if self.trading_info["EXCHANGE"] == "poloniex":
             self.trading_info["TICK_SIZE"] = 1000.0
 
+
+    def load_dict(self, strat_dict):
+        name = strat_dict.get('name')
+        self._load_trading(strat_dict)
         self._load_indicators(strat_dict)
         self._load_datasets(strat_dict)
         self._load_signals(strat_dict)
 
 
-
-    def load_from_json(self, json_file):
+    def load_json_file(self, json_file):
         with open(json_file, "r") as f:
             d = json.load(f)
-            self.load_from_dict(d)
+            self.load_dict(d)
+
+    @classmethod
+    def from_dict(cls, strat_dict):
+        instance = cls()
+        instance.load_dict(strat_dict)
+        return instance
+
+    @classmethod
+    def from_json_file(cls, json_file):
+        instance = cls()
+        instance.load_json_file(json_file)
+        return instance
+
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""

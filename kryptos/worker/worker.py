@@ -28,10 +28,10 @@ def get_queue(queue_name):
     return Queue(queue_name, connection=CONN)
 
 
-def run_strat(strat_json, strat_name, live=False, simulate_orders=True):
+def run_strat(strat_json, live=False, simulate_orders=True):
     strat_dict = json.loads(strat_json)
-    strat = Strategy()
-    strat.load_from_dict(strat_dict)
+    strat = Strategy.from_dict(strat_dict)
+
     strat.run(viz=False, live=live, simulate_orders=simulate_orders, as_job=True)
     result_df = strat.quant_results
 
@@ -40,8 +40,7 @@ def run_strat(strat_json, strat_name, live=False, simulate_orders=True):
 
 def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
     strat_dict = json.loads(strat_json)
-    strat = Strategy()
-    strat.load_from_dict(strat_dict)
+    strat = Strategy.from_dict(strat_dict)
 
     if live and simulate_orders:
         q = get_queue('paper')
@@ -57,7 +56,6 @@ def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
         job_id=strat.id,
         kwargs={
             'strat_json': strat_json,
-            'strat_name': strat.name, # pass to keep same id as the job_id
             'live': live,
             'simulate_orders': simulate_orders
         },
