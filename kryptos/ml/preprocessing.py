@@ -27,20 +27,26 @@ def preprocessing_multiclass_data(df, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
     learning problem.
     """
-
-    # Prepare signal classification problem (0=KEPP / 1=UP / 2=DOWN)
+    # Prepare labelling classification problem (0=KEPP / 1=UP / 2=DOWN)
     df['last_price'] = df['price'].shift(1)
     df['target_past'] = 0 # 'KEEP'
     df.loc[df.last_price + (df.last_price * CONFIG.PERCENT_UP) < df.price, 'target_past'] = 1 # 'UP'
     df.loc[df.last_price - (df.last_price * CONFIG.PERCENT_DOWN) > df.price, 'target_past'] = 2 # 'DOWN'
-    df['target'] = df['target_past'].shift(1).copy()
     df = df.dropna()
-    df['target'] = df['target'].astype('int')
+    df['diff_past'] = df['price'] - df['last_price']
+    df['diff_target'] = df['price'] - df['price'].shift(-1)
+    df['target'] = df['target_past'].astype('int').shift(1).copy()
 
+    # Prepare data structure X and y
     excl = ['target', 'pred', 'id']
     cols = [c for c in df.columns if c not in excl]
-    y = df['target']
     X = df[cols]
+    if CONFIG.CLASSIFICATION_TYPE == 1:
+        y = df['diff_target']
+    elif CONFIG.CLASSIFICATION_TYPE == 2 or CONFIG.CLASSIFICATION_TYPE == 3:
+        y = df['target']
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 0, 1 or 2')
 
     if not to_optimize:
         # Adding different features (feature engineering)

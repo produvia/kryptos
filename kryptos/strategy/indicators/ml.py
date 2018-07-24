@@ -1,4 +1,4 @@
-from catalyst.api import record
+from catalyst.api import record, get_datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -12,6 +12,7 @@ from kryptos.ml.feature_selection.wrapper import wrapper_feature_selection
 from kryptos.ml.preprocessing import preprocessing_multiclass_data, clean_params, add_fe
 from kryptos.ml.metric import classification_metrics
 from kryptos.settings import MLConfig as CONFIG
+from kryptos.settings import DEFAULT_CONFIG
 from kryptos.utils import merge_two_dicts
 
 
@@ -59,6 +60,7 @@ class XGBOOST(MLIndicator):
     def __init__(self, **kw):
         super(XGBOOST, self).__init__("XGBOOST", **kw)
         self.num_boost_rounds = None
+        self.first_iteration = True
 
     @property
     def signals_buy(self):
@@ -115,11 +117,17 @@ class XGBOOST(MLIndicator):
             self.result = int(xgboost_test(model, X_test)[0])
 
             # Results
-            self.results_pred.append(self.result)
-            self.results_real.append(int(df.iloc[-1].target))
+            self.df_results.loc[get_datetime()] = self.result
 
         else:
             self.result = 0
+
+        # Fill df to analyze at end
+        if self.first_iteration:
+            self.df_final = df
+            self.first_iteration = False
+        else:
+            self.df_final.loc[df.index[-1]] = df.iloc[-1]
 
         if self.signals_buy:
             self.log.debug("Signals BUY")
@@ -127,5 +135,18 @@ class XGBOOST(MLIndicator):
             self.log.debug("Signals SELL")
 
     def analyze(self, namespace):
-        file_name = 'xgboost_confussion_matrix.txt'
-        classification_metrics(namespace, file_name, self.results_real, self.results_pred)
+
+        # Post processing of target column
+        self.df_final['target'] = 0 # 'KEEP'
+        self.df_final.loc[self.df_final.price + (self.df_final.price * CONFIG.PERCENT_UP) < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
+        self.df_final.loc[self.df_final.price - (self.df_final.price * CONFIG.PERCENT_DOWN) > self.df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
+
+        if DEFAULT_CONFIG['DATA_FREQ'] == 'daily':
+            self.results_pred = self.df_results.pred.astype('int').values
+            self.results_real = self.df_final.loc[pd.to_datetime(self.df_results.index.date, utc=True)].target.values
+        else:
+            self.results_pred = self.df_results.pred.astype('int').values
+            self.results_real = self.df_final.loc[self.df_results.index].target.values
+
+        classification_metrics(namespace, 'xgboost_confussion_matrix.txt',
+                                self.results_real, self.results_pred)

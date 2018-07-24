@@ -104,6 +104,7 @@ class MLConfig(object):
 
     # Machine Learning General Settings
     """
+        1 - Regression
         2 - Binary Classification (DOWN / UP)
         3 - Multiclass Classification (DOWN / KEEP / UP)
     """
