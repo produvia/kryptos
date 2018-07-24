@@ -11,6 +11,7 @@ services:
     environment:
       - FLASK_DEBUG=0
       - FLASK_ENV='prod'
+      - FLASK_APP=autoapp.py
       - REDIS_HOST=redis
       - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
 
