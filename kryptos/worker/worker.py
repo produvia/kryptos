@@ -70,7 +70,6 @@ def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
 def workers_required():
     paper_q, live_q = get_queue('paper'), get_queue('live')
     total_queued = len(paper_q) + len(live_q)
-    log.warn(f'TOTAL QUEUED: {total_queued}')
     return total_queued
 
 
