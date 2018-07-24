@@ -28,4 +28,4 @@ class ReverseProxied(object):
 
 
 app = create_app(ProdConfig)
-app.wsgi_app = ReverseProxied(app.wsgi_app, script_name="/flask")
+app.wsgi_app = ReverseProxied(app.wsgi_app)
