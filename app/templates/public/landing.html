@@ -12,8 +12,8 @@
              <p>Join the Cryptocurrency Revolution Today</p>
 
             {% if current_user.is_authenticated %}
-                <a class="btn btn-primary btn-lg "href={{ url_for("account.manage_exchanges") }}>Manage Exchanges</a>
-                <a class="btn btn-primary btn-lg "href={{ url_for("account.build_strategy") }}>Build A Strategy</a>
+                <a class="btn btn-primary btn-lg "href={{ url_for("web.manage_exchanges") }}>Manage Exchanges</a>
+                <a class="btn btn-primary btn-lg "href={{ url_for("web.build_strategy") }}>Build A Strategy</a>
                 <a class="btn btn-primary btn-lg "href={{ url_for("user.logout") }}>Logout</a>
             {% else %}
                 <a class="btn btn-primary btn-lg" href={{ url_for('user.register') }} role="button">Register</a>
