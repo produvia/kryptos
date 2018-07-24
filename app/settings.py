@@ -49,7 +49,7 @@ class ProdConfig(Config):
     API_URL = "http://35.233.156.192/api"
 
 
-class DockerDevConfig(object):
+class DockerDevConfig(Config):
     ENV = "docker-dev"
     DEBUG = True
     FRONTEND_URL = '0.0.0.0:8080'
