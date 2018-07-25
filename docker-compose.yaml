@@ -15,6 +15,7 @@ services:
       - REDIS_HOST=redis
       - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_BOT=KryptosAIBot
     depends_on:
       - redis
       - db

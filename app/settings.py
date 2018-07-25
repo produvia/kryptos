@@ -46,14 +46,19 @@ class ProdConfig(Config):
     ENV = "prod"
     DEBUG = False
     FRONTEND_URL = "http://35.233.156.192"
-    API_URL = "http://35.233.156.192/api"
+    API_URL = "http://web:5000/api"
+    TELEGRAM_BOT = 'KryptosAIBot'
 
 
 class DockerDevConfig(Config):
     ENV = "docker-dev"
     DEBUG = True
-    FRONTEND_URL = '0.0.0.0:8080'
+    BASE_URL = os.getenv('NGROK_URL', 'http://0.0.0.0:5000/')
+    FRONTEND_URL = BASE_URL
     API_URL = "http://web:5000/api"
+    USER_ENABLE_CONFIRM_EMAIL = False
+    USER_SEND_REGISTERED_EMAIL = False
+    TELEGRAM_BOT = 'kryptos_dev_bot'
 
 
 class DevConfig(Config):
@@ -61,9 +66,13 @@ class DevConfig(Config):
 
     ENV = "dev"
     DEBUG = True
-    FRONTEND_URL = '0.0.0.0:8080'
-    API_URL = "http://0.0.0.0:5000/api"
+    BASE_URL = os.getenv('NGROK_URL', 'http://0.0.0.0:5000/')
+    FRONTEND_URL = BASE_URL
+    API_URL = os.path.join(BASE_URL, 'api')
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/kryptos'
+    USER_ENABLE_CONFIRM_EMAIL = False
+    TELEGRAM_BOT = 'kryptos_dev_bot'
+    # SQLALCHEMY_ECHO = True
 
 
 class TestConfig(Config):

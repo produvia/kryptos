@@ -13,6 +13,8 @@ from app.bot import bot_utils
 # Grouping 2 blueprints together
 blueprint = Blueprint('web', __name__, url_prefix='/')
 
+def telegram_auth_url():
+    return os.path.join(current_app.config['FRONTEND_URL'], '/account/telegram/authorize')
 
 
 @blueprint.route('/')
@@ -21,7 +23,11 @@ def home_page():
 
 @blueprint.route('/account')
 def user_account():
-    return render_template('account/dashboard.html')
+    return render_template('account/dashboard.html', telegram_auth_url=telegram_auth_url(), telegram_bot=current_app.config['TELEGRAM_BOT'])
+
+@blueprint.route('/account/telegram')
+def prompt_telegram():
+    return render_template('account/telegram_auth.html', telegram_auth_url=telegram_auth_url(), telegram_bot=current_app.config['TELEGRAM_BOT'])
 
 @blueprint.route('/account/telegram/logout')
 @login_required
