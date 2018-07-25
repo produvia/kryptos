@@ -42,6 +42,7 @@ class Config(object):
     USER_AFTER_REGISTER_ENDPOINT = 'web.user_account'
     USER_AFTER_CONFIRM_ENDPOINT = 'web.user_account'
     USER_AFTER_LOGIN_ENDPOINT = 'web.user_account'
+    USER_ENABLE_CONFIRM_EMAIL = False
 
 
 class ProdConfig(Config):
