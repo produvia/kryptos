@@ -28,7 +28,7 @@ cryptography==2.3
 cycler==0.10.0
 cyordereddict==1.0.0
 cython==0.27.3
-cytoolz==0.9.0.1; implementation_name == 'cpython'
+cytoolz==0.9.0.1
 decorator==4.3.0
 docutils==0.14
 empyrical==0.2.1
@@ -52,6 +52,7 @@ flask-sqlalchemy==2.3.2
 flask-user==1.0.1.5
 flask-wtf==0.14.2
 flask==1.0.2
+future==0.16.0
 hexbytes==0.1.0
 html5lib==1.0.1
 idna-ssl==1.1.0
@@ -108,6 +109,7 @@ pyparsing==2.2.0
 pyrsistent==0.14.4
 python-dateutil==2.7.3
 python-editor==1.0.3
+python-telegram-bot==10.1.0
 pytrends==4.4.0
 pytz==2016.4
 pyzmq==17.1.0
@@ -148,4 +150,4 @@ werkzeug==0.14.1
 wrapt==1.10.11
 wtforms==2.2.1
 xgboost==0.72.1
-yarl==1.1.0; python_version >= '3.5.3'
+yarl==1.1.0

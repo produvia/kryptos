@@ -28,6 +28,7 @@ flask-assistant = "*"
 flask-user = "*"
 flask-migrate = "*"
 "psycopg2" = "*"
+python-telegram-bot = "*"
 
 [dev-packages]
 black = "==18.4a4"
