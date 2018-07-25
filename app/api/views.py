@@ -20,7 +20,14 @@ api = Blueprint("api", __name__, url_prefix="/api")
 
 @jsonrpc.method("Strat.run")
 def run(strat_json, live=False, simulate_orders=True):
-    job_id, queue_name = worker.queue_strat(strat_json, live, simulate_orders)
+
+    job_id, queue_name = worker.queue_strat(
+                            strat_json=strat_json,
+                            user_id=None,
+                            live=live,
+                            simulate_orders=simulate_orders
+                        )
+
     resp = {"status": "success", "data": {"strat_id": job_id, 'queue': queue_name}}
     return resp
 
@@ -34,19 +41,6 @@ def get_status(strat_id, queue_name):
     if job.is_finished:
         resp['strat_results'] = job.result
     return resp
-
-
-
-@api.route('/submit', methods=['POST'])
-def run_strat():
-    strat_payload = request.json
-    trade_type = strat_payload['trade_type']
-    live = trade_type in ['live', 'paper']
-    simulate_orders = trade_type == 'live'
-
-    strat_config_dict  = {'trading': {}}
-    for k, v in strat_payload.items():
-        strat_config_dict['trading'][k.upper()] = v
 
 
     job_id, queue_name = worker.queue_strat(json.dumps(strat_config_dict), live, simulate_orders)
