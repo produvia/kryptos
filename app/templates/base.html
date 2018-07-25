@@ -8,6 +8,7 @@
 
     <!-- Bootstrap -->
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
 
     <!-- In-lining styles to avoid needing a separate .css file -->
     <style>
@@ -39,9 +40,7 @@
     {% block body %}
         {% include "navbar.html" %}
     {% block menu %}
-    <div id="menu-div" class="with-margins">
-        <a href="/">{%trans%}Home page{%endtrans%}</a>
-    </div>
+
     {% endblock %}
     <hr class="no-margins"/>
 
@@ -68,8 +67,8 @@
     <br/>
     <hr class="no-margins"/>
     <div id="footer-div" class="clearfix with-margins">
-        <div class="pull-left">{{ user_manager.USER_APP_NAME }} v1.0</div>
-        <div class="pull-right">&copy; 2014 MyCorp</div>
+        <div class="pull-left">{{ user_manager.USER_APP_NAME }} (Beta)</div>
+        <div class="pull-right">&copy; 2018 Produvia</div>
     </div>
     {% endblock %}
 
