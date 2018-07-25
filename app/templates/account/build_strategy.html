@@ -1,0 +1,21 @@
+{% extends 'flask_user/_authorized_base.html' %}
+
+{% block content %}
+{% from "flask_user/_macros.html" import render_field, render_checkbox_field, render_submit_field %}
+<h1>{%trans%}Build a Strategy{%endtrans%}</h1>
+
+<form action="" method="POST" class="form" role="form">
+    {{ form.hidden_tag() }}
+    {% for field in form %}
+        {% if not field.flags.hidden %}
+            {% if field.type=='SubmitField' %}
+                {{ render_submit_field(field, tabindex=loop.index*10) }}
+            {% else %}
+                {{ render_field(field, tabindex=loop.index*10) }}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+</form>
+<br/>
+
+{% endblock %}

@@ -8,7 +8,7 @@ import logbook
 
 strat = Strategy("BBANDS_PSAR", data_frequency="daily")
 
-strat.load_from_json('bbands_psar.json')
+strat.load_json_file('bbands_psar.json')
 
 log = logbook.Logger(strat.name)
 

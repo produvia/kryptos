@@ -179,7 +179,7 @@ Load the JSON file to extend upon our existing strategy
 ```python
 
 config = './mystrategy.json'
-strat.load_from_json(config)
+strat.load_json_file(config)
 ```
 
 Let's add an additional indicator

@@ -239,7 +239,7 @@ strat = Strategy('MyStrategy')
 Optionally load JSON config
 ```
 config = './sma_crossover.json'
-strat.load_from_json(config)
+strat.load_json_file(config)
 ```
 
 Run the strategy

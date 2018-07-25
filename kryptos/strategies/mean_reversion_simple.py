@@ -16,7 +16,7 @@ import logbook
 
 strat = Strategy("MEAN_REVERSION", data_frequency="daily")
 
-strat.load_from_json('mean_reversion.json')
+strat.load_json_file('mean_reversion.json')
 
 log = logbook.Logger(strat.name)
 

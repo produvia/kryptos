@@ -66,7 +66,7 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
             strat.add_data_indicator(dataset, ind.upper(), col=columns[i])
 
     if json_file is not None:
-        strat.load_from_json(json_file)
+        strat.load_json_file(json_file)
 
     click.secho(strat.serialize(), fg="white")
 

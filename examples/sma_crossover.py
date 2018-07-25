@@ -7,7 +7,7 @@ config = './sma_crossover.json'
 
 strat = Strategy()
 
-strat.load_from_json(config)
+strat.load_json_file(config)
 
 
 sma_fast = strat.indicator('SMA_FAST')
