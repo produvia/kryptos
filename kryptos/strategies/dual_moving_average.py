@@ -17,7 +17,7 @@ strat = Strategy("DUAL_MOVING_AVG", data_frequency="daily")
 # strat.add_market_indicator(short_avg)
 # strat.add_market_indicator(long_avg)
 
-strat.load_from_json('dual_moving_average.json')
+strat.load_json_file('dual_moving_average.json')
 
 @strat.init
 def init(context):

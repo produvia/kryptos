@@ -13,6 +13,7 @@ from rq import get_current_job
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+from ccxt.base import errors as ccxt_errors
 
 from kryptos.utils import load, viz, outputs
 from kryptos.strategy.indicators import technical, ml
@@ -21,6 +22,8 @@ from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
 from kryptos.settings import DEFAULT_CONFIG
 from kryptos.analysis import quant
+
+from redo import retry
 
 
 class StratLogger(logbook.Logger):
@@ -35,7 +38,7 @@ class StratLogger(logbook.Logger):
 
         if self.strat.in_job:
             job = get_current_job()
-            job.meta['Strategy'] = record.msg
+            job.meta['output'] = record.msg
             job.save_meta()
 
 
@@ -64,9 +67,11 @@ class Strategy(object):
         persisting data, and iterating through timeseries data) is handled by catalyst.
         """
 
+        self.id = str(uuid.uuid1())
+
         # name required for storing live algos
         if name is None:
-            name = "Strat-" + str(uuid.uuid1())
+            name = "Strat-" + self.id
 
         self.name = name
         self.trading_info = DEFAULT_CONFIG
@@ -103,13 +108,18 @@ class Strategy(object):
         self.current_date = None
 
     def serialize(self):
+        return json.dumps(self.to_dict(), indent=3)
+
+    def to_dict(self):
         d = {
+            "id": self.id,
+            "name": self.name,
             "trading": self.trading_info,
             "datasets": self.dataset_info,
             "indicators": self.indicator_info,
             "signals": self._dump_signals(),
         }
-        return json.dumps(d, indent=3)
+        return d
 
     @property
     def indicator_info(self):
@@ -225,7 +235,7 @@ class Strategy(object):
             # store json repr so we can load params during execution
             self._sell_signal_objs.append(s)
 
-    def load_from_dict(self, strat_dict):
+    def _load_trading(self, strat_dict):
         trade_config = strat_dict.get("trading", {})
         self.trading_info.update(trade_config)
         # For all trading pairs in the poloniex bundle, the default denomination
@@ -234,16 +244,32 @@ class Strategy(object):
         if self.trading_info["EXCHANGE"] == "poloniex":
             self.trading_info["TICK_SIZE"] = 1000.0
 
+
+    def load_dict(self, strat_dict):
+        self.name = strat_dict.get('name')
+        self._load_trading(strat_dict)
         self._load_indicators(strat_dict)
         self._load_datasets(strat_dict)
         self._load_signals(strat_dict)
 
 
-
-    def load_from_json(self, json_file):
+    def load_json_file(self, json_file):
         with open(json_file, "r") as f:
             d = json.load(f)
-            self.load_from_dict(d)
+            self.load_dict(d)
+
+    @classmethod
+    def from_dict(cls, strat_dict):
+        instance = cls()
+        instance.load_dict(strat_dict)
+        return instance
+
+    @classmethod
+    def from_json_file(cls, json_file):
+        instance = cls()
+        instance.load_json_file(json_file)
+        return instance
+
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
@@ -261,6 +287,18 @@ class Strategy(object):
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
+
+    def _fetch_history(self, context, data):
+        # Get price, open, high, low, close
+        # The frequency attribute determine the bar size. We use this convention
+        # for the frequency alias:
+        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+        context.prices = data.history(
+            context.asset,
+            bar_count=context.BARS,
+            fields=["price", "open", "high", "low", "close", "volume"],
+            frequency=context.HISTORY_FREQ,
+        )
 
     def _process_data(self, context, data):
         """Called at each algo iteration
@@ -293,16 +331,17 @@ class Strategy(object):
 
         context.price = price
 
-        # Get price, open, high, low, close
-        # The frequency attribute determine the bar size. We use this convention
-        # for the frequency alias:
-        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        context.prices = data.history(
-            context.asset,
-            bar_count=context.BARS,
-            fields=["price", "open", "high", "low", "close", "volume"],
-            frequency=context.HISTORY_FREQ,
-        )
+    
+        try:
+            retry(self._fetch_history,
+                  sleeptime=5,
+                  retry_exceptions=(ccxt_errors.RequestTimeout),
+                  args=(context, data),
+                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+
+        except ccxt_errors.ExchangeNotAvailable:
+            self.log.error('Exchange API is currently unavailable, skipping trading step')
+            return
 
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
@@ -611,21 +650,32 @@ class Strategy(object):
         """
         self.in_job = as_job
         self.viz = viz
+
+        if self.in_job:
+            job = get_current_job()
+            job.meta['config'] = self.to_dict()
+            job.save_meta()
+
         try:
             if live or self.trading_info.get("LIVE", False):
                 self.run_live(simulate_orders=simulate_orders)
             else:
                 self.run_backtest()
 
-        except PricingDataNotLoadedError:
-            self.log.warn("Ingesting required exchange bundle data")
-            load.ingest_exchange(self.trading_info)
-            self.log.warn("Exchange ingested, please run the command again")
+        except PricingDataNotLoadedError as e:
+            self.log.error('Failed to run stratey Requires data ingestion')
+            self.log.warn(f"Starting ingest job for {self.trading_info['EXCHANGE']}")
+            raise e
+            # from kryptos.worker import ingester
+            # ingester.run_ingest(self.trading_info['EXCHANGE'], symbol=self.trading_info['ASSET'])
+            # load.ingest_exchange(self.trading_info)
+            # self.log.warn("Exchange ingested, please run the command again")
+            # self.run(live, simulate_orders, viz, as_job)
 
     def run_backtest(self):
         try:
             run_algorithm(
-                algo_namespace=self.name,
+                algo_namespace=self.id,
                 capital_base=self.trading_info["CAPITAL_BASE"],
                 data_frequency=self.trading_info["DATA_FREQ"],
                 initialize=self._init_func,

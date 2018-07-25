@@ -11,17 +11,20 @@ services:
      - "5000:5000"
     volumes:
      - .:/app
-     - ~/.catalyst:/root/.catalyst #to store exhange data and auth
+     - catalyst:/root/.catalyst #to store exhange data and auth
     environment:
       - FLASK_DEBUG=1
-      - FLASK_ENV=development
+      - FLASK_ENV=docker-dev
       - REDIS_HOST=redis
       - FLASK_APP=autoapp.py
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_BOT=kryptos_dev_bot
+      - BASE_URL=${BASE_URL}
       # - LISTEN_PORT=80
-    networks:
-      - kryptos-net
     depends_on:
       - redis
+      - db
     # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
     command: ['flask', 'run', '--host=0.0.0.0']
@@ -38,22 +41,47 @@ services:
     environment:
       - FLASK_DEBUG=1
     entrypoint: ['python', 'kryptos/worker/worker.py']
-    networks:
-      - kryptos-net
 
     depends_on:
     - redis
     - web
 
+  ingester:
+    image: kryptos
+    container_name: ingester
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+      - catalyst:/root/.catalyst
+    entrypoint: ['python', 'kryptos/worker/ingester.py']
+    depends_on:
+    - worker
+    logging:
+        driver: none
+
+  db:
+    container_name: db
+    image: postgres:10.4-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: 'kryptos'
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+
+     # expose port 5433 instead of default
+     # in case postgres already on host machine
+    ports:
+      - "5433:5432"
+
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
-    networks:
-      - kryptos-net
 
-networks:
-  kryptos-net:
-      driver: bridge
 
 volumes:
   catalyst:
+  postgres_data:

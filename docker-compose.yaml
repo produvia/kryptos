@@ -10,12 +10,15 @@ services:
      - "80:80"
     environment:
       - FLASK_DEBUG=0
+      - FLASK_ENV='prod'
+      - FLASK_APP=autoapp.py
       - REDIS_HOST=redis
-
-    networks:
-      - kryptos-net
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_BOT=KryptosAIBot
     depends_on:
       - redis
+      - db
     # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
     # command: ['flask', 'run']
@@ -30,20 +33,37 @@ services:
       - catalyst:/root/.catalyst
 
     entrypoint: ['python', 'kryptos/worker/worker.py']
-    networks:
-      - kryptos-net
-
     depends_on:
     - redis
+
+  ingester:
+    image: kryptos
+    container_name: ingester
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - catalyst:/root/.catalyst
+    entrypoint: ['python', 'kryptos/worker/ingester.py']
+    depends_on:
+    - worker
+
+  db:
+    container_name: db
+    image: postgres:10.4-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: 'kryptos'
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
 
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
-    networks:
-      - kryptos-net
 
-networks:
-  kryptos-net:
 
 volumes:
   catalyst:
+  postgres_data:
