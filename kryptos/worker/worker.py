@@ -11,6 +11,7 @@ from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
+from app.models import StrategyModel
 
 host = 'redis' if in_docker() else 'localhost'
 CONN = redis.Redis(host=host, port=6379)
@@ -38,9 +39,10 @@ def run_strat(strat_json, live=False, simulate_orders=True):
     return result_df.to_json()
 
 
-def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
+def queue_strat(strat_json, user_id, live=False, simulate_orders=True, depends_on=None):
     strat_dict = json.loads(strat_json)
     strat = Strategy.from_dict(strat_dict)
+
 
     if live and simulate_orders:
         q = get_queue('paper')
@@ -61,6 +63,10 @@ def queue_strat(strat_json, live=False, simulate_orders=True, depends_on=None):
         },
         timeout=-1,
         depends_on=depends_on)
+
+    log.info(f'Creating Strategy {strat.name} with user {user_id}')
+    strat = StrategyModel.create_from_strat(strat, user_id=user_id)
+
 
     return job.id, q.name
 

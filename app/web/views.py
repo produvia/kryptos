@@ -52,7 +52,8 @@ def build_strategy():
         live = form.trade_type in ['live', 'paper']
         simulate_orders = form.trade_type == 'live'
 
-        job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), live, simulate_orders)
+        job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+
 
         return redirect(url_for('web.strategy_status', strat_id=job_id))
 
