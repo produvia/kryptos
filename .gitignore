@@ -71,3 +71,5 @@ data/csv_data/
 
 # Notebooks
 .ipynb_checkpoints/
+
+spa-mat/

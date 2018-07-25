@@ -1,9 +1,8 @@
 import os
 import pandas as pd
 from logbook import Logger
-from catalyst.exchange.exchange_bundle import ExchangeBundle
 
-from kryptos import strategies
+from kryptos import strategies, logger_group
 
 
 STRATS = os.path.dirname(os.path.abspath(strategies.__file__))
@@ -83,31 +82,3 @@ def load_strats():
             if hasattr(strat, "NAMESPACE"):
                 strats.append(strat)
     return strats
-
-
-def ingest_exchange(config):
-    """
-    Ingest data for the given exchange.
-    """
-
-    if config.get("EXCHANGE") is None:
-        log.error("must specify an exchange name")
-
-    exchange_bundle = ExchangeBundle(config["EXCHANGE"])
-
-    log.notice(
-        "Ingesting {} exchange bundle {} - {}...".format(
-            config["EXCHANGE"], config["START"], config["END"]
-        )
-    )
-    exchange_bundle.ingest(
-        data_frequency=config["DATA_FREQ"],
-        include_symbols=config["ASSET"],
-        exclude_symbols=None,
-        start=pd.to_datetime(config["START"], utc=True),
-        end=pd.to_datetime(config["END"], utc=True),
-        show_progress=True,
-        show_breakdown=True,
-        show_report=True,
-        csv=None,
-    )

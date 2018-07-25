@@ -15,10 +15,13 @@ from kryptos import setup_logging
 from kryptos.utils.outputs import in_docker
 from kryptos.utils.load import get_strat
 
-from kryptos.app.settings import DevConfig, ProdConfig, DockerDevConfig
 
 log = logbook.Logger("Platform")
 setup_logging()
+
+REMOTE_API_URL = 'http://35.233.156.192/api'
+LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/api'
+
 
 
 @click.command()
@@ -66,19 +69,19 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
             strat.add_data_indicator(dataset, ind.upper(), col=columns[i])
 
     if json_file is not None:
-        strat.load_from_json(json_file)
+        strat.load_json_file(json_file)
 
     click.secho(strat.serialize(), fg="white")
 
     if hosted:
-        CONFIG = ProdConfig
+        API_URL = REMOTE_API_URL
 
     else:
-        CONFIG = DockerDevConfig if in_docker() else DevConfig
+        API_URL = LOCAL_API_URL
 
     if rpc:
-        strat_id, queue_name = run_rpc(strat, CONFIG.API_URL, live=paper, simulate_orders=True)
-        poll_status(strat_id, queue_name, CONFIG.API_URL)
+        strat_id, queue_name = run_rpc(strat, API_URL, live=paper, simulate_orders=True)
+        poll_status(strat_id, queue_name, API_URL)
 
     else:
         viz = not in_docker()
