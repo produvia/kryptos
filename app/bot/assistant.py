@@ -10,6 +10,7 @@ from flask_assistant.response import _Response
 import talib as ta
 import talib.abstract as ab
 
+from app.models import User
 from app.bot.response import ask, inline_keyboard
 from kryptos.worker import worker
 
@@ -30,10 +31,26 @@ EXISTING_STRATS = [
 ]
 
 
-def get_user_from_request():
+# TODO possibly use tleegram chat_id
+def get_user():
+    telegram_id = get_message_payload()['id']
+    user = User.query.filter_by(telegram_id=telegram_id).first()
+    current_app.logger.debug(f'Got user {user}')
+    return user
+
+def get_first_name():
+    name =  get_message_payload().get('first_name', None)
+    if name is not None:
+        return name
+    return ''
+
+
+
+def get_message_payload():
     platform_data =  request.json.get('originalRequest', {}).get('data', {})
+    current_app.logger.info(platform_data)
     if not platform_data:
-        return {'first_name': 'USER', 'id': 34567}
+        return {'first_name': 'DialogFlow', 'id': 111}
 
     if platform_data.get('message'):
         return platform_data['message']['from']
@@ -44,7 +61,7 @@ def get_user_from_request():
 
 @assist.action('Default Welcome Intent')
 def welcome_message():
-    user_name = get_user_from_request()['first_name']
+    user_name = get_first_name()
     msg = f"Hello {user_name}! I’m Kryptos AI, your virtual assistant to buy and sell bitcoin and other coins."
     return ask(msg)
 
@@ -52,7 +69,7 @@ def welcome_message():
 
 @assist.action('activity-menu')
 def show_menu():
-    user_name = get_user_from_request()['first_name']
+    user_name = get_first_name()
     speech = f"""\
     Hi {user_name}. Let's get started. Please select a number or text me the named
     1. Launch New Strategy
@@ -124,7 +141,7 @@ def launch_strategy(existing_strategy):
     start = datetime.datetime.today()
     end = start + datetime.timedelta(days=7)
 
-
+    user = get_user()
     strat_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
     strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
     strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
