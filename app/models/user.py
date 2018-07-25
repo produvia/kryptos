@@ -23,7 +23,7 @@ class User(db.Model, UserMixin):
     telegram_id = db.Column(db.Integer, nullable=True, unique=True)
     telegram_username = db.Column(db.String(255), nullable=True, unique=True)
     telegram_photo = db.Column(db.String(), nullable=True, unique=False)
-    telegram_auth_date = db.Column(db.DateTime, nullable=True, unique=False)
+    telegram_auth_date = db.Column(db.Integer, nullable=True, unique=False)
 
 
     strategies = db.relationship("StrategyModel", backref="user", lazy=True)
