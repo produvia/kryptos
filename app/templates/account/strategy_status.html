@@ -78,7 +78,6 @@ new Vue({
   el: '#app',
   data: {
     strat_id: window.location.href.substr(window.location.href.lastIndexOf('/') + 1),
-    stratConfig: {},
     stratInfo: {
       meta: {}
     }
@@ -102,7 +101,6 @@ new Vue({
       })
       .then(response => {
         this.stratInfo = response.data.strat_info
-        this.stratConfig = JSON.parse(this.stratInfo.meta.config)
         console.log(response)
       })
       .catch(error => {
