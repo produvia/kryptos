@@ -159,16 +159,19 @@ def launch_strategy(existing_strategy):
     strat_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
     strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
     strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
+    strat_dict['name'] = f"{existing_strategy}-Paper"
 
-    job_id, _ = worker.queue_strat(json.dumps(strat_dict), live=True, simulate_orders=True)
 
+
+    job_id, _ = worker.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
+    url = os.path.join(current_app.config['FRONTEND_URL'], 'account/strategy/', job_id)
 
     speech = f"""\
     Great! The strategy is now live and will run for the next 7 days.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
-    url = os.path.join(current_app.config['FRONTEND_URL'], 'monitor', job_id)
+
     resp = inline_keyboard(dedent(speech))
     resp.add_button('View your Strategy', url=url)
     return resp
