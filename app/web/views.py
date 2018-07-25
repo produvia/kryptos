@@ -18,6 +18,10 @@ blueprint = Blueprint('web', __name__, url_prefix='/')
 def home_page():
     return render_template('public/landing.html', current_user=current_user)
 
+@blueprint.route('account/strategies')
+@login_required
+def user_strategies():
+    return render_template('account/strategies.html')
 
 @blueprint.route('account/strategy/<strat_id>', methods=['GET'])
 @login_required
