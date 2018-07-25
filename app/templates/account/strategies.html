@@ -1,25 +1,23 @@
-{% extends 'flask_user/_authorized_base.html' %}
 
-{% block content %}
-{% from "flask_user/_macros.html" import render_field, render_checkbox_field, render_submit_field %}
-<h1>{%trans%}User Strategies{%endtrans%}</h1>
+<div class="card">
+  <div class="card-body">
+    <h3 class="card-title">Strategies</h3>
 
-{% for strat in current_user.strategies %}
-    <div class="container">
-        <div class="row">
-            <div class="card">
+  <ul class="list-group list-group-flush">
+      {% for strat in current_user.strategies %}
+      <li class="list-group-item">
+          <div class="card">
                 <div class="card-body">
-                    <a href={{url_for('web.strategy_status', strat_id=strat.id)}}><h2 class="card-title">{{strat.name}}</h2></a>
-                </div>
-                <div class="card-text">
-                    Status {{strat.status}}
-                    Created: {{strat.created_at}}
+                    <h2 class="card-title">{{strat.name}}</h2>
+                    <div class="card-text">
+                        Status {{strat.status}} <br>
+                        Created: {{strat.created_at}}
+                    </div>
+                      <a class='btn btn-primary card-link' href={{url_for('web.strategy_status', strat_id=strat.id)}}>View</a>
                 </div>
             </div>
-        </div>
-    </div>
+      </li>
+     </div>
 
-{% endfor %}
-
-
-{% endblock %}
+      {% endfor %}
+</div>

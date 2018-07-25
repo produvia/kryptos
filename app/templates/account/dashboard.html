@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1 class="text-center">{%trans%}User Dashboard{%endtrans%}</h1>
+
+    <div class="container">
+        <div class="row">
+            {% if current_user.telegram_id %}
+                <div class="col-sm-12 col-md-3 text-center">
+                    <div class="card text-center" style="width: 18rem;">
+                      <div class="card-body">
+                        <h5 class="card-title">Telegram</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <img src="{{current_user.telegram_photo}}" class="avatar img-circle" alt="telegram photo">@{{current_user.telegram_username}}
+                            </h6>
+                                <p class="card-text">Kryptos is able to send you notifications</p>
+                                <a href={{ url_for("web.telegram_logout") }} class="card-link btn btn-primary">Logout</a>
+                        </div>
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="col-sm-12 col-md-3">
+                    <div class="card" style="width: 18rem;">
+                      <div class="card-body">
+                        <h5 class="card-title">Authenticate With Telegram</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+
+                            </h6>
+                                <p class="card-text">Authorizing with Telegram will allow Kryptos to send you ntofications about your strategies</p>
+                                <script async src="https://telegram.org/js/telegram-widget.js" data-telegram-login="kryptos_dev_bot" data-size="large" data-auth-url="https://da747e93.ngrok.io/account/telegram/authorize" data-request-access="write"></script>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="col-sm-12 col-md-4">
+                {% include "account/strategies.html" %}
+            </div>
+
+
+        </div>
+    </div>
+
+
+{% endblock %}

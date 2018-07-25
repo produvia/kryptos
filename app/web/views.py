@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for
+from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash
 from flask_user import current_user, login_required
 
 from app.extensions import db
@@ -17,6 +17,45 @@ blueprint = Blueprint('web', __name__, url_prefix='/')
 @blueprint.route('/')
 def home_page():
     return render_template('public/landing.html', current_user=current_user)
+
+@blueprint.route('/account')
+def user_account():
+    return render_template('account/dashboard.html')
+
+@blueprint.route('/account/telegram/logout')
+@login_required
+def telegram_logout():
+    user = current_user
+    user.telegram_id = None
+    user.telegram_username = None
+    user.telegram_photo = None
+    user.telegram_auth_date = None
+
+    db.session.add(user)
+    db.session.commit()
+    flash('Sucessfully logged out of Telegram!')
+    return render_template('account/dashboard.html')
+
+@blueprint.route('account/telegram/authorize')
+@login_required
+def telegram_authorize():
+    id = request.args.get('id')
+    username = request.args.get('username')
+    photo_url = request.args.get('photo_url')
+    auth_date = request.args.get('auth_date')
+    has = request.args.get('hash)')
+
+    user = current_user
+    user.telegram_id = id
+    user.telegram_username = username
+    user.telegram_photo = photo_url
+    user.telegram_auth_date = auth_date
+
+    db.session.add(user)
+    db.session.commit()
+    flash('Sucessfully logged in with Telegram!')
+    return render_template('account/dashboard.html')
+
 
 @blueprint.route('account/strategies')
 @login_required
