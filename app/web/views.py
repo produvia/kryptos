@@ -8,6 +8,7 @@ from app.extensions import db
 from app.forms.forms import UserExchangeKeysForm, TradeInfoForm
 from kryptos.worker import worker
 from app.models import User, StrategyModel
+from app.bot import bot_utils
 
 # Grouping 2 blueprints together
 blueprint = Blueprint('web', __name__, url_prefix='/')
@@ -36,7 +37,7 @@ def telegram_logout():
     flash('Sucessfully logged out of Telegram!')
     return render_template('account/dashboard.html')
 
-@blueprint.route('account/telegram/authorize')
+@blueprint.route('/account/telegram/authorize')
 @login_required
 def telegram_authorize():
     id = request.args.get('id')
@@ -54,6 +55,10 @@ def telegram_authorize():
     db.session.add(user)
     db.session.commit()
     flash('Sucessfully logged in with Telegram!')
+
+    message = "Thanks for signing up with Kryptos!\nType /menu to have a look around."
+
+    bot_utils.send_to_user(message, user)
     return render_template('account/dashboard.html')
 
 
