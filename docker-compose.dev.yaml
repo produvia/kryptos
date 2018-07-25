@@ -18,6 +18,7 @@ services:
       - REDIS_HOST=redis
       - FLASK_APP=autoapp.py
       - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       # - LISTEN_PORT=80
     depends_on:
       - redis
