@@ -7,7 +7,7 @@ from flask_user import current_user, login_required
 from app.extensions import db
 from app.forms.forms import UserExchangeKeysForm, TradeInfoForm
 from kryptos.worker import worker
-from app.models import User, Strategy
+from app.models import User, StrategyModel
 
 # Grouping 2 blueprints together
 blueprint = Blueprint('web', __name__, url_prefix='/')

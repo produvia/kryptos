@@ -1,1 +1,1 @@
-from .user import User, Strategy
+from .user import User, StrategyModel
