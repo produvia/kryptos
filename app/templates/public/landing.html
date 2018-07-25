@@ -14,7 +14,7 @@
             {% if current_user.is_authenticated %}
                 <a class="btn btn-primary btn-lg "href={{ url_for("web.manage_exchanges") }}>Manage Exchanges</a>
                 <a class="btn btn-primary btn-lg "href={{ url_for("web.build_strategy") }}>Build A Strategy</a>
-                <a class="btn btn-primary btn-lg "href={{ url_for("user.logout") }}>Logout</a>
+                <a class="btn btn-primary btn-lg "href={{ url_for("web.user_strategies") }}>View Strategies</a>
             {% else %}
                 <a class="btn btn-primary btn-lg" href={{ url_for('user.register') }} role="button">Register</a>
                 <a class="btn btn-primary btn-lg" href={{ url_for('user.login') }}>{%trans%}Sign in{%endtrans%}</a>
