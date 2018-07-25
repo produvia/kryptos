@@ -39,6 +39,10 @@ class Config(object):
     USER_ENABLE_USERNAME = False    # Disable username authentication
     USER_ENABLE_CONFIRM_EMAIL = True
     USER_SEND_REGISTERED_EMAIL = True
+    USER_AFTER_REGISTER_ENDPOINT = 'web.user_account'
+    USER_AFTER_CONFIRM_ENDPOINT = 'web.user_account'
+    USER_AFTER_LOGIN_ENDPOINT = 'web.user_account'
+
 
 class ProdConfig(Config):
     """Production configuration."""
