@@ -63,6 +63,15 @@ def get_message_payload():
 def welcome_message():
     user_name = get_first_name()
     msg = f"Hello {user_name}! I’m Kryptos AI, your virtual assistant to buy and sell bitcoin and other coins."
+
+    if get_user() is None:
+        current_app.logger.info('Prompting user to login')
+        msg += f"\n\nBefore we can get started, you'll need to create a free Kryptos account and authentiate with Telegram"
+        resp = inline_keyboard(msg)
+        url = os.path.join(current_app.config['FRONTEND_URL'], 'account/telegram')
+        resp.add_button('Create an account', url=current_app.config['FRONTEND_URL'])
+        return resp
+
     return ask(msg)
 
 
