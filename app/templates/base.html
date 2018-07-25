@@ -37,22 +37,7 @@
 
 <body>
     {% block body %}
-    <div id="header-div" class="clearfix with-margins">
-        <div class="pull-left"><a href="/"><h1 class="no-margins">{{ user_manager.USER_APP_NAME }}</h1></a></div>
-        <div class="pull-right">
-            {% if call_or_get(current_user.is_authenticated) %}
-                {% if call_or_get(current_user.telegram_photo) %}
-                    <img src="{{current_user.telegram_photo}}" class="avatar img-circle" alt="telegram photo">
-                {% endif %}
-
-                <a href="{{ url_for('user.edit_user_profile') }}">{{ current_user.username or current_user.email }}</a>
-                &nbsp; | &nbsp;
-                <a href="{{ url_for('user.logout') }}">{%trans%}Sign out{%endtrans%}</a>
-            {% else %}
-                <a href="{{ url_for('user.login') }}">{%trans%}Sign in{%endtrans%}</a>
-            {% endif %}
-        </div>
-    </div>
+        {% include "navbar.html" %}
     {% block menu %}
     <div id="menu-div" class="with-margins">
         <a href="/">{%trans%}Home page{%endtrans%}</a>
