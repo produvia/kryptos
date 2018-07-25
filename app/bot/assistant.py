@@ -122,6 +122,7 @@ def display_momentum_indicators():
 def select_strategy(existing_strategy):
     # TODO determine exchange
     backtest_dict = {'trading': {'EXCHANGE': 'bitfinex'}, 'indicators': [{"name": existing_strategy}]}
+    backtest_dict['name'] = f"{existing_strategy} Backtest"
 
     # Can't use today as the end date bc data bundles are updated daily,
     # so current market data won't be avialable for backtest until the following day
@@ -129,18 +130,22 @@ def select_strategy(existing_strategy):
     back_start = datetime.datetime.today() - datetime.timedelta(days=100)
     back_end = datetime.datetime.today() - datetime.timedelta(days=7)
 
+
     backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
     backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
 
-    backtest_id, _ = worker.queue_strat(json.dumps(backtest_dict), live=False, simulate_orders=True)
-    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'monitor', backtest_id)
+
+
+    backtest_id, _ = worker.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
+    current_app.logger.info(f'Queues Strat {backtest_id}')
+    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'backtest/strategy/', backtest_id)
 
 
 
     speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 100 days'
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View Past Performance', url=backtest_url)
+    resp.add_button('View Past Perfor mance', url=backtest_url)
 
     return resp.with_quick_reply('yes', 'no')
 

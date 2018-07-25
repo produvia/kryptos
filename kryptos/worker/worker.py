@@ -64,6 +64,10 @@ def queue_strat(strat_json, user_id, live=False, simulate_orders=True, depends_o
         timeout=-1,
         depends_on=depends_on)
 
+    if user_id is None:
+        log.warn('Not Saving Strategy to DB because no User specified')
+        return job.id, q.name
+
     log.info(f'Creating Strategy {strat.name} with user {user_id}')
     strat = StrategyModel.create_from_strat(strat, user_id=user_id)
 

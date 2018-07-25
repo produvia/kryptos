@@ -67,13 +67,14 @@ def telegram_authorize():
 def user_strategies():
     return render_template('account/strategies.html')
 
+@blueprint.route('backtest/strategy/<strat_id>', methods=['GET'])
+def public_backtest_status(strat_id):
+    return render_template('account/strategy_status.html', strat_id=strat_id)
+
+
 @blueprint.route('account/strategy/<strat_id>', methods=['GET'])
 @login_required
 def strategy_status(strat_id):
-    current_app.logger.error('CURRENT UISER')
-    current_app.logger.error(current_user.id)
-    current_app.logger.error(current_user.strategies)
-
     strat = StrategyModel.query.filter_by(id=strat_id).first_or_404()
     if not strat in current_user.strategies:
         return 401
