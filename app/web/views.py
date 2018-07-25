@@ -20,7 +20,16 @@ def home_page():
 
 
 @blueprint.route('account/strategy/<strat_id>', methods=['GET'])
+@login_required
 def strategy_status(strat_id):
+    current_app.logger.error('CURRENT UISER')
+    current_app.logger.error(current_user.id)
+    current_app.logger.error(current_user.strategies)
+
+    strat = StrategyModel.query.filter_by(id=strat_id).first_or_404()
+    if not strat in current_user.strategies:
+        return 401
+    current_app.logger.error(strat.id)
     return render_template('account/strategy_status.html', strat_id=strat_id)
 
 
