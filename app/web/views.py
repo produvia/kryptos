@@ -33,13 +33,8 @@ def prompt_telegram():
 @login_required
 def telegram_logout():
     user = current_user
-    user.telegram_id = None
-    user.telegram_username = None
-    user.telegram_photo = None
-    user.telegram_auth_date = None
+    user.unlink_telegram()
 
-    db.session.add(user)
-    db.session.commit()
     flash('Sucessfully logged out of Telegram!')
     return render_template('account/dashboard.html')
 
