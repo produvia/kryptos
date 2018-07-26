@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateTimeField, SelectField, IntegerField, FloatField, FieldList, FormField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Required
+from wtforms.validators import DataRequired, Required, Optional
 import talib as ta
 from talib import abstract as ab
 
@@ -58,7 +58,9 @@ class TradeInfoForm(FlaskForm):
     bar_period = IntegerField('Bar Period', validators=[DataRequired()], default=50)
     order_size = FloatField('Order Size', validators=[DataRequired()], default=0.5)
     slippage_allowed = FloatField('Slippage Allowed', validators=[DataRequired()], default=0.05)
-    submit = SubmitField('Submit')
+    submit = SubmitField('Next')
+
+
 
 class IndicatorInfoForm(FlaskForm):
 
