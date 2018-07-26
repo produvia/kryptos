@@ -90,6 +90,12 @@ def strategy_status(strat_id):
     return render_template('account/strategy_status.html', strat_id=strat_id)
 
 
+@blueprint.route('/_get_group_indicators/')
+def _get_group_indicators():
+    group = request.args.get('group', '01', type=str)
+    indicators = forms.get_indicators_by_group(group)
+    return jsonify(indicators)
+
 @blueprint.route("account/strategy", methods=['GET', 'POST'])
 def build_strategy():
     trading_form = forms.TradeInfoForm()

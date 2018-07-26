@@ -1,21 +1,72 @@
 {% extends 'flask_user/_authorized_base.html' %}
-
-{% block content %}
 {% from "flask_user/_macros.html" import render_field, render_checkbox_field, render_submit_field %}
+{% block content %}
+
 <h1>{%trans%}Build a Strategy{%endtrans%}</h1>
 
-<form action="" method="POST" class="form" role="form">
-    {{ form.hidden_tag() }}
-    {% for field in form %}
-        {% if not field.flags.hidden %}
-            {% if field.type=='SubmitField' %}
-                {{ render_submit_field(field, tabindex=loop.index*10) }}
-            {% else %}
-                {{ render_field(field, tabindex=loop.index*10) }}
-            {% endif %}
-        {% endif %}
-    {% endfor %}
-</form>
-<br/>
+{% for form in forms %}
+<div class="row">
+    <!-- <div class="col-2"> -->
+        <form action="" method="POST" class="form col" role="form">
+            {{ form.hidden_tag() }}
+            {% for field in form %}
+                {% if not field.flags.hidden %}
+                    {% if field.type=='SubmitField' %}
+                        {{ render_submit_field(field, tabindex=loop.index*10) }}
+                    {% else %}
+                        {{ render_field(field, tabindex=loop.index*10) }}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </form>
+    <!-- </div> -->
+</div>
+{% endfor %}
 
+
+
+{% endblock %}
+
+{% block extra_js %}
+<script charset="utf-8" type="text/javascript">
+
+$(document).ready(function() {
+    console.log('STARTING')
+    // jQuery selection for the 2 select boxes
+    var dropdown = {
+        group: $('#indicator_group_select'),
+        indicator: $('#indicator_select')
+    };
+
+    // call to update on load
+    updateIndicatorList();
+
+    // function to call XHR and update indicator dropdown
+    function updateIndicatorList() {
+        var send = {
+            group: dropdown.group.val()
+        };
+        dropdown.indicator.attr('disabled', 'disabled');
+        dropdown.indicator.empty();
+        $.getJSON("{{ url_for('web._get_group_indicators') }}", send, function(data) {
+            data.forEach(function(item) {
+                dropdown.indicator.append(
+                    $('<option>', {
+                        value: item[0],
+                        text: item[1]
+                    })
+                );
+            });
+            dropdown.indicator.removeAttr('disabled');
+        });
+    }
+
+    // event listener to group dropdown change
+    dropdown.group.on('change', function() {
+        updateIndicatorList();
+    });
+
+});
+
+</script>
 {% endblock %}
