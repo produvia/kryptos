@@ -62,7 +62,7 @@ def get_message_payload():
 @assist.action('Default Welcome Intent')
 def welcome_message():
     user_name = get_first_name()
-    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual assistant to buy and sell bitcoin and other coins."
+    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual investment assistant that manages your cryptocurrency portfolio and automates your cryptocurrency trading"
 
     if get_user() is None:
         current_app.logger.info('Prompting user to login')
