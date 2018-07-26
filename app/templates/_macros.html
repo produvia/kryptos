@@ -21,3 +21,12 @@
     <input type="{{ type }}" name="{{ name }}" value="{{
         value|e }}" size="{{ size }}">
 {%- endmacro %}
+
+
+{% macro render_submit_as_btn(field, label=None, tabindex=None) -%}
+    {% if not label %}{% set label=field.label.text %}{% endif %}
+    {#<button type="submit" class="btn btn-default btn-primary" name={{label}}>{{label}}</button>#}
+    <input type="submit" class="btn btn-default btn-primary" value="{{label}}" name="{{field.name}}"
+           {% if tabindex %}tabindex="{{ tabindex }}"{% endif %}
+           >
+{%- endmacro %}
