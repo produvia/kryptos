@@ -62,7 +62,7 @@ def get_message_payload():
 @assist.action('Default Welcome Intent')
 def welcome_message():
     user_name = get_first_name()
-    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual assistant to buy and sell bitcoin and other coins."
+    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual investment assistant that manages your cryptocurrency portfolio and automates your cryptocurrency trading"
 
     if get_user() is None:
         current_app.logger.info('Prompting user to login')
@@ -145,7 +145,7 @@ def select_strategy(existing_strategy):
     speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 100 days'
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View Past Perfor mance', url=backtest_url)
+    resp.add_button('View Past Performance', url=backtest_url)
 
     return resp.with_quick_reply('yes', 'no')
 

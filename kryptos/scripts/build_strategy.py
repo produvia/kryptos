@@ -19,7 +19,7 @@ from kryptos.utils.load import get_strat
 log = logbook.Logger("Platform")
 setup_logging()
 
-REMOTE_API_URL = 'http://35.233.156.192/api'
+REMOTE_API_URL = 'http://kryptos.produvia.com/api'
 LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/api'
 
 
