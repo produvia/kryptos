@@ -125,17 +125,17 @@ def build_strategy():
     if form.validate_on_submit():
 
         trading_dict = process_trading_form(form)
-        session['trading_dict'] = trading_dict
-
-        strat_dict = {
-            'name': form.name.data,
-            'trading': trading_dict
-        }
 
         live = form.trade_type in ['live', 'paper']
         simulate_orders = form.trade_type == 'live'
 
-        # job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+        session['strat_dict'] = {
+            'name': form.name.data,
+            'trading': trading_dict,
+            'live': live,
+            'simulate_orders': simulate_orders
+
+        }
 
         return redirect(url_for('web.build_indicators'))
 
@@ -143,6 +143,8 @@ def build_strategy():
 
 @blueprint.route('account/strategy/indicators', methods=['GET', 'POST'])
 def build_indicators():
+    if not session.get('strat_dict', {})['trading']:
+        return redirect(url_for('web.build_strategy'))
     indicator_form = forms.IndicatorInfoForm()
     indicator_form.group.choices = forms.indicator_group_name_selectors()
     indicator_form.name.choices = forms.all_indicator_selectors()
