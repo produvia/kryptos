@@ -75,6 +75,25 @@ def welcome_message():
     return ask(msg)
 
 
+@assist.action('account-unlink')
+def unlink_telegram_confirm():
+    speech = """\
+    Are you sure you want to unlink your telegram account from Kryptos?
+    You won't be able to receive updates from me anymore.
+    """
+
+    return ask(dedent(speech)).with_quick_reply('yes', 'no')
+
+@assist.action('account-unlink-yes')
+def unlink_telegram_account():
+    user = get_user()
+    user.unlink_telegram()
+    speech = f"""\
+    Your account is now unlinked
+    You can always re-link at {current_app.config['FRONTEND_URL']}
+    """
+    return tell(dedent(speech))
+
 
 @assist.action('activity-menu')
 def show_menu():
