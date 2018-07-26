@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash, jsonify
+from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash, jsonify, session
 from flask_user import current_user, login_required
 
 from app.extensions import db
@@ -96,6 +96,13 @@ def _get_group_indicators():
     indicators = forms.get_indicators_by_group(group)
     return jsonify(indicators)
 
+@blueprint.route('/_get_indicator_params/')
+def _get_indicator_params():
+    indicator_abbrev = request.args.get('indicator', '01', type=str)
+    params_obj = forms._get_indicator_params(indicator_abbrev)
+    return  jsonify(params_obj)
+
+
 def process_trading_form(form):
     trading_dict = {
        "EXCHANGE": form.exchange.data,
@@ -128,14 +135,22 @@ def build_strategy():
         live = form.trade_type in ['live', 'paper']
         simulate_orders = form.trade_type == 'live'
 
-        job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+        # job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+
+        return redirect(url_for('web.build_indicators'))
 
     return render_template('strategy/trading.html', form=form)
 
+@blueprint.route('account/strategy/indicators', methods=['GET', 'POST'])
+def build_indicators():
+    indicator_form = forms.IndicatorInfoForm()
+    indicator_form.group.choices = forms.indicator_group_name_selectors()
+    indicator_form.name.choices = forms.all_indicator_selectors()
 
-        return redirect(url_for('web.strategy_status', strat_id=job_id))
+    if indicator_form.validate_on_submit():
+        pass
 
-    return render_template('account/build_strategy.html', forms=strat_forms)
+    return render_template('strategy/indicators.html', form=indicator_form)
 
 
 @blueprint.route('account/exchanges', methods=['GET', 'POST'])

@@ -24,6 +24,11 @@ def all_indicator_selectors():
     return selectors
 
 
+def _get_indicator_params(indicator_abbrev):
+    func = getattr(ab, indicator_abbrev)
+    return func.parameters
+
+
 def get_indicators_by_group(group):
     indicator_selects = []
     group_indicators = ta.get_function_groups()[group]
@@ -68,5 +73,6 @@ class IndicatorInfoForm(FlaskForm):
     name = SelectField('Indicator', validators=[DataRequired()], id='indicator_select')
     label = StringField('Custom Indicator Label')
     symbol = StringField('Symbol')
-
-
+    submit = SubmitField(label='Next')
+    add = SubmitField(label='Add Another')
+    # params are added dybnamically with js
