@@ -1,12 +1,39 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateTimeField, SelectField, IntegerField, FloatField, PasswordField, SubmitField
+from wtforms import StringField, DateTimeField, SelectField, IntegerField, FloatField, FieldList, FormField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Required
+import talib as ta
+from talib import abstract as ab
 
 trade_types = [('backtest','backtest'), ('paper','paper'), ('live','live')]
 exchanges = [('bitfinex', 'bitfinex'), ('poloniex', 'poloniex'), ('bittrex', 'bittrex')]
 freqs = [('daily', 'daily'), ('minute', 'minute')]
+datasets = [('None', 'None'), ('Google Trends, google'), ('Quandl Blochain Data', 'quandl')]
 
 
+
+def indicator_group_name_selectors():
+    selectors = []
+    for k in ta.get_function_groups().keys():
+        selectors.append((k, k))
+    return selectors
+
+def all_indicator_selectors():
+    selectors = []
+    for i in ta.get_functions():
+        selectors.append((i, i))
+    return selectors
+
+
+def get_indicators_by_group(group):
+    indicator_selects = []
+    group_indicators = ta.get_function_groups()[group]
+    for i in range(len(group_indicators)):
+        abbrev = group_indicators[i]
+        func = getattr(ab, abbrev)
+        name = func.info['display_name']
+        indicator_selects.append((name, abbrev))
+
+    return indicator_selects
 
 
 class UserExchangeKeysForm(FlaskForm):
@@ -32,3 +59,12 @@ class TradeInfoForm(FlaskForm):
     order_size = FloatField('Order Size', validators=[DataRequired()], default=0.5)
     slippage_allowed = FloatField('Slippage Allowed', validators=[DataRequired()], default=0.05)
     submit = SubmitField('Submit')
+
+class IndicatorInfoForm(FlaskForm):
+
+    group = SelectField('Group', id='indicator_group_select')
+    name = SelectField('Indicator', validators=[DataRequired()], id='indicator_select')
+    label = StringField('Custom Indicator Label')
+    symbol = StringField('Symbol')
+
+
