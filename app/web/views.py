@@ -119,6 +119,14 @@ def process_trading_form(form):
 
     }
     return trading_dict
+
+def process_indicator_form(form):
+    indicator_dict = {
+        'name': form.indicator_name.data,
+        'symbol': form.symbol.data,
+        'label': form.custom_label.data
+    }
+    return indicator_dict
 @blueprint.route("account/strategy", methods=['GET', 'POST'])
 def build_strategy():
     form = forms.TradeInfoForm()
@@ -147,7 +155,23 @@ def build_indicators():
         return redirect(url_for('web.build_strategy'))
     indicator_form = forms.IndicatorInfoForm()
     indicator_form.group.choices = forms.indicator_group_name_selectors()
-    indicator_form.name.choices = forms.all_indicator_selectors()
+    indicator_form.indicator_name.choices = forms.all_indicator_selectors()
+
+    if request.method == 'POST' and indicator_form.validate_on_submit():
+
+        indicator_dict = process_indicator_form(indicator_form)
+
+        strat_indicators = session['strat_dict'].get('indicators', [])
+        strat_indicators.append(indicator_dict)
+
+        session['strat_dict']['indicators'] = strat_indicators
+
+        strat_dict = session['strat_dict']
+        live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']
+
+        job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+
+        return redirect(url_for('web.strategy_status', strat_id=job_id))
 
     if indicator_form.validate_on_submit():
         pass
