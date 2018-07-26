@@ -94,8 +94,17 @@ $(document).ready(function() {
         for (var p in new_params) {
 
         // append to the params form group
-        let label = $('<label for="label" class="control-label">' + p + '</label>')
-        let input = $('<input class="form-control" id="label" name="label" tabindex="30" value="' + new_params[p] + '" type="text">')
+        let label = $('<label class="control-label"></label>')
+        let input = $('<input class="form-control tabindex="30" type="text">')
+
+        label.attr('for', p)
+        label.text(p)
+
+        input.attr('id', p)
+        input.attr('name', p)
+        input.text(p)
+        input.val(new_params[p])
+
         params.append(label, input)
         }
 
