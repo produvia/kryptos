@@ -96,30 +96,29 @@ def _get_group_indicators():
     indicators = forms.get_indicators_by_group(group)
     return jsonify(indicators)
 
+def process_trading_form(form):
+    trading_dict = {
+       "EXCHANGE": form.exchange.data,
+       "ASSET": form.asset.data,
+       "DATA_FREQ": form.data_freq.data,
+       "HISTORY_FREQ": form.history_freq.data,
+       "CAPITAL_BASE": form.capital_base.data,
+       "BASE_CURRENCY": form.base_currency.data,
+       "START": form.start.data,
+       "END": form.end.data,
+       "BARS": form.bar_period.data,
+       "ORDER_SIZE": form.order_size.data,
+       "SLIPPAGE_ALLOWED": form.slippage_allowed.data
+
+    }
+    return trading_dict
 @blueprint.route("account/strategy", methods=['GET', 'POST'])
 def build_strategy():
-    trading_form = forms.TradeInfoForm()
-    indicator_form = forms.IndicatorInfoForm()
-    indicator_form.group.choices = forms.indicator_group_name_selectors()
-    indicator_form.name.choices = forms.all_indicator_selectors()
+    form = forms.TradeInfoForm()
+    if form.validate_on_submit():
 
-    strat_forms = [trading_form, indicator_form]
-    if trading_form.validate_on_submit():
-
-        trading_dict = {
-           "EXCHANGE": form.exchange.data,
-           "ASSET": form.asset.data,
-           "DATA_FREQ": form.data_freq.data,
-           "HISTORY_FREQ": form.history_freq.data,
-           "CAPITAL_BASE": form.capital_base.data,
-           "BASE_CURRENCY": form.base_currency.data,
-           "START": form.start.data,
-           "END": form.end.data,
-           "BARS": form.bar_period.data,
-           "ORDER_SIZE": form.order_size.data,
-           "SLIPPAGE_ALLOWED": form.slippage_allowed.data
-
-        }
+        trading_dict = process_trading_form(form)
+        session['trading_dict'] = trading_dict
 
         strat_dict = {
             'name': form.name.data,
@@ -130,6 +129,8 @@ def build_strategy():
         simulate_orders = form.trade_type == 'live'
 
         job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+
+    return render_template('strategy/trading.html', form=form)
 
 
         return redirect(url_for('web.strategy_status', strat_id=job_id))
