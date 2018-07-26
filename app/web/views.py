@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash
+from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash, jsonify
 from flask_user import current_user, login_required
 
 from app.extensions import db
-from app.forms.forms import UserExchangeKeysForm, TradeInfoForm
+from app.forms import forms
 from kryptos.worker import worker
 from app.models import User, StrategyModel
 from app.bot import bot_utils
@@ -92,8 +92,13 @@ def strategy_status(strat_id):
 
 @blueprint.route("account/strategy", methods=['GET', 'POST'])
 def build_strategy():
-    form = TradeInfoForm()
-    if form.validate_on_submit():
+    trading_form = forms.TradeInfoForm()
+    indicator_form = forms.IndicatorInfoForm()
+    indicator_form.group.choices = forms.indicator_group_name_selectors()
+    indicator_form.name.choices = forms.all_indicator_selectors()
+
+    strat_forms = [trading_form, indicator_form]
+    if trading_form.validate_on_submit():
 
         trading_dict = {
            "EXCHANGE": form.exchange.data,
@@ -123,13 +128,13 @@ def build_strategy():
 
         return redirect(url_for('web.strategy_status', strat_id=job_id))
 
-    return render_template('account/build_strategy.html', form=form)
+    return render_template('account/build_strategy.html', forms=strat_forms)
 
 
 @blueprint.route('account/exchanges', methods=['GET', 'POST'])
 @login_required
 def manage_exchanges():
-    form = UserExchangeKeysForm()
+    form = forms.UserExchangeKeysForm()
 
     if request.method == 'POST' and form.validate():
 
