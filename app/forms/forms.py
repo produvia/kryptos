@@ -66,7 +66,7 @@ class TradeInfoForm(FlaskForm):
     bar_period = IntegerField('Bar Period', validators=[DataRequired()], default=50)
     order_size = FloatField('Order Size', validators=[DataRequired()], default=0.5)
     slippage_allowed = FloatField('Slippage Allowed', validators=[DataRequired()], default=0.05)
-    submit = SubmitField('Next')
+    next_step = SubmitField('Next')
 
 
 class DynamicChoiceField(SelectField):
@@ -82,6 +82,6 @@ class IndicatorInfoForm(FlaskForm):
     indicator_name = DynamicChoiceField('Indicator', validators=[], id='indicator_select')
     custom_label = StringField('Custom Indicator Label')
     symbol = StringField('Symbol')
-    submit = SubmitField(label='Next')
-    add = SubmitField(label='Add Another')
+    next_step = SubmitField(label='Next')
+    add_another = SubmitField(label='Add Another')
     # params are added dybnamically with js
