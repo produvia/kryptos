@@ -69,12 +69,18 @@ class TradeInfoForm(FlaskForm):
     submit = SubmitField('Next')
 
 
+class DynamicChoiceField(SelectField):
+    """An open ended select field to accept dynamic choices added by the browser"""
+
+    def pre_validate(self, form):
+        pass
+
 
 class IndicatorInfoForm(FlaskForm):
 
     group = SelectField('Group', id='indicator_group_select')
-    name = SelectField('Indicator', validators=[DataRequired()], id='indicator_select')
-    label = StringField('Custom Indicator Label')
+    indicator_name = DynamicChoiceField('Indicator', validators=[], id='indicator_select')
+    custom_label = StringField('Custom Indicator Label')
     symbol = StringField('Symbol')
     submit = SubmitField(label='Next')
     add = SubmitField(label='Add Another')
