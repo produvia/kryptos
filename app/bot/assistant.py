@@ -145,7 +145,7 @@ def select_strategy(existing_strategy):
     speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 100 days'
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View Past Perfor mance', url=backtest_url)
+    resp.add_button('View Past Performance', url=backtest_url)
 
     return resp.with_quick_reply('yes', 'no')
 
