@@ -1,5 +1,6 @@
 {% extends 'flask_user/_authorized_base.html' %}
 {% from "flask_user/_macros.html" import render_field, render_submit_field %}
+{% from "_macros.html" import render_submit_as_btn %}
 {% block content %}
 
 <h1>{%trans%}Build a Strategy{%endtrans%}</h1>
@@ -23,7 +24,7 @@
     {% for field in form %}
         {% if not field.flags.hidden %}
             {% if field.type=='SubmitField' %}
-                {{ render_submit_field(field, tabindex=loop.index*20) }}
+                {{ render_submit_as_btn(field, tabindex=loop.index*20) }}
             {% endif %}
         {% endif %}
     {% endfor %}

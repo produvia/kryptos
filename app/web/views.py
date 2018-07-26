@@ -177,6 +177,12 @@ def build_indicators():
 
         session['strat_dict']['indicators'] = strat_indicators
 
+
+        # render new form if adding another
+        if indicator_form.add_another.data:
+            return render_template('strategy/indicators.html', form=indicator_form)
+
+
         # remove from session if submitting strat
         strat_dict = session.pop('strat_dict')
         live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']
