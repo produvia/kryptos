@@ -162,21 +162,28 @@ def build_indicators():
     if request.method == 'POST' and indicator_form.validate_on_submit():
 
         indicator_dict = process_indicator_form(indicator_form)
+        params = {}
+
+        # get params outside of wtf form
+        for key in request.form.keys():
+            if 'param-' in key:
+                name, val = key.strip('param-'), request.form.get(key)
+                params[name] = val
+
+        indicator_dict['params'] = params
 
         strat_indicators = session['strat_dict'].get('indicators', [])
         strat_indicators.append(indicator_dict)
 
         session['strat_dict']['indicators'] = strat_indicators
 
-        strat_dict = session['strat_dict']
+        # remove from session if submitting strat
+        strat_dict = session.pop('strat_dict')
         live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']
 
         job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
 
         return redirect(url_for('web.strategy_status', strat_id=job_id))
-
-    if indicator_form.validate_on_submit():
-        pass
 
     return render_template('strategy/indicators.html', form=indicator_form)
 
