@@ -151,7 +151,9 @@ def build_strategy():
 
 @blueprint.route('account/strategy/indicators', methods=['GET', 'POST'])
 def build_indicators():
-    if not session.get('strat_dict', {})['trading']:
+
+    strat_dict = session.get('strat_dict', {})
+    if not strat_dict.get('trading', {}):
         return redirect(url_for('web.build_strategy'))
     indicator_form = forms.IndicatorInfoForm()
     indicator_form.group.choices = forms.indicator_group_name_selectors()
