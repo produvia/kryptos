@@ -46,14 +46,21 @@ def telegram_logout():
 @blueprint.route('/account/telegram/authorize')
 @login_required
 def telegram_authorize():
-    id = request.args.get('id')
+    telegram_id = request.args.get('id')
     username = request.args.get('username')
     photo_url = request.args.get('photo_url')
     auth_date = request.args.get('auth_date')
     has = request.args.get('hash)')
 
+    existing_linked_user = User.query.filter_by(telegram_id=telegram_id).first()
+    if existing_linked_user is not None:
+        bot_name = current_app.config['TELEGRAM_BOT']
+        flash(f'Cannot link telegram account to more than one kryptos account.\n You can unlink your telegram account by sending "/logout" to @{bot_name} in telegram', category='error')
+        return redirect(url_for('web.user_account'))
+
+
     user = current_user
-    user.telegram_id = id
+    user.telegram_id = telegram_id
     user.telegram_username = username
     user.telegram_photo = photo_url
     user.telegram_auth_date = auth_date
