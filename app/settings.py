@@ -50,7 +50,7 @@ class ProdConfig(Config):
 
     ENV = "prod"
     DEBUG = False
-    FRONTEND_URL = "http://35.233.156.192"
+    FRONTEND_URL = "http://kryptos.produvia.com"
     API_URL = "http://web:5000/api"
     TELEGRAM_BOT = 'KryptosAIBot'
 
