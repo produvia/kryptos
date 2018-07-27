@@ -55,11 +55,10 @@ class StrategyModel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
     @classmethod
-    def create_from_strat(cls, strat_obj, user_id=None):
+    def from_json(cls, strat_json, user_id=None):
+        d = json.loads(strat_json)
+        instance = cls(id=d['id'], name=d['name'] )
 
-        instance = cls(id=strat_obj.id, name=strat_obj.name )
-
-        d = strat_obj.to_dict()
         instance.trading_config = d['trading']
         instance.dataset_config = d['datasets']
         instance.indicators_config = d['indicators']
@@ -67,6 +66,3 @@ class StrategyModel(db.Model):
 
         if user_id is not None:
             instance.user_id = user_id
-
-        db.session.add(instance)
-        db.session.commit()
