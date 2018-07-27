@@ -71,3 +71,4 @@ class SignalForm(FlaskForm):
     # depending on the func
     period = IntegerField('Period', id='signal-period-field')
     trigger_series = SelectField('Trigger', id='signal-trigger-field')
+    submit = SubmitField('Submit')
