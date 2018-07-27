@@ -15,23 +15,25 @@ RUN apt-get -y update \
 
 # copy only the requirements to prevent rebuild for any changes
 # need to have in subdir of app
-COPY requirements.txt /app/app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install numpy
-RUN pip install -r /app/app/requirements.txt
+RUN pip install ta-lib
+RUN pip install -r /app/requirements.txt
 
 
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
-COPY . /app/app
+COPY . /app
 
-COPY uwsgi.ini /app/uswgi.ini
+## all app code needs to be in /app/app
+## uwsgi needs to be in /app
 
 
 # NGINX config
 ENV UWSGI_INI /app/uwsgi.ini
 
-WORKDIR /app/app
+WORKDIR /app
 
 ENV REDIS_HOST REDIS
 
