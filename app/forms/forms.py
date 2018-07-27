@@ -9,7 +9,14 @@ exchanges = [('bitfinex', 'bitfinex'), ('poloniex', 'poloniex'), ('bittrex', 'bi
 freqs = [('daily', 'daily'), ('minute', 'minute')]
 datasets = [('None', 'None'), ('Google Trends, google'), ('Quandl Blochain Data', 'quandl')]
 
+signal_types = [('buy', 'Buy'), ('sell', 'Sell')]
 
+signal_funcs = [
+    ('decreasing', 'Decreasing for'),
+    ('increasing', 'Increasing for'),
+    ('cross_above', 'Crosses Above'),
+    ('cross_below', 'Crosses Below'),
+    ]
 
 def indicator_group_name_selectors() -> [(str, str)]:
     """Returns list of select options of indicator group names"""
@@ -85,3 +92,17 @@ class IndicatorInfoForm(FlaskForm):
     next_step = SubmitField(label='Next')
     add_another = SubmitField(label='Add Another')
     # params are added dybnamically with js
+
+
+class SignalForm(FlaskForm):
+
+    signal_type = SelectField('Signal Type', choices=signal_types)
+    target_series = SelectField('Target Indicator')
+    func = SelectField('Signal Function', choices=signal_funcs, id='signal-func-select')
+
+    # only one of the following will be active
+    # depending on the func
+    period = IntegerField('Period', id='signal-period-field')
+    trigger_series = SelectField('Trigger', id='signal-trigger-field')
+
+
