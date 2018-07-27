@@ -72,3 +72,4 @@ class SignalForm(FlaskForm):
     period = IntegerField('Period', id='signal-period-field', default=None)
     trigger_series = SelectField('Trigger', id='signal-trigger-field', default=None)
     submit = SubmitField('Submit')
+    add_another = SubmitField(label='Add Another')

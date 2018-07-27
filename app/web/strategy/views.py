@@ -137,6 +137,10 @@ def build_signals():
 
         session['strat_dict']['signals'] = existing_signals
 
+        # render new form if adding another
+        if signal_form.add_another.data:
+            return render_template('strategy/signals.html', form=signal_form)
+
         # remove from session if submitting strat
         strat_dict = session.pop('strat_dict')
         live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']

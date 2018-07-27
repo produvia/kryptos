@@ -37,7 +37,14 @@
                     {{ render_field(form.trigger_series) }}
                 </div>
             </div>
-            {{ render_submit_field(form.submit) }}
+            <!-- Add submit buttons after parameters -->
+            {% for field in form %}
+                {% if not field.flags.hidden %}
+                    {% if field.type=='SubmitField' %}
+                        {{ render_submit_as_btn(field, tabindex=loop.index*20) }}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
             </form>
         </div>
     </div>
