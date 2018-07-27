@@ -93,7 +93,7 @@ def build_indicators():
 
     strat_dict = session.get('strat_dict', {})
     if not strat_dict.get('trading', {}):
-        return redirect(url_for('account.build_strategy'))
+        return redirect(url_for('strategy.build_strategy'))
     indicator_form = forms.IndicatorInfoForm()
     indicator_form.group.choices = forms.indicator_group_name_selectors()
     indicator_form.indicator_name.choices = forms.all_indicator_selectors()
