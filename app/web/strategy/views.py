@@ -6,10 +6,9 @@ from flask_user import current_user, login_required
 
 from app.extensions import db
 from app.forms import forms, utils
-from kryptos.worker import worker
 from app.models import User, StrategyModel
 from app.bot import bot_utils
-
+from app import task
 
 blueprint = Blueprint('strategy', __name__, url_prefix='/strategy')
 
@@ -111,7 +110,7 @@ def build_signals():
     # submit strat if no indicators chosen
     active_indicators = session['strat_dict'].get('indicators')
     if active_indicators is None:
-        job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+        job_id, queue_name = task.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
         return redirect(url_for('account.strategy_status', strat_id=job_id))
 
     indicator_choices = [(i['name'], i['name']) for i in active_indicators]
@@ -145,7 +144,7 @@ def build_signals():
         strat_dict = session.pop('strat_dict')
         live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']
 
-        job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
+        job_id, queue_name = task.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
         return redirect(url_for('strategy.strategy_status', strat_id=job_id))
 
     return render_template('strategy/signals.html', form=signal_form)

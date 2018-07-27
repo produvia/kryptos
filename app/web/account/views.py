@@ -6,7 +6,6 @@ from flask_user import current_user, login_required
 
 from app.extensions import db
 from app.forms import forms
-from kryptos.worker import worker
 from app.models import User, StrategyModel
 from app.bot import bot_utils
 

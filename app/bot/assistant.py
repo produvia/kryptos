@@ -12,7 +12,7 @@ import talib.abstract as ab
 
 from app.models import User
 from app.bot.response import ask, inline_keyboard
-from kryptos.worker import worker
+from app import task
 
 blueprint = Blueprint('bot', __name__, url_prefix='/bot')
 assist = Assistant(blueprint=blueprint)
@@ -154,8 +154,7 @@ def select_strategy(existing_strategy):
     backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
 
 
-
-    backtest_id, _ = worker.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
+    backtest_id, _ = task.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
     current_app.logger.info(f'Queues Strat {backtest_id}')
     backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/backtest/strategy/', backtest_id)
 
@@ -182,7 +181,7 @@ def launch_strategy(existing_strategy):
 
 
 
-    job_id, _ = worker.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
+    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
     url = os.path.join(current_app.config['FRONTEND_URL'], 'account/strategy/', job_id)
 
     speech = f"""\
