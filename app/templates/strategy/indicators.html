@@ -56,7 +56,7 @@ $(document).ready(function() {
         };
         dropdown.indicator.attr('disabled', 'disabled');
         dropdown.indicator.empty();
-        $.getJSON("{{ url_for('web._get_group_indicators') }}", send, function(data) {
+        $.getJSON("{{ url_for('strategy._get_group_indicators') }}", send, function(data) {
             data.forEach(function(item) {
                 dropdown.indicator.append(
                     $('<option>', {
@@ -76,7 +76,7 @@ $(document).ready(function() {
         };
         params.attr('disabled', 'disabled');
         params.empty();
-        $.getJSON("{{ url_for('web._get_indicator_params') }}", send, function(data) {
+        $.getJSON("{{ url_for('strategy._get_indicator_params') }}", send, function(data) {
             console.log(data);
             addParameterFields(data)
             params.removeAttr('disabled');

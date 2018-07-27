@@ -9,7 +9,7 @@
                 <img src="{{current_user.telegram_photo}}" class="avatar img-circle" alt="telegram photo">
             {% endif %}
 
-            <a href="{{ url_for('web.user_account') }}">{{ current_user.telegram_username or current_user.email }}</a>
+            <a href="{{ url_for('account.user_account') }}">{{ current_user.telegram_username or current_user.email }}</a>
             &nbsp; | &nbsp;
             <a href="{{ url_for('user.logout') }}">{%trans%}Sign out{%endtrans%}</a>
         {% else %}

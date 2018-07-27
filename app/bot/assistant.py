@@ -157,7 +157,7 @@ def select_strategy(existing_strategy):
 
     backtest_id, _ = worker.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
     current_app.logger.info(f'Queues Strat {backtest_id}')
-    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'backtest/strategy/', backtest_id)
+    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/backtest/strategy/', backtest_id)
 
 
 
