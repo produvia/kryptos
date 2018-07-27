@@ -121,19 +121,27 @@ def build_signals():
     signal_form.target_series.choices = indicator_choices
     signal_form.trigger_series.choices = indicator_choices
 
+    if request.method == 'POST':
 
+        # get and setup session signal object
+        existing_signals = session['strat_dict'].get('signals', {})
+        existing_signals['sell'] = existing_signals.get('sell', [])
+        existing_signals['buy'] = existing_signals.get('buy', [])
 
+        signal_dict = utils.process_signal_form(signal_form)
 
+        if signal_form.signal_type == 'sell':
+            existing_signals['sell'].append(signal_dict)
+        else:
+            existing_signals['buy'].append(signal_dict)
 
-    if request.method == 'POST' and signal_form.validate_on_submit():
-
-
+        session['strat_dict']['signals'] = existing_signals
 
         # remove from session if submitting strat
         strat_dict = session.pop('strat_dict')
         live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']
 
         job_id, queue_name = worker.queue_strat(json.dumps(strat_dict), current_user.id, live, simulate_orders)
-        return redirect(url_for('account.strategy_status', strat_id=job_id))
+        return redirect(url_for('strategy.strategy_status', strat_id=job_id))
 
     return render_template('strategy/signals.html', form=signal_form)
