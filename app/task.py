@@ -3,14 +3,18 @@ import redis
 from rq import Queue, Connection, Worker
 import click
 import time
-import logbook
 from flask import current_app
 
 
-CONN = redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
+
+QUEUE_NAMES = ['paper', 'live', 'backtest']
+
+
+def get_conn(app):
+    return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
 
 def get_queue(queue_name):
-    return Queue(queue_name, connection=CONN)
+    return Queue(queue_name, connection=get_conn())
 
 def queue_strat(strat_json, user_id, live=False, simulate_orders=True, depends_on=None):
     strat_model = StrategyModel.from_json(strat_json)
@@ -44,3 +48,43 @@ def queue_strat(strat_json, user_id, live=False, simulate_orders=True, depends_o
     db.session.commit()
 
     return job.id, q.name
+
+def pretty_result(result_json):
+    string = ''
+    if result_json is None:
+        return None
+    result_dict = json.loads(result_json)
+    for k, v in result_dict.items():
+        # nested dict with trading type as key
+        metric, val = k, v["Backtest"]
+        string += f"{metric}: {val}\n"
+    return string
+
+def job_by_strat_id(strat_id):
+    for q_name in QUEUE_NAMES:
+        current_app.logger.info(f'Checking if strat in {q_name}')
+        q = task.get_queue(q_name)
+        job = q.fetch_job(strat_id)
+        if job is not None:
+            return
+
+def get_job_data(strat_id, queue_name=None):
+    if queue_name is None:
+        job = job_by_strat_id(strat_id)
+
+    else:
+        q = task.get_queue(queue_name)
+        job = q.fetch_job(strat_id)
+
+    if job is None:
+        data = {'status': 'Not Found'}
+
+    else:
+        data = {
+            'status': job.status,
+            'meta': job.meta,
+            'started_at': job.started_at,
+            'result': pretty_result(job.result)
+        }
+
+    return data
