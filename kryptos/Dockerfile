@@ -1,4 +1,4 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.6
+FROM python:3.6
 
 # install xgboost library
 RUN git clone --recursive https://github.com/dmlc/xgboost \
@@ -16,27 +16,29 @@ RUN apt-get -y update \
     && rm -rf ta-lib*
 
 # copy only the requirements to prevent rebuild for any changes
-COPY requirements.txt /app/requirements.txt
+COPY requirements.txt /requirements.txt
 
 # ensure numpy installed before ta-lib, matplotlib, etc
 RUN pip install 'numpy==1.14.3'
-RUN pip install -r /app/requirements.txt
+RUN pip install -r /requirements.txt
 
 
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
-COPY . /app
+COPY ./kryptos /kryptos
 
 # Install kryptos package
-WORKDIR /app
+COPY setup.py /setup.py
+COPY README.md /README.md
+
 RUN pip install -e .
 
 
-# NGINX config
-ENV UWSGI_INI /app/api/uwsgi.ini
-
-
-ENV REDIS_HOST REDIS
-
-EXPOSE 80
+# # NGINX config
+# ENV UWSGI_INI /app/api/uwsgi.ini
+#
+#
+# ENV REDIS_HOST REDIS
+#
+# EXPOSE 80
