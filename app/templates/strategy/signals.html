@@ -37,6 +37,7 @@
                     {{ render_field(form.trigger_series) }}
                 </div>
             </div>
+            {{ render_submit_field(form.submit) }}
             </form>
         </div>
     </div>
@@ -44,4 +45,44 @@
 
 
 
+{% endblock %}
+{% block extra_js %}
+
+<script charset="utf-8" type="text/javascript">
+
+$(document).ready(function() {
+
+    const PERIOD_FUNCS = ['decreasing', 'increasing']
+    var funcSelector = $('#signal-func-select')
+    var periodField = $("#period-field-container")
+    var triggerField = $('#trigger-field-container')
+
+    // call to update on load
+    upodateSignalParams();
+
+    // function to call XHR and update indicator dropdown
+    function upodateSignalParams() {
+
+        periodField.hide();
+        triggerField.hide();
+
+        let val = funcSelector.val();
+        console.log('Using param for ' + val)
+
+        if (PERIOD_FUNCS.includes(val)) {
+            periodField.show();
+        }
+        else {
+            triggerField.show();
+        }
+    }
+
+    // event listener to group dropdown change
+    funcSelector.on('change', function() {
+        upodateSignalParams();
+    });
+
+});
+
+</script>
 {% endblock %}
