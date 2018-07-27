@@ -25,6 +25,7 @@ itsdangerous==0.24
 jinja2==2.10
 mako==1.0.7
 markupsafe==1.0
+numpy==1.15.0
 passlib==1.7.1
 psycopg2==2.7.5
 pycparser==2.18
@@ -38,6 +39,7 @@ rq==0.12.0
 ruamel.yaml==0.15.45
 six==1.11.0
 sqlalchemy==1.2.10
+ta-lib==0.4.17
 urllib3==1.23
 werkzeug==0.14.1
 wtforms==2.2.1

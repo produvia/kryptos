@@ -8,8 +8,6 @@ flask = "*"
 flask-jsonrpc = "*"
 rq = "*"
 rq-dashboard = "*"
-
-
 flask-cors = "*"
 flask-assistant = "*"
 "aniso8601" = "*"
@@ -17,6 +15,8 @@ flask-user = "*"
 flask-migrate = "*"
 "psycopg2" = "*"
 python-telegram-bot = "*"
+numpy = "*"
+ta-lib = "*"
 
 [dev-packages]
 black = "==18.4a4"
