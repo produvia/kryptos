@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% from "flask_user/_macros.html" import render_field, render_submit_field %}
+{% from "_macros.html" import render_submit_as_btn %}
+{% block content %}
+
+<div class="container text-center">
+    <div class="row">
+       <h1 class="text-center">{%trans%}Build a Strategy{%endtrans%}</h1>
+       <h3>Indicators</h3>
+   </div>
+
+</div>
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-7 col-md-6 col-lg-5 col-centered">
+            <form action="" method="POST" class="form" role="form">
+                {{ form.hidden_tag() }}
+
+            <div class="row">
+                <div class="col-sm-4 col-centered">
+                    {{render_field(form.signal_type)}}</div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-4 col-md-4">
+                    {{ render_field(form.target_series) }}
+                </div>
+                <div class="col-sm-4 col-md-4">
+                    {{ render_field(form.func) }}
+                </div>
+                <div id='period-field-container' class="col-sm-4 col-md-4">
+                    {{ render_field(form.period) }}
+                </div>
+                <div id='trigger-field-container' class="col-sm-4 col-md-4">
+                    {{ render_field(form.trigger_series) }}
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
