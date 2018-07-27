@@ -7,7 +7,8 @@ import logging
 from flask_user import UserManager
 import rq_dashboard
 
-from app import web, api, bot, models
+from app import api, bot, models
+from app.web import account, strategy, public
 from app.extensions import jsonrpc, cors, db, migrate
 from app.settings import DevConfig, DockerDevConfig, ProdConfig
 from kryptos.utils.outputs import in_docker
@@ -72,7 +73,12 @@ def register_blueprints(app):
 
     If the entire flask app consists of only the Assistant, comment out the code below.
     """
-    app.register_blueprint(web.views.blueprint)
+    # web blueprints
+    app.register_blueprint(public.views.blueprint)
+    app.register_blueprint(account.views.blueprint)
+    app.register_blueprint(strategy.views.blueprint)
+
+    # backend blueprints
     app.register_blueprint(api.views.api)
     app.register_blueprint(bot.assistant.blueprint)
     app.register_blueprint(rq_dashboard.blueprint, url_prefix="/rq")

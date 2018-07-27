@@ -31,6 +31,14 @@ class User(db.Model, UserMixin):
     # first_name = db.Column(db.String(100), nullable=False, server_default='')
     # last_name = db.Column(db.String(100), nullable=False, server_default='')
 
+    def unlink_telegram(self):
+        self.telegram_id = None
+        self.telegram_username = None
+        self.telegram_photo = None
+        self.telegram_auth_date = None
+        db.session.add(self)
+        db.session.commit()
+
 
 class StrategyModel(db.Model):
     __tablename__ = 'strategies'
