@@ -5,13 +5,12 @@ services:
     image: kryptos
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./app/Dockerfile
     ports:
      # - "80:80"
      - "5000:5000"
     volumes:
-     - .:/app
-     - catalyst:/root/.catalyst #to store exhange data and auth
+     - ./app/:/app
     environment:
       - FLASK_DEBUG=1
       - FLASK_ENV=docker-dev
@@ -34,13 +33,13 @@ services:
     container_name: worker
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./kryptos/Dockerfile
     volumes:
-      - .:/app
+      - ./kryptos:/app
       - catalyst:/root/.catalyst
     environment:
       - FLASK_DEBUG=1
-    entrypoint: ['python', 'kryptos/worker/worker.py']
+    entrypoint: ['python', 'worker/worker.py']
 
     depends_on:
     - redis
@@ -51,11 +50,11 @@ services:
     container_name: ingester
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./kryptos/Dockerfile
     volumes:
-      - .:/app
+      - ./kryptos:/app
       - catalyst:/root/.catalyst
-    entrypoint: ['python', 'kryptos/worker/ingester.py']
+    entrypoint: ['python', 'worker/ingester.py']
     depends_on:
     - worker
     logging:
@@ -81,6 +80,14 @@ services:
     container_name: redis
     image: redis:4.0.5-alpine
 
+  # reverse-proxy:
+  #   image: traefik # The official Traefik docker image
+  #   command: --api --docker # Enables the web UI and tells Træfik to listen to docker
+  #   ports:
+  #     - "80:80"     # The HTTP port
+  #     - "8080:8080" # The Web UI (enabled by --api)
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
 
 volumes:
   catalyst:

@@ -34,7 +34,7 @@ RUN pip install -e .
 
 
 # NGINX config
-ENV UWSGI_INI /app/app/uwsgi.ini
+ENV UWSGI_INI /app/api/uwsgi.ini
 
 
 ENV REDIS_HOST REDIS
