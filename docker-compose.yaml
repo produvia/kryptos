@@ -2,9 +2,9 @@ version: '3'
 services:
   web:
     container_name: web
-    image: kryptos
+    image: kryptos-web
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile
     ports:
      - "80:80"
@@ -24,11 +24,11 @@ services:
     # command: ['flask', 'run']
 
   worker:
-    image: kryptos
+    image: kryptos-core
     container_name: worker
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: kryptos/Dockerfile
     volumes:
       - catalyst:/root/.catalyst
 
@@ -37,11 +37,11 @@ services:
     - redis
 
   ingester:
-    image: kryptos
+    image: kryptos-core
     container_name: ingester
     build:
-      context: .
-      dockerfile: Dockerfile
+       context: .
+       dockerfile: kryptos/Dockerfile
     volumes:
       - catalyst:/root/.catalyst
     entrypoint: ['python', 'kryptos/worker/ingester.py']

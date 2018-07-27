@@ -4,8 +4,8 @@ services:
     container_name: web
     image: kryptos
     build:
-      context: .
-      dockerfile: ./app/Dockerfile
+      context: ./app
+      dockerfile: Dockerfile
     ports:
      # - "80:80"
      - "5000:5000"
@@ -33,7 +33,7 @@ services:
     container_name: worker
     build:
       context: .
-      dockerfile: ./kryptos/Dockerfile
+      dockerfile: kryptos/Dockerfile
     volumes:
       - ./kryptos:/app
       - catalyst:/root/.catalyst
@@ -50,7 +50,7 @@ services:
     container_name: ingester
     build:
       context: .
-      dockerfile: ./kryptos/Dockerfile
+      dockerfile: kryptos/Dockerfile
     volumes:
       - ./kryptos:/app
       - catalyst:/root/.catalyst
