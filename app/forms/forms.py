@@ -1,8 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateTimeField, SelectField, IntegerField, FloatField, FieldList, FormField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Required, Optional
-import talib as ta
-from talib import abstract as ab
 
 trade_types = [('backtest','backtest'), ('paper','paper'), ('live','live')]
 exchanges = [('bitfinex', 'bitfinex'), ('poloniex', 'poloniex'), ('bittrex', 'bittrex')]
@@ -11,44 +9,13 @@ datasets = [('None', 'None'), ('Google Trends, google'), ('Quandl Blochain Data'
 
 signal_types = [('buy', 'Buy'), ('sell', 'Sell')]
 
+
 signal_funcs = [
     ('decreasing', 'Decreasing for'),
     ('increasing', 'Increasing for'),
     ('cross_above', 'Crosses Above'),
     ('cross_below', 'Crosses Below'),
     ]
-
-def indicator_group_name_selectors() -> [(str, str)]:
-    """Returns list of select options of indicator group names"""
-    selectors = []
-    for k in ta.get_function_groups().keys():
-        selectors.append((k, k))
-    return selectors
-
-def all_indicator_selectors() -> [(str, str)]:
-    """Returns the entire list of possible indicator abbreviation select options"""
-    selectors = []
-    for i in ta.get_functions():
-        selectors.append((i, i))
-    return selectors
-
-
-def _get_indicator_params(indicator_abbrev):
-    func = getattr(ab, indicator_abbrev)
-    return func.parameters
-
-
-def get_indicators_by_group(group: str) -> [(str, str)]:
-    """Returns list of select options containing abbreviations of the groups indicators"""
-    indicator_selects = []
-    group_indicators = ta.get_function_groups()[group]
-    for i in range(len(group_indicators)):
-        abbrev = group_indicators[i]
-        func = getattr(ab, abbrev)
-        name = func.info['display_name']
-        indicator_selects.append((abbrev, abbrev))
-
-    return indicator_selects
 
 
 class UserExchangeKeysForm(FlaskForm):
@@ -104,5 +71,3 @@ class SignalForm(FlaskForm):
     # depending on the func
     period = IntegerField('Period', id='signal-period-field')
     trigger_series = SelectField('Trigger', id='signal-trigger-field')
-
-
