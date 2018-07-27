@@ -14,6 +14,7 @@ class Config(object):
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    REDIS_HOST = 'redis'
 
     MIGRATIONS_DIR = os.path.join(APP_DIR, 'models', 'migrations')
 
@@ -77,6 +78,7 @@ class DevConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/kryptos'
     USER_ENABLE_CONFIRM_EMAIL = False
     TELEGRAM_BOT = 'kryptos_dev_bot'
+    REDIS_HOST = 'localhost'
     # SQLALCHEMY_ECHO = True
 
 
