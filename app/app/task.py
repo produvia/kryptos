@@ -4,6 +4,7 @@ from rq import Queue, Connection, Worker
 import click
 import time
 from flask import current_app
+from app.models.user import StrategyModel
 
 
 
