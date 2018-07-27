@@ -10,7 +10,6 @@ ta-lib = "*"
 quandl = "*"
 click = "*"
 pytrends = "*"
-"e1839a8" = {path = ".", editable = true}
 colorama = "*"
 flask = "*"
 flask-jsonrpc = "*"
@@ -22,12 +21,10 @@ jupyterlab = "*"
 xgboost = "*"
 sklearn = "*"
 setuptools = "==38.5.1"
-flask-cors = "*"
-flask-assistant = "*"
-"aniso8601" = "*"
-flask-migrate = "*"
 "psycopg2" = "*"
 python-telegram-bot = "*"
+logbook = "*"
+"e1839a8" = {path = ".", editable = true}
 
 [dev-packages]
 black = "==18.4a4"

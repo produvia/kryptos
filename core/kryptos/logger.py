@@ -48,6 +48,7 @@ Trade Date: {record.extra[strat_date]}
 ----------------------------------------------------------------------------------
 """
 
+
     setup = logbook.NestedSetup(
         [
             logbook.NullHandler(),

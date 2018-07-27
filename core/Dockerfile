@@ -16,29 +16,23 @@ RUN apt-get -y update \
     && rm -rf ta-lib*
 
 # copy only the requirements to prevent rebuild for any changes
-COPY requirements.txt /requirements.txt
+COPY requirements.txt /core/requirements.txt
 
 # ensure numpy installed before ta-lib, matplotlib, etc
 RUN pip install 'numpy==1.14.3'
-RUN pip install -r /requirements.txt
+RUN pip install -r /core/requirements.txt
 
 
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
-COPY ./kryptos /kryptos
+COPY . /core
 
 # Install kryptos package
-COPY setup.py /setup.py
-COPY README.md /README.md
+# COPY setup.py /core/setup.py
+# COPY README.md /core/README.md
 
+WORKDIR /core
 RUN pip install -e .
 
-
-# # NGINX config
-# ENV UWSGI_INI /app/api/uwsgi.ini
-#
-#
-# ENV REDIS_HOST REDIS
-#
-# EXPOSE 80
+WORKDIR /core/kryptos/worker

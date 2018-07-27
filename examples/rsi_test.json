@@ -1,0 +1,50 @@
+{
+   "trading": {
+      "EXCHANGE": "bitfinex",
+      "ASSET": "btc_usd",
+      "DATA_FREQ": "daily",
+      "HISTORY_FREQ": "1d",
+      "CAPITAL_BASE": 10000,
+      "BASE_CURRENCY": "usd",
+      "START": "2017-10-10",
+      "END": "2018-3-28",
+      "BARS": 50,
+      "ORDER_SIZE": 0.5,
+      "SLIPPAGE_ALLOWED": 0.05
+   },
+   "datasets": [],
+   "indicators": [
+      {
+         "name": "RSI",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "RSI",
+         "params": {
+            "timeperiod": 30,
+            "oversold": 30,
+            "overbought": 70
+         }
+      }
+   ],
+   "signals": {
+       "buy": [
+           {
+            "func": "cross_below",
+            "params": {
+                "series": "RSI",
+                "trigger": 50
+            }
+            }
+       ],
+       "sell": [
+           {
+            "func": "cross_above",
+            "params": {
+                "series": "RSI",
+                "trigger": 50
+            }
+            }
+
+        ]
+   }
+}

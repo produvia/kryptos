@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-
 import os
-from kryptos import __version__
 from setuptools import setup, find_packages
+
+__version__ = "0.1.0"
 
 #
 # See https://packaging.python.org/requirements/  and
