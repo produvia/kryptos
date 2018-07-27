@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """The flask app module, containing the app factory function."""
+import os
 from flask import Flask, current_app
 from flask.helpers import get_debug_flag
 import logging
@@ -11,9 +12,21 @@ from app import api, bot, models
 from app.web import account, strategy, public
 from app.extensions import jsonrpc, cors, db, migrate
 from app.settings import DevConfig, DockerDevConfig, ProdConfig
-from kryptos.utils.outputs import in_docker
+
 
 logging.getLogger('flask_assistant').setLevel(logging.INFO)
+
+def in_docker():
+    if not os.path.exists('/proc/self/cgroup'):
+        return False
+    with open('/proc/self/cgroup', 'r') as procfile:
+        for line in procfile:
+            fields = line.strip().split('/')
+            if 'docker' in fields:
+                print('**Inside Docker container, will disable visualization**')
+                return True
+
+    return False
 
 
 def get_config():
