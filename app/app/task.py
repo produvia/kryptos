@@ -4,21 +4,23 @@ from rq import Queue, Connection, Worker
 import click
 import time
 from flask import current_app
+
 from app.models.user import StrategyModel
+from app.extensions import db
 
 
 
 QUEUE_NAMES = ['paper', 'live', 'backtest']
 
 
-def get_conn(app):
+def get_conn():
     return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
 
 def get_queue(queue_name):
     return Queue(queue_name, connection=get_conn())
 
-def queue_strat(strat_json, user_id, live=False, simulate_orders=True, depends_on=None):
-    strat_model = StrategyModel.from_json(strat_json)
+def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
+    strat_model = StrategyModel.from_json(strat_json, user_id=user_id)
 
     if live and simulate_orders:
         q = get_queue('paper')
@@ -34,6 +36,7 @@ def queue_strat(strat_json, user_id, live=False, simulate_orders=True, depends_o
         job_id=strat_model.id,
         kwargs={
             'strat_json': strat_json,
+            'strat_id': strat_model.id,
             'live': live,
             'simulate_orders': simulate_orders
         },
