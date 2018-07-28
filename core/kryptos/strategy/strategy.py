@@ -331,7 +331,7 @@ class Strategy(object):
 
         context.price = price
 
-    
+
         try:
             retry(self._fetch_history,
                   sleeptime=5,
@@ -673,25 +673,19 @@ class Strategy(object):
             # self.run(live, simulate_orders, viz, as_job)
 
     def run_backtest(self):
-        try:
-            run_algorithm(
-                algo_namespace=self.id,
-                capital_base=self.trading_info["CAPITAL_BASE"],
-                data_frequency=self.trading_info["DATA_FREQ"],
-                initialize=self._init_func,
-                handle_data=self._process_data,
-                analyze=self._analyze,
-                exchange_name=self.trading_info["EXCHANGE"],
-                quote_currency=self.trading_info["BASE_CURRENCY"],
-                start=pd.to_datetime(self.trading_info["START"], utc=True),
-                end=pd.to_datetime(self.trading_info["END"], utc=True),
-            )
-        except KeyError as e:
-            self.log.exception(e)
-            self.log.error(
-                "The configured timeframe seems to be causing an error. Consider adjusting the start date",
-                e,
-            )
+        run_algorithm(
+            algo_namespace=self.id,
+            capital_base=self.trading_info["CAPITAL_BASE"],
+            data_frequency=self.trading_info["DATA_FREQ"],
+            initialize=self._init_func,
+            handle_data=self._process_data,
+            analyze=self._analyze,
+            exchange_name=self.trading_info["EXCHANGE"],
+            quote_currency=self.trading_info["BASE_CURRENCY"],
+            start=pd.to_datetime(self.trading_info["START"], utc=True),
+            end=pd.to_datetime(self.trading_info["END"], utc=True),
+        )
+
 
     def run_live(self, simulate_orders=True):
         self.log.info('Running live trading, suimulating orders: {}'.format(simulate_orders))
