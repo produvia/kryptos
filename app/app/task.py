@@ -72,6 +72,8 @@ def job_by_strat_id(strat_id):
         if job is not None:
             return job
 
+    current_app.logger.error('Strategy not Found in Job')
+
 def get_job_data(strat_id, queue_name=None):
     if queue_name is None:
         job = job_by_strat_id(strat_id)
@@ -84,6 +86,8 @@ def get_job_data(strat_id, queue_name=None):
         data = {'status': 'Not Found'}
 
     else:
+        strat = StrategyModel.query.get(strat_id)
+        strat.update_from_job(job)
         data = {
             'status': job.status,
             'meta': job.meta,

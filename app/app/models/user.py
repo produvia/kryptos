@@ -1,9 +1,11 @@
 import datetime
 import json
 import uuid
+from flask import current_app
+from flask_user import UserMixin, current_user
 
 from app.extensions import db
-from flask_user import current_user, login_required, roles_required, UserManager, UserMixin
+
 
 
 class User(db.Model, UserMixin):
@@ -79,9 +81,11 @@ class StrategyModel(db.Model):
 
     def update_from_job(self, job):
         self.status = job.status
+        current_app.logger.debug(f"Updating strategy {self.id} status: {self.status}")
         if job.result:
-            self.result_json = result
-        # db.session.add(self)
+            current_app.logger.debug(f"Strategy {self.id} job has finished")
+            self.result_json = job.result
+
         db.session.commit()
 
     def config_to_json(self):
