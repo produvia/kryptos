@@ -34,7 +34,7 @@ def strategy_status(strat_id):
         flash('Strategy Not Found in DB', category='error')
         current_app.logger.error(f"Strat {strat_id} not Found")
 
-    if strat.status not in ['queued', 'started']:
+    if strat.status in ['finished', 'failed']:
         return render_template('strategy/strategy_result.html', strat=strat)
 
     return render_template('account/strategy_status.html', strat_id=strat_id)
