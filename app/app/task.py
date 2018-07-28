@@ -64,17 +64,17 @@ def pretty_result(result_json):
 def job_by_strat_id(strat_id):
     for q_name in QUEUE_NAMES:
         current_app.logger.info(f'Checking if strat in {q_name}')
-        q = task.get_queue(q_name)
+        q = get_queue(q_name)
         job = q.fetch_job(strat_id)
         if job is not None:
-            return
+            return job
 
 def get_job_data(strat_id, queue_name=None):
     if queue_name is None:
         job = job_by_strat_id(strat_id)
 
     else:
-        q = task.get_queue(queue_name)
+        q = get_queue(queue_name)
         job = q.fetch_job(strat_id)
 
     if job is None:
