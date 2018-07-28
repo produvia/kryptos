@@ -58,7 +58,7 @@ class StrategyModel(db.Model):
 
     status = db.Column(db.String(), nullable=True, unique=False, primary_key=False)
 
-    results_json = db.Column(db.JSON(), nullable=True, unique=False)
+    result_json = db.Column(db.JSON(), nullable=True, unique=False)
 
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
