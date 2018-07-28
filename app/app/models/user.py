@@ -76,3 +76,32 @@ class StrategyModel(db.Model):
             instance.user_id = user_id
 
         return instance
+
+    def update_from_job(self, job):
+        self.status = job.status
+        if job.result:
+            self.result_json = result
+        # db.session.add(self)
+        db.session.commit()
+
+    def config_to_json(self):
+        d = {
+            'id': self.id,
+            'name': self.name,
+            'trading': self.trading_config,
+            'datasets': self.dataset_config,
+            'indicator': self.indicators_config,
+            'signals_config': self.signals_config
+        }
+        return json.dumps(d)
+
+    def pretty_result(self):
+        string = ''
+        if self.result_json is None:
+            return None
+        result_dict = json.loads(self.result_json)
+        for k, v in result_dict.items():
+            # nested dict with trading type as key
+            metric, val = k, v["Backtest"]
+            string += f"{metric}: {val}\n"
+        return string
