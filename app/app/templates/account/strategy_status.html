@@ -20,7 +20,7 @@
             <div class="card-text">
                 Strategy ID: <small>[[strat_id]]</small> <br>
                 Name: [[stratInfo.meta.config.name]] <br>
-                Job started at: [[stratInfo.started_at]] <br>
+                Job started at: [[stratInfo.started_at || '']] <br>
 
             </div>
 
@@ -36,7 +36,7 @@
                     Config
                 </h4>
             <div class="card-text">
-                <pre>[[stratInfo.meta.config]]</pre>
+                <pre>[[stratInfo.meta.config || '']]</pre>
             </div>
 
             </div>
@@ -49,7 +49,7 @@
                     Logs
                 </h4>
             <div class="card-text">
-                    Date: <pre>[[stratInfo.meta.date]]</pre> <br>
+                    Date: <pre>[[stratInfo.meta.date || ""]]</pre> <br>
                     Output: <pre>[[stratInfo.meta.output]]</pre> <br>
             </div>
             </div>
@@ -63,7 +63,7 @@
                     Result
                 </h4>
             <div class="card-text">
-                <pre>[[stratInfo.result]]</pre> <br>
+                <pre>[[stratInfo.result || '']]</pre> <br>
             </div>
             </div>
         </div>
@@ -101,7 +101,7 @@ new Vue({
       })
       .then(response => {
         this.stratInfo = response.data.strat_info
-        console.log(response)
+        console.log(response.data.stratInfo)
       })
       .catch(error => {
         console.log(error)
