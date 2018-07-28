@@ -102,6 +102,8 @@ class StrategyModel(db.Model):
 
     @property
     def parsed_result_json(self):
+        if self.result_json is None:
+            return {}
         d = json.loads(self.result_json)
         clean_result = {}
         for k, v in d.items():
