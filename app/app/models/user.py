@@ -54,6 +54,10 @@ class StrategyModel(db.Model):
     signals_config = db.Column(db.JSON(), nullable=False, unique=False)
 
 
+    status = db.Column(db.String(), nullable=True, unique=False, primary_key=False)
+
+    results_json = db.Column(db.JSON(), nullable=True, unique=False)
+
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
     @classmethod
