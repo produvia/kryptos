@@ -40,17 +40,19 @@
             </div>
     </div>
 
-    <div class="text-center col-xs-12 col-md-6">
+    <div class="text-center col-xs-12 col-sm-6">
         <h4>Result</h4><hr>
-        <div class="card col-centered">
-            <div class="card-body">
-
-            <div class="card-text text-left">
-                <pre>{{strat.pretty_result()}}</pre> <br>
-            </div>
-            </div>
-        </div>
+            <div class="card col-centered">
+              <ul class="list-group list-group-flush">
+                {% for k, v in strat.parsed_result_json.items() %}
+                    <li class="list-group-item text-left col-sm-6">
+                        {{k.title()}}: {{ v }}
+                    </li>
+                {% endfor %}
+              </ul>
+          </div>
     </div>
+
 </div>
 <div class="row">
     <div class="text-center col-xs-12 col-sm-6 col-centered">

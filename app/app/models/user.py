@@ -99,6 +99,18 @@ class StrategyModel(db.Model):
         }
         return json.dumps(d)
 
+
+    @property
+    def parsed_result_json(self):
+        d = json.loads(self.result_json)
+        clean_result = {}
+        for k, v in d.items():
+            # nested dict with trading type as key
+            metric, val = k, v.get("Backtest", v)
+            clean_result[metric] = val
+        return clean_result
+
+
     def pretty_result(self):
         string = ''
         if self.result_json is None:
