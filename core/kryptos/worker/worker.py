@@ -28,9 +28,10 @@ def get_queue(queue_name):
     return Queue(queue_name, connection=CONN)
 
 
-def run_strat(strat_json, live=False, simulate_orders=True):
+def run_strat(strat_json, strat_id, live=False, simulate_orders=True):
     strat_dict = json.loads(strat_json)
     strat = Strategy.from_dict(strat_dict)
+    strat.id = strat_id
 
     strat.run(viz=False, live=live, simulate_orders=simulate_orders, as_job=True)
     result_df = strat.quant_results
