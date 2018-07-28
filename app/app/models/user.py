@@ -1,4 +1,6 @@
 import datetime
+import json
+import uuid
 
 from app.extensions import db
 from flask_user import current_user, login_required, roles_required, UserManager, UserMixin
@@ -57,12 +59,16 @@ class StrategyModel(db.Model):
     @classmethod
     def from_json(cls, strat_json, user_id=None):
         d = json.loads(strat_json)
-        instance = cls(id=d['id'], name=d['name'] )
+        instance = cls()
 
-        instance.trading_config = d['trading']
-        instance.dataset_config = d['datasets']
-        instance.indicators_config = d['indicators']
-        instance.signals_config = d['signals']
+        instance.id = d.get('id', str(uuid.uuid1()))
+        instance.name = d.get('name')
+        instance.trading_config = d.get('trading')
+        instance.dataset_config = d.get('datasets')
+        instance.indicators_config = d.get('indicators')
+        instance.signals_config = d.get('signals')
 
         if user_id is not None:
             instance.user_id = user_id
+
+        return instance
