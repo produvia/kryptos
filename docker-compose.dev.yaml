@@ -10,7 +10,7 @@ services:
      # - "80:80"
      - "5000:5000"
     volumes:
-     - ./app/:/app
+     - ./app:/app
     environment:
       - FLASK_DEBUG=1
       - FLASK_ENV=docker-dev
@@ -27,38 +27,33 @@ services:
     # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
     command: ['flask', 'run', '--host=0.0.0.0']
-
   worker:
-    image: kryptos
+    image: kryptos-core
     container_name: worker
     build:
-      context: .
-      dockerfile: kryptos/Dockerfile
+      context: ./core
+      dockerfile: Dockerfile
     volumes:
-      - ./kryptos:/app
       - catalyst:/root/.catalyst
-    environment:
-      - FLASK_DEBUG=1
-    entrypoint: ['python', 'worker/worker.py']
-
+      - ./core:/core
+    entrypoint: ['python', 'worker.py']
     depends_on:
     - redis
-    - web
 
   ingester:
-    image: kryptos
+    image: kryptos-core
     container_name: ingester
     build:
-      context: .
-      dockerfile: kryptos/Dockerfile
+      context: ./core
+      dockerfile: Dockerfile
     volumes:
-      - ./kryptos:/app
       - catalyst:/root/.catalyst
-    entrypoint: ['python', 'worker/ingester.py']
+      - ./core:/core
+    entrypoint: ['python', 'ingester.py']
     depends_on:
     - worker
     logging:
-        driver: none
+        driver: 'none'
 
   db:
     container_name: db
