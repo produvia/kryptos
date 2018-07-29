@@ -1,0 +1,121 @@
+{
+   "trading": {
+      "EXCHANGE": "bitfinex",
+      "ASSET": "btc_usd",
+      "DATA_FREQ": "daily",
+      "HISTORY_FREQ": "1d",
+      "CAPITAL_BASE": 5000,
+      "BASE_CURRENCY": "usd",
+      "START": "2017-10-10",
+      "END": "2018-3-28",
+      "BARS": 50,
+      "ORDER_SIZE": 0.5,
+      "SLIPPAGE_ALLOWED": 0.05
+   },
+   "datasets": [],
+   "indicators": [
+      {
+         "name": "EMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "EMA",
+         "params": {
+            "timeperiod": 30
+         },
+         "outputs": [
+            "real"
+         ]
+      },
+      {
+         "name": "BBANDS",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "BBANDS",
+         "params": {
+            "timeperiod": 5,
+            "nbdevup": 2,
+            "nbdevdn": 2,
+            "matype": 0
+         },
+         "outputs": [
+            "upperband",
+            "middleband",
+            "lowerband"
+         ]
+      },
+      {
+         "name": "SMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "SMA_FAST",
+         "params": {
+            "timeperiod": 10
+         }
+      },
+      {
+         "name": "SMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "SMA_SLOW",
+         "params": {
+            "timeperiod": 50
+         }
+      },
+      {
+         "name": "RSI",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "RSI",
+         "params": {
+            "timeperiod": 14,
+            "oversold": 30,
+            "overbought": 70
+         },
+         "outputs": [
+            "real"
+         ]
+      }
+   ],
+   "signals": {
+      "buy": [
+          {
+           "func": "cross_above",
+           "params": {
+               "series": "SMA_FAST",
+               "trigger": "SMA_SLOW"
+           }
+       },
+         {
+            "func": "increasing",
+            "params": {
+               "series": "EMA",
+               "period": 5
+            }
+         },
+         {
+            "func": "increasing",
+            "params": {
+               "series": "EMA",
+               "period": 2
+            }
+         }
+      ],
+      "sell": [
+         {
+            "func": "decreasing",
+            "params": {
+               "series": "EMA",
+               "period": 2
+            }
+        },
+        {
+         "func": "cross_below",
+         "params": {
+             "series": "SMA_FAST",
+             "trigger": "SMA_SLOW"
+         }
+
+         }
+      ]
+   }
+}
