@@ -17,6 +17,7 @@ flask-migrate = "*"
 python-telegram-bot = "*"
 numpy = "*"
 ta-lib = "*"
+gunicorn = "*"
 
 [dev-packages]
 black = "==18.4a4"

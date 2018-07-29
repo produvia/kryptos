@@ -20,6 +20,7 @@ flask-user==1.0.1.5
 flask-wtf==0.14.2
 flask==1.0.2
 future==0.16.0
+gunicorn==19.9.0
 idna==2.7
 itsdangerous==0.24
 jinja2==2.10
