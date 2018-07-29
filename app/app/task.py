@@ -87,7 +87,10 @@ def get_job_data(strat_id, queue_name=None):
 
     else:
         strat = StrategyModel.query.get(strat_id)
-        strat.update_from_job(job)
+        if strat is not None:
+            strat.update_from_job(job)
+        else:
+            current_app.logger.warn("Fetching strat from RQ that is not in DB")
         data = {
             'status': job.status,
             'meta': job.meta,
