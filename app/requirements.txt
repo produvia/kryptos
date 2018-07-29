@@ -38,6 +38,7 @@ requests==2.19.1
 rq-dashboard==0.3.12
 rq==0.12.0
 ruamel.yaml==0.15.45
+shortuuid==0.5.0
 six==1.11.0
 sqlalchemy==1.2.10
 ta-lib==0.4.17

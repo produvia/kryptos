@@ -18,6 +18,7 @@ python-telegram-bot = "*"
 numpy = "*"
 ta-lib = "*"
 gunicorn = "*"
+shortuuid = "*"
 
 [dev-packages]
 black = "==18.4a4"

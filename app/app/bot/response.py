@@ -30,7 +30,7 @@ class ask(_Response):
         return self
 
 
-class inline_keyboard(ask):
+class inline_keyboard(_Response):
 
     def __init__(self, msg, buttons=None):
         super().__init__(speech=msg)

@@ -21,6 +21,7 @@ assist = Assistant(blueprint=blueprint)
 logging.getLogger('flask_assistant').setLevel(logging.INFO)
 
 EXISTING_STRATS = [
+    # display, callback
     ('Bollinger Bands (BBANDS)', 'BBANDS'),
     ('Stop and Reverse (SAR)', 'SAR'),
     ('Moving Average Convergence/Divergence (MACD)', 'MACD'),
@@ -164,8 +165,11 @@ def select_strategy(existing_strategy):
 
     resp = inline_keyboard(dedent(speech))
     resp.add_button('View Past Performance', url=backtest_url)
+    resp.add_button('Launch in Paper Mode', 'yes')
+    # resp.add_button('Lauch Live')
+    resp.add_button('Nevermind', 'no')
 
-    return resp.with_quick_reply('yes', 'no')
+    return resp
 
 @assist.action('new-strategy-select-yes')
 def launch_strategy(existing_strategy):
@@ -182,7 +186,7 @@ def launch_strategy(existing_strategy):
 
 
     job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
-    url = os.path.join(current_app.config['FRONTEND_URL'], 'account/strategy/', job_id)
+    url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
 
     speech = f"""\
     Great! The strategy is now live and will run for the next 7 days.

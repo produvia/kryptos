@@ -1,9 +1,9 @@
 import datetime
 import json
-import uuid
 from flask import current_app
 from flask_user import UserMixin, current_user
 
+import shortuuid
 from app.extensions import db
 
 
@@ -47,7 +47,8 @@ class User(db.Model, UserMixin):
 class StrategyModel(db.Model):
     __tablename__ = 'strategies'
 
-    id = db.Column(db.String(), nullable=False, unique=True, primary_key=True)
+    id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
+    uuid = db.Column(db.String(), unique=True, default=shortuuid.uuid())
     name = db.Column(db.String(), nullable=False, unique=False)
     created_at = db.Column(db.DateTime(), default=datetime.datetime.now())
     trading_config = db.Column(db.JSON(), nullable=False, unique=False)
@@ -67,7 +68,7 @@ class StrategyModel(db.Model):
         d = json.loads(strat_json)
         instance = cls()
 
-        instance.id = d.get('id', str(uuid.uuid1()))
+        instance.uuid = shortuuid.uuid()
         instance.name = d.get('name')
         instance.trading_config = d.get('trading')
         instance.dataset_config = d.get('datasets')

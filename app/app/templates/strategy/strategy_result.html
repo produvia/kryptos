@@ -18,7 +18,7 @@
                 </h4>
                 <h4>Status: {{strat.status}}</h4>
             <div class="card-text">
-                Strategy ID: <small>{{strat.id}}</small> <br>
+                Strategy ID: <small>{{strat.uuid}}</small> <br>
             </div>
 
             </div>
@@ -66,9 +66,13 @@
                         <li class="list-group-item">Label: {{ i['label'] }}</li>
                         <li class="list-group-item">Symbol: {{ i['symbol'] }}</li>
 
-                        {% for p, v in i['params'].items() %}
-                            <li class="list-group-item">{{p}}: {{v}}</li>
-                        {% endfor %}
+                        {% if i.get('params') %}
+                            {% for p, v in i.get('params', {}).items() %}
+                                <li class="list-group-item">{{p}}: {{v}}</li>
+                            {% endfor %}
+                        {% endif %}
+
+
                       </ul>
                     </div>
                 </div>
