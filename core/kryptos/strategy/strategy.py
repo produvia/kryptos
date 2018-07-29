@@ -344,6 +344,10 @@ class Strategy(object):
             self.log.error('Exchange API is currently unavailable, skipping trading step')
             return
 
+        except ccxt_errors.DDoSProtection:
+            self.log.error('Hit Rate limit, skipping trade step')
+            return
+
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
             for i in self._ml_models:
