@@ -34,8 +34,10 @@ Browse to http://0.0.0.0:5000
 
 ## Deployment
 
-# TODO
+TODO
+
+## Project Components
 
 To work with the core kryptos code base:
 
-Checkout the [core documentation](https://github.com/produvia/kryptos/core)
+Checkout the [core documentation](core/README.md)
