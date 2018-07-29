@@ -10,7 +10,7 @@
             <p class="card-text">
                 Status {{strat.status}} <br>
                 Created: {{strat.created_at}}</p>
-            <a class='btn btn-primary card-link' href={{url_for('strategy.strategy_status', strat_id=strat.id)}}>View</a>
+            <a class='btn btn-primary card-link' href={{url_for('strategy.strategy_status', strat_id=strat.uuid)}}>View</a>
           </div>
         </div>
         </div>

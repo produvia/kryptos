@@ -29,7 +29,7 @@ def _get_indicator_params():
 @blueprint.route('/strategy/<strat_id>', methods=['GET'])
 @login_required
 def strategy_status(strat_id):
-    strat = StrategyModel.query.filter_by(id=strat_id).first_or_404()
+    strat = StrategyModel.query.filter_by(uuid=strat_id).first_or_404()
     if not strat in current_user.strategies:
         flash('Strategy Not Found in DB', category='error')
         current_app.logger.error(f"Strat {strat_id} not Found")

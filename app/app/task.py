@@ -34,10 +34,10 @@ def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depe
 
     job = q.enqueue(
         'worker.run_strat',
-        job_id=strat_model.id,
+        job_id=strat_model.uuid,
         kwargs={
             'strat_json': strat_json,
-            'strat_id': strat_model.id,
+            'strat_id': strat_model.uuid,
             'live': live,
             'simulate_orders': simulate_orders
         },
@@ -87,7 +87,7 @@ def get_job_data(strat_id, queue_name=None):
         data = {'status': 'Not Found'}
 
     else:
-        strat = StrategyModel.query.get(strat_id)
+        strat = StrategyModel.query.filter_by(uuid=strat_id).first()
         if strat is not None:
             strat.update_from_job(job)
         else:
