@@ -15,7 +15,7 @@ services:
       - FLASK_DEBUG=1
       - FLASK_ENV=docker-dev
       - REDIS_HOST=redis
-      - FLASK_APP=autoapp.py
+      - FLASK_APP=app/autoapp.py
       - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_BOT=kryptos_dev_bot
