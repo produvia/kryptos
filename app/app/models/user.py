@@ -47,7 +47,7 @@ class User(db.Model, UserMixin):
 class StrategyModel(db.Model):
     __tablename__ = 'strategies'
 
-    id = db.Column(db.String(), nullable=False, unique=True, primary_key=True)
+    id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
     name = db.Column(db.String(), nullable=False, unique=False)
     created_at = db.Column(db.DateTime(), default=datetime.datetime.now())
     trading_config = db.Column(db.JSON(), nullable=False, unique=False)
