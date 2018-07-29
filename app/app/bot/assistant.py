@@ -182,7 +182,7 @@ def launch_strategy(existing_strategy):
 
 
     job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
-    url = os.path.join(current_app.config['FRONTEND_URL'], 'account/strategy/', job_id)
+    url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
 
     speech = f"""\
     Great! The strategy is now live and will run for the next 7 days.
