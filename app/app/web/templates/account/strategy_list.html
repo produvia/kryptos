@@ -1,0 +1,19 @@
+
+<h3 class="card-title text-center">Strategies</h3>
+<hr>
+<div class="row justify-center">
+     {% for strat in current_user.strategies %}
+        <div class="col-xs-12 col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title">{{strat.name}}</h3>
+            <p class="card-text">
+                Status {{strat.status}} <br>
+                Created: {{strat.created_at}}</p>
+            <a class='btn btn-primary card-link' href={{url_for('strategy.strategy_status', strat_id=strat.id)}}>View</a>
+          </div>
+        </div>
+        </div>
+{% endfor %}
+
+</div>
