@@ -30,8 +30,8 @@ class Config(object):
     MAIL_PORT = 465
     MAIL_USE_SSL = True
     MAIL_USE_TLS = False
-    MAIL_USERNAME = 'testkryptos123@gmail.com'
-    MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
+    MAIL_USERNAME = 'hello@produvia.com'
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = '"Kryptos AI" <noreply@example.com>'
 
     # Flask-User settings
@@ -63,8 +63,10 @@ class DockerDevConfig(Config):
     FRONTEND_URL = BASE_URL
     API_URL = "http://web:5000/api"
     USER_ENABLE_CONFIRM_EMAIL = False
-    USER_SEND_REGISTERED_EMAIL = False
+    USER_SEND_REGISTERED_EMAIL = True
     TELEGRAM_BOT = 'kryptos_dev_bot'
+    MAIL_USERNAME = 'testkryptos123@gmail.com'
+    MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
 
 
 class DevConfig(Config):
@@ -79,6 +81,8 @@ class DevConfig(Config):
     USER_ENABLE_CONFIRM_EMAIL = False
     TELEGRAM_BOT = 'kryptos_dev_bot'
     REDIS_HOST = 'localhost'
+    MAIL_USERNAME = 'testkryptos123@gmail.com'
+    MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
     # SQLALCHEMY_ECHO = True
 
 
