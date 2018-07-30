@@ -2,8 +2,10 @@ import os
 from flask import current_app
 from telegram import Bot
 
+from google.cloud import datastore
 
-bot = Bot(os.getenv('TELEGRAM_TOKEN'))
+
+bot = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
 
 def send_to_user(text, user):
     if not user.telegram_id:
