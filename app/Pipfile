@@ -19,6 +19,7 @@ numpy = "*"
 ta-lib = "*"
 gunicorn = "*"
 shortuuid = "*"
+google-cloud = "*"
 
 [dev-packages]
 black = "==18.4a4"
