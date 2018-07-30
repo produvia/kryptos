@@ -8,4 +8,8 @@ steps:
             '--cache-from', 'gcr.io/kryptos-stage/kryptos-worker:latest',
             'core/'
         ]
+
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["app", "deploy", 'core/worker.yaml', '--image-url=gcr.io/kryptos-stage/kryptos-worker:latest']
+
 images: ['gcr.io/kryptos-stage/kryptos-worker:latest']
