@@ -12,10 +12,18 @@ from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
 
+from google.cloud import datastore
+datastore = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
+
+product_key = datastore.key('Settings', 'production')
+entity = datastore.get(product_key)
+
+redis_host = entity['REDIS_HOST']
+redis_port = entity['REDIS_PORT']
+redis_pw = entity['REDIS_PASSWORD']
+
 host = 'redis' if in_docker() else 'localhost'
-CONN = redis.Redis(host=host, port=6379)
-
-
+CONN = redis.Redis() (host=redis_host, port=redis_port, password=redis_pw)
 # from logbook.compat import redirect_logging
 # redirect_logging()
 
@@ -58,7 +66,7 @@ def manage_workers():
         log.info('Starting initial workers')
 
         log.info('Starting worker for BACKTEST queue')
-        multiprocessing.Process(target=Worker(['backtest']).work).start()
+        multiprocessing.Process(target=Worker(['backtest'],).work).start()
 
         log.info('Starting worker for PAPER/LIVE queues')
         multiprocessing.Process(target=Worker(['paper', 'live']).work).start()
@@ -80,6 +88,43 @@ def manage_workers():
 
 
 
+# def retry_handler(job, exc_type, exc_value, traceback):
+#     job.meta.setdefault('failures', 0)
+#     job.meta['failures'] += 1
+#
+#     # Too many failures
+#     if job.meta['failures'] >= MAX_FAILURES:
+#         log.warn('job %s: failed too many times times - moving to failed queue' % job.id)
+#         job.save()
+#         return True
+#
+#     # Requeue job and stop it from being moved into the failed queue
+#     log.warn('job %s: failed %d times - retrying' % (job.id, job.meta['failures']))
+#
+#     fq = get_failed_queue()
+#     fq.quarantine(job, Exception('Some fake error'))
+#     # assert fq.count == 1
+#
+#     job.meta['failures'] += 1
+#     job.save()
+#     fq.requeue(job.id)
+#
+#     # for q_name in QUEUE_NAMES:
+#     #     q = get_queue(q_name)
+#     #     if q.name == job.origin:
+#     #         q.enqueue_job(job)
+#     #         return False
+#
+#     # Can't find queue, which should basically never happen as we only work jobs that match the given queue names and
+#     # queues are transient in rq.
+#     # log.warn('job %s: cannot find queue %s - moving to failed queue' % (job.id, job.origin))
+#     # return True
+#
+# def spawn_worker_process(queues, name=None, burst=False, allow_retry=True):
+#     worker = Worker(QUEUE_NAMES, name=name)
+#     if allow_retry:
+#         worker.push_exc_handler(retry_handler)
+#     multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
 
 
 
