@@ -6,6 +6,6 @@ steps:
             'build',
             '-t', 'gcr.io/kryptos-stage/kryptos-worker:latest',
             '--cache-from', 'gcr.io/kryptos-stage/kryptos-worker:latest',
-            '.'
+            'core/'
         ]
 images: ['gcr.io/kryptos-stage/kryptos-worker:latest']
