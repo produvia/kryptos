@@ -20,5 +20,5 @@ COPY . /core
 WORKDIR /core
 RUN pip install -e .
 
-WORKDIR /core/kryptos/worker
-ENTRYPOINT honcho start -f /core/procfile worker monitor ingester
+WORKDIR /core
+ENTRYPOINT honcho start -f procfile worker monitor ingester
