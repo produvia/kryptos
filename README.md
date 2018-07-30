@@ -34,7 +34,30 @@ Browse to http://0.0.0.0:5000
 
 ## Deployment
 
-TODO
+### First push the base image to GCR
+
+This speeds up the build process during deployment by caching from the heavy docker base image
+
+Build the base image
+docker build -t kryptos-base -f core/Dockerfile-base /core
+docker build -t kryptos-worker -f core/Dockerfile-worker /core
+docker buildt -t kryptos-app -f app/Dockerfile /app
+
+tag for gcr
+docker tag kryptos-base gcr.io/kryptos-stage/kryptos-base:latest
+docker tag kryptos-worker gcr.io/kryptos-stage/kryptos-worker:latest
+docker tag kryptos-app gcr.io/kryptos-stage/kryptos-app:latest
+
+Push images
+docker push gcr.io/kryptos-stage/kryptos-base:latest
+docker push gcr.io/kryptos-stage/kryptos-worker:latest
+docker push gcr.io/kryptos-stage/kryptos-app:latest
+
+# Deploy
+gcloud app deploy app/app.yaml --image-url=gcr.io/kryptos-stage/kryptos-app:latest
+gcloud app deploy /core/worker.yaml --image-url=gcr.io/kryptos-stage/kryptos-worker:latest
+gcloud app deploy --image-url=[HOSTNAME]/[PROJECT-ID]/[IMAGE]:[TAG]
+
 
 ## Project Components
 
