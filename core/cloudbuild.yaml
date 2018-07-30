@@ -1,15 +1,15 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['pull', 'gcr.io/kryptos-stage/kryptos-worker:latest']
+  args: ['pull', 'gcr.io/$PROJECT_ID/kryptos-worker:latest']
 - name: 'gcr.io/cloud-builders/docker'
   args: [
             'build',
-            '-t', 'gcr.io/kryptos-stage/kryptos-worker:latest',
-            '--cache-from', 'gcr.io/kryptos-stage/kryptos-worker:latest',
+            '-t', 'gcr.io/$PROJECT_ID/kryptos-worker:latest',
+            '--cache-from', 'gcr.io/$PROJECT_ID/kryptos-worker:latest',
             'core/'
         ]
 
 - name: "gcr.io/cloud-builders/gcloud"
-  args: ["app", "deploy", 'core/worker.yaml', '--image-url=gcr.io/kryptos-stage/kryptos-worker:latest']
+  args: ["app", "deploy", 'core/worker.yaml', '--image-url=gcr.io/$PROJECT_ID/kryptos-worker:latest']
 
-images: ['gcr.io/kryptos-stage/kryptos-worker:latest']
+images: ['gcr.io/$PROJECT_ID/kryptos-worker:latest']
