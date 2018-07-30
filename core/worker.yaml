@@ -1,0 +1,9 @@
+runtime: custom
+env: flex
+service: worker
+skip_files: [logs, performance_results]
+# env_variables:
+#     REDIS_HOST: 'redis-16113.c1.us-central1-2.gce.cloud.redislabs.com'
+#     REDIS_PORT: 16113
+#     REDIS_URL: 'redis-16113.c1.us-central1-2.gce.cloud.redislabs.com:16113'
+#     REDIS_PASSWORD: '6858xsu5pmGbi2MnaDZJSQnJpohyWZ64'
