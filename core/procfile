@@ -1,0 +1,3 @@
+worker: python kryptos/worker/worker.py
+ingester: python kryptos/worker/ingester.py
+monitor: python monitor.py /tmp/psq.pid
