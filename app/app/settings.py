@@ -7,11 +7,7 @@ import os
 from google.auth import app_engine
 from google.cloud import datastore
 
-credentials = app_engine.Credentials()
-try:
-    ds = datastore.Client()
-except:
-    ds = datastore.Client(credentials=credentials)
+ds = datastore.Client()
 
 
 def get_from_datastore(config_key, env):
@@ -83,7 +79,11 @@ class ProdConfig(Config):
     API_URL = "http://web:5000/api"
     TELEGRAM_BOT = 'KryptosAIBot'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
-    TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN')
+    TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
+    REDIS_HOST = get_from_datastore('REDIS_HOST', 'production')
+    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'production')
+    REDIS_PORT = get_from_datastore('REDIS_PORT', 'production')
+
 
 class DockerDevConfig(Config):
     ENV = "docker-dev"
@@ -97,6 +97,9 @@ class DockerDevConfig(Config):
     MAIL_USERNAME = 'testkryptos123@gmail.com'
     MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
+    REDIS_HOST = get_from_datastore('REDIS_HOST', 'dev')
+    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'dev')
+    REDIS_PORT = get_from_datastore('REDIS_PORT', 'dev')
 
 
 class DevConfig(Config):
