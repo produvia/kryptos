@@ -8,12 +8,10 @@ from flask import current_app
 from app.models.user import StrategyModel
 from app.extensions import db
 
-credentials = compute_engine.Credentials()
+from google.cloud import datastore
 
-try:
-    ds = datastore.Client()
-except Exception:
-    ds = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
+ds = datastore.Client()
+
 
 product_key = ds.key('Settings', 'production')
 entity = ds.get(product_key)
