@@ -1,4 +1,4 @@
-FROM gcr.io/kryptos-stage/kryptos-base:latest
+FROM gcr.io/kryptos-205115/kryptos-base:latest
 
 # copy only the requirements to prevent rebuild for any changes
 COPY requirements.txt /core/requirements.txt
