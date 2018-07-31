@@ -30,10 +30,10 @@ def in_docker():
 
 
 def get_config():
-    if not in_docker():
-        config = DevConfig
+    # if not in_docker():
+    #     config = DevConfig
 
-    elif get_debug_flag():
+    if get_debug_flag():
         config = DockerDevConfig
 
     else:
