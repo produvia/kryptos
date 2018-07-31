@@ -2,7 +2,6 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['pull', 'gcr.io/$PROJECT_ID/kryptos-worker:latest']
 - name: 'gcr.io/cloud-builders/docker'
-  dir: 'core/'
   args: [
             'build',
             '-t', 'gcr.io/$PROJECT_ID/kryptos-worker:latest',
@@ -11,7 +10,6 @@ steps:
         ]
 
 - name: "gcr.io/cloud-builders/gcloud"
-  dir: 'core/'
-  args: ["app", "deploy", 'worker.yaml', '--image-url=gcr.io/$PROJECT_ID/kryptos-worker:latest']
+  args: ["app", "deploy", 'core/worker.yaml', '--image-url=gcr.io/$PROJECT_ID/kryptos-worker:latest']
 
 images: ['gcr.io/$PROJECT_ID/kryptos-worker:latest']
