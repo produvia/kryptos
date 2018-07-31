@@ -31,7 +31,7 @@ class Config(object):
     # PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    REDIS_HOST = get_from_datastore('REDIS_HOST', "production")
+    # REDIS_HOST = get_from_datastore('REDIS_HOST', "production")
     RQ_POLL_INTERVAL = 1000
 
     # Google Cloud Project ID. This can be found on the 'Overview' page at
@@ -80,9 +80,8 @@ class ProdConfig(Config):
     TELEGRAM_BOT = 'KryptosAIBot'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
-    REDIS_HOST = get_from_datastore('REDIS_HOST', 'production')
-    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'production')
-    REDIS_PORT = get_from_datastore('REDIS_PORT', 'production')
+    REDIS_HOST = '10.0.0.3'
+    REDIS_PORT = 6379
 
 
 class DockerDevConfig(Config):
@@ -97,9 +96,9 @@ class DockerDevConfig(Config):
     MAIL_USERNAME = 'testkryptos123@gmail.com'
     MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
-    REDIS_HOST = get_from_datastore('REDIS_HOST', 'dev')
-    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'dev')
-    REDIS_PORT = get_from_datastore('REDIS_PORT', 'dev')
+    REDIS_HOST = os.getenv("REDIS_HOST")
+    REDIS_PORT = os.getenv('REDIS_PORT')
+
 
 
 class DevConfig(Config):
@@ -111,7 +110,9 @@ class DevConfig(Config):
     FRONTEND_URL = BASE_URL
     API_URL = os.path.join(BASE_URL, 'api')
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/kryptos'
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
+    REDIS_HOST = 'localhost'
+    REDIS_PORT = os.getenv('REDIS_PORT')
 
 
     USER_ENABLE_CONFIRM_EMAIL = False

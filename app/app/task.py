@@ -8,19 +8,6 @@ from flask import current_app
 from app.models.user import StrategyModel
 from app.extensions import db
 
-from google.cloud import datastore
-
-ds = datastore.Client()
-
-
-product_key = ds.key('Settings', 'production')
-entity = ds.get(product_key)
-
-redis_host = entity['REDIS_HOST']
-redis_port = entity['REDIS_PORT']
-redis_pw = entity['REDIS_PASSWORD']
-CONN = redis.Redis(host=redis_host, port=redis_port, password=redis_pw)
-
 
 QUEUE_NAMES = ['paper', 'live', 'backtest']
 
@@ -32,6 +19,7 @@ QUEUE_NAMES = ['paper', 'live', 'backtest']
 #     return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
 
 def get_queue(queue_name):
+    CONN = redis.Redis(host=current_app['REDIS_HOST'], port=current_app['REDIS_PORT'])
     return Queue(queue_name, connection=CONN)
 
 def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
