@@ -8,16 +8,33 @@ from flask import current_app
 from app.models.user import StrategyModel
 from app.extensions import db
 
+credentials = compute_engine.Credentials()
+
+try:
+    ds = datastore.Client()
+except Exception:
+    ds = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
+
+product_key = ds.key('Settings', 'production')
+entity = ds.get(product_key)
+
+redis_host = entity['REDIS_HOST']
+redis_port = entity['REDIS_PORT']
+redis_pw = entity['REDIS_PASSWORD']
+CONN = redis.Redis(host=redis_host, port=redis_port, password=redis_pw)
 
 
 QUEUE_NAMES = ['paper', 'live', 'backtest']
 
 
-def get_conn():
-    return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
+# def get_conn():
+#
+#     CONN = redis.Redis(host=redis_host, port=redis_port, password=redis_pw)
+#     # from logbook.compat import redirect_logging
+#     return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
 
 def get_queue(queue_name):
-    return Queue(queue_name, connection=get_conn())
+    return Queue(queue_name, connection=CONN)
 
 def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
     current_app.logger.debug(f'Queueing new strat with user_id {user_id}')
