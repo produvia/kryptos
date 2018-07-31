@@ -69,6 +69,9 @@ class Config(object):
     USER_AFTER_LOGIN_ENDPOINT = 'account.user_account'
     USER_ENABLE_CONFIRM_EMAIL = False
 
+    REDIS_HOST = os.getenv('REDIS_HOST')
+    REDIS_PORT = os.getenv('REDIS_PORT')
+
 
 class ProdConfig(Config):
     """Production configuration."""
@@ -80,8 +83,9 @@ class ProdConfig(Config):
     TELEGRAM_BOT = 'KryptosAIBot'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
-    REDIS_HOST = '10.0.0.3'
-    REDIS_PORT = 6379
+    REDIS_HOST = os.getenv('REDIS_HOST', '10.0.0.3')
+    REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+
 
 
 class DockerDevConfig(Config):
