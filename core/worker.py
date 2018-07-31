@@ -12,15 +12,22 @@ from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
 
+from google.auth import compute_engine
 from google.cloud import datastore
 
-try:
-    datastore = datastore.Cleint()
-except Exception:
-    datastore = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
+credentials = compute_engine.Credentials()
 
-product_key = datastore.key('Settings', 'production')
-entity = datastore.get(product_key)
+    # Create the client using the credentials and specifying a project ID.
+ds = datastore.Client(credentials=credentials, project='kryptos-stage')
+
+
+# try:
+#     ds = datastore.Cleint()
+# except Exception:
+#     ds = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
+
+product_key = ds.key('Settings', 'production')
+entity = ds.get(product_key)
 
 redis_host = entity['REDIS_HOST']
 redis_port = entity['REDIS_PORT']
