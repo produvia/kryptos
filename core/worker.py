@@ -23,7 +23,7 @@ redis_port = entity['REDIS_PORT']
 redis_pw = entity['REDIS_PASSWORD']
 
 host = 'redis' if in_docker() else 'localhost'
-CONN = redis.Redis() (host=redis_host, port=redis_port, password=redis_pw)
+CONN = redis.Redis(host=redis_host, port=redis_port, password=redis_pw)
 # from logbook.compat import redirect_logging
 # redirect_logging()
 
