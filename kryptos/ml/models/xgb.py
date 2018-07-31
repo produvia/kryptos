@@ -8,15 +8,31 @@ from kryptos.settings import MLConfig as CONFIG
 
 XGBOOST_SEED = 17
 
-FIXED_PARAMS_DEFAULT = {
-    'objective': 'multi:softmax',
-    'num_class' : 3,
-    'eval_metric': 'mlogloss', # 'merror', # 'rmse', # 'mlogloss'
-    'base_score': 0,
-    'tree_method': 'exact', # TODO: gpu_exact
-    'silent': 1,
-    'seed': XGBOOST_SEED
-}
+if CONFIG.CLASSIFICATION_TYPE == 1:
+    pass
+
+elif CONFIG.CLASSIFICATION_TYPE == 2:
+    FIXED_PARAMS_DEFAULT = {
+        'objective': 'binary:logistic',
+        'eval_metric': 'error@0.9', # 'error@0.9', auc
+        'tree_method': 'exact', # TODO: gpu_exact
+        'silent': 1,
+        'seed': XGBOOST_SEED
+    }
+
+elif CONFIG.CLASSIFICATION_TYPE == 3:
+    FIXED_PARAMS_DEFAULT = {
+        'objective': 'multi:softmax',
+        'num_class' : 3,
+        'eval_metric': 'mlogloss', # 'merror', # 'rmse', # 'mlogloss'
+        'base_score': 0,
+        'tree_method': 'exact', # TODO: gpu_exact
+        'silent': 1,
+        'seed': XGBOOST_SEED
+    }
+
+else:
+    raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
 DEFAULT_PARAMS = {
     'n_trees': 800,
@@ -29,7 +45,7 @@ DEFAULT_PARAMS = {
 
 def optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize):
     # IMPLEMENTED ON https://github.com/produvia/kryptos/tree/ml-tsfresh
-    # WAITING CATALYST UPDATE: https://github.com/enigmampc/catalyst/issues/269
+    # WAITING CATALYST UPDATE: https://github.com/enigmampc/catalyst/issues/269
     xgb_params = merge_two_dicts(DEFAULT_PARAMS, FIXED_PARAMS_DEFAULT)
     xgb_params['num_boost_rounds'] = 705
     return xgb_params
@@ -51,4 +67,22 @@ def xgboost_train(X_train, y_train, xgb_params=None, num_boost_rounds=None):
 def xgboost_test(model, X_test):
     dtest = xgb.DMatrix(X_test)
     y_pred = model.predict(dtest)
+
+    if CONFIG.CLASSIFICATION_TYPE == 1:
+        pass
+
+    elif CONFIG.CLASSIFICATION_TYPE == 2:
+        if y_pred[0] > CONFIG.THRESHOLD and y_pred[0] <= 1.0:
+            y_pred = 1
+        elif y_pred[0] < CONFIG.THRESHOLD and y_pred[0] >= 0.0:
+            y_pred = 0
+        else:
+            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+
+    elif CONFIG.CLASSIFICATION_TYPE == 3:
+        y_pred = int(y_pred[0])
+
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+
     return y_pred

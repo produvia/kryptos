@@ -9,7 +9,7 @@ from kryptos.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_
 from kryptos.ml.feature_selection.xgb import embedded_feature_selection
 from kryptos.ml.feature_selection.filter import filter_feature_selection
 from kryptos.ml.feature_selection.wrapper import wrapper_feature_selection
-from kryptos.ml.preprocessing import preprocessing_multiclass_data, clean_params, add_fe
+from kryptos.ml.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params
 from kryptos.ml.metric import classification_metrics
 from kryptos.settings import MLConfig as CONFIG
 from kryptos.settings import DEFAULT_CONFIG
@@ -64,37 +64,72 @@ class XGBOOST(MLIndicator):
 
     @property
     def signals_buy(self):
-        if self.result == 1:
-            return True
+        signal = False
+        if CONFIG.CLASSIFICATION_TYPE == 1:
+            if self.result > 0:
+                signal = True
+        elif CONFIG.CLASSIFICATION_TYPE == 2:
+            if self.result == 1:
+                signal = True
+        elif CONFIG.CLASSIFICATION_TYPE == 3:
+            if self.result == 1:
+                signal = True
         else:
-            return False
+            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+        return signal
 
     @property
     def signals_sell(self):
-        if self.result == 2:
-            return True
+        signal = False
+        if CONFIG.CLASSIFICATION_TYPE == 1:
+            if self.result <= 0:
+                signal = True
+        elif CONFIG.CLASSIFICATION_TYPE == 2:
+            if self.result == 0:
+                signal = True
+        elif CONFIG.CLASSIFICATION_TYPE == 3:
+            if self.result == 2:
+                signal = True
         else:
-            return False
+            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+        return signal
 
     def calculate(self, df, **kw):
         self.idx += 1
+
+        if CONFIG.DEBUG:
+            print(str(self.idx) + ' - ' + str(get_datetime()))
 
         # Dataframe size is enough to apply Machine Learning
         if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
             # Optimize Hyper Params for Xgboost model
             if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_PARAMS_OPTIMIZE) == 0:
-                X_train_optimize, y_train_optimize, X_test_optimize = preprocessing_multiclass_data(df, to_optimize=True)
+
+                # Prepare data to machine learning problem
+                if CONFIG.CLASSIFICATION_TYPE == 1:
+                    pass
+                elif CONFIG.CLASSIFICATION_TYPE == 2:
+                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_binary_data(df, to_optimize=True)
+                elif CONFIG.CLASSIFICATION_TYPE == 3:
+                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_multiclass_data(df, to_optimize=True)
+                else:
+                    raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+
                 y_test_optimize = df['target'].tail(CONFIG.SIZE_TEST_TO_OPTIMIZE).values
                 params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
                 self.num_boost_rounds = int(params['num_boost_rounds'])
                 self.hyper_params = clean_params(params)
 
             # Prepare data to machine learning problem
-            if CONFIG.CLASSIFICATION_TYPE == 3:
-                X_train, y_train, X_test = preprocessing_multiclass_data(df)
+            if CONFIG.CLASSIFICATION_TYPE == 1:
+                X_train, y_train, X_test = labeling_regression_data(df)
             elif CONFIG.CLASSIFICATION_TYPE == 2:
-                X_train, y_train, X_test = preprocessing_binary_data(df)
+                X_train, y_train, X_test = labeling_binary_data(df)
+            elif CONFIG.CLASSIFICATION_TYPE == 3:
+                X_train, y_train, X_test = labeling_multiclass_data(df)
+            else:
+                raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
             # Feature Selection
             if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
@@ -114,7 +149,7 @@ class XGBOOST(MLIndicator):
             model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
 
             # Predict results
-            self.result = int(xgboost_test(model, X_test)[0])
+            self.result = xgboost_test(model, X_test)
 
             # Results
             self.df_results.loc[get_datetime()] = self.result
@@ -136,10 +171,17 @@ class XGBOOST(MLIndicator):
 
     def analyze(self, namespace):
 
-        # Post processing of target column
-        self.df_final['target'] = 0 # 'KEEP'
-        self.df_final.loc[self.df_final.price + (self.df_final.price * CONFIG.PERCENT_UP) < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-        self.df_final.loc[self.df_final.price - (self.df_final.price * CONFIG.PERCENT_DOWN) > self.df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
+        if CONFIG.CLASSIFICATION_TYPE == 1:
+            pass
+        elif CONFIG.CLASSIFICATION_TYPE == 2:
+            # Post processing of target column
+            self.df_final['target'] = 0 # 'KEEP - DOWN'
+            self.df_final.loc[self.df_final.price < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
+        elif CONFIG.CLASSIFICATION_TYPE == 3:
+            # Post processing of target column
+            self.df_final['target'] = 0 # 'KEEP'
+            self.df_final.loc[self.df_final.price + (self.df_final.price * CONFIG.PERCENT_UP) < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
+            self.df_final.loc[self.df_final.price - (self.df_final.price * CONFIG.PERCENT_DOWN) >= self.df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
 
         if DEFAULT_CONFIG['DATA_FREQ'] == 'daily':
             self.results_pred = self.df_results.pred.astype('int').values
@@ -147,6 +189,10 @@ class XGBOOST(MLIndicator):
         else:
             self.results_pred = self.df_results.pred.astype('int').values
             self.results_real = self.df_final.loc[self.df_results.index].target.values
+
+        # Delete last item because of last results_real is not real.
+        self.results_pred = self.results_pred[:-1]
+        self.results_real = self.results_real[:-1]
 
         classification_metrics(namespace, 'xgboost_confussion_matrix.txt',
                                 self.results_real, self.results_pred)

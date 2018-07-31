@@ -102,16 +102,23 @@ class TAConfig(object):
 # Machine Learning Settings
 class MLConfig(object):
 
+    DEBUG = True
+
     # Machine Learning General Settings
     """
         1 - Regression
         2 - Binary Classification (DOWN / UP)
         3 - Multiclass Classification (DOWN / KEEP / UP)
     """
-    CLASSIFICATION_TYPE = 3
-    PERCENT_UP = 0.015 # up signal %
-    PERCENT_DOWN = 0.015 # down signal %
+    CLASSIFICATION_TYPE = 2
     MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
+
+    if CLASSIFICATION_TYPE == 2:
+        THRESHOLD = 0.8 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
+
+    if CLASSIFICATION_TYPE == 3:
+        PERCENT_UP = 0.015 # up signal % (if CLASSIFICATION_TYPE == 3)
+        PERCENT_DOWN = 0.015 # down signal % (if CLASSIFICATION_TYPE == 3)
 
     # Hyper parameters
     SIZE_TEST_TO_OPTIMIZE = 20 # Test dataframe size to optimize model params
@@ -121,7 +128,7 @@ class MLConfig(object):
 
     # Feature Selection
     PERFORM_FEATURE_SELECTION = True # APPLY FEATURE SELECTION
-    ITERATIONS_FEATURE_SELECTION = 30 # Number of iterations to perform feature selection
+    ITERATIONS_FEATURE_SELECTION = 10 # Number of iterations to perform feature selection
     TYPE_FEATURE_SELECTION = 'embedded' # https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
 
     # Feature Engineering: dates
@@ -129,7 +136,7 @@ class MLConfig(object):
 
     # Feature Engineering: tsfresh
     FE_TSFRESH = {
-        'enabled': True,
+        'enabled': False,
         # 'kind': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
         'window': 30,
     }
@@ -151,7 +158,7 @@ class MLConfig(object):
 
     # Feature Engineering: fbprophet
     FE_FBPROPHET = {
-        'enabled': True
+        'enabled': False
     }
 
     # Feature Engineering: utils
@@ -162,3 +169,6 @@ class MLConfig(object):
 
     # Check if min rows is less than dataframe size.
     assert MIN_ROWS_TO_ML <= DEFAULT_CONFIG['BARS']
+
+    # Check if threshold is in range [0,1]
+    assert THRESHOLD <= 1.0 and THRESHOLD >= 0.0
