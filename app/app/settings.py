@@ -95,7 +95,8 @@ class DockerDevConfig(Config):
     TELEGRAM_BOT = 'kryptos_dev_bot'
     MAIL_USERNAME = 'testkryptos123@gmail.com'
     MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
-    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
+    # SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
 
