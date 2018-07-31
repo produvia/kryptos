@@ -1,3 +1,2 @@
 worker: python worker.py
-ingester: python ingester.py
 monitor: python monitor.py /tmp/psq.pid
