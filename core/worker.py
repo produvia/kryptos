@@ -13,7 +13,11 @@ from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
 
 from google.cloud import datastore
-datastore = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
+
+try:
+    datastore = datastore.Cleint()
+except Exception:
+    datastore = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
 
 product_key = datastore.key('Settings', 'production')
 entity = datastore.get(product_key)
