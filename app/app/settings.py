@@ -10,10 +10,10 @@ datastore = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd
 
 
 
-def get_from_datastore(config_key):
+def get_from_datastore(config_key, env):
     print('Fetching {}'.format(config_key))
 
-    product_key = datastore.key('Settings', 'production')
+    product_key = datastore.key('Settings', env)
     entity = datastore.get(product_key)
 
     # print(value['SQLALCHEMY_DATABASE_URI'])
@@ -31,12 +31,12 @@ class Config(object):
     # PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    REDIS_HOST = get_from_datastore('REDIS_HOST')
+    REDIS_HOST = get_from_datastore('REDIS_HOST', "production")
     RQ_POLL_INTERVAL = 1000
 
     # Google Cloud Project ID. This can be found on the 'Overview' page at
     # https://console.developers.google.com
-    PROJECT_ID = 'kryptos-204204'
+    PROJECT_ID = 'kryptos-205115'
 
     # Cloud Datastore dataset id, this is the same as your project id.
     DATASTORE_DATASET_ID = PROJECT_ID
@@ -44,8 +44,8 @@ class Config(object):
     MIGRATIONS_DIR = os.path.join(APP_DIR, 'models', 'migrations')
 
     # Flask-Assistant options
-    CLIENT_ACCESS_TOKEN = get_from_datastore("CLIENT_ACCESS_TOKEN")
-    DEV_ACCESS_TOKEN = get_from_datastore("DEV_ACCESS_TOKEN")
+    CLIENT_ACCESS_TOKEN = get_from_datastore("CLIENT_ACCESS_TOKEN", "production")
+    DEV_ACCESS_TOKEN = get_from_datastore("DEV_ACCESS_TOKEN", "production")
 
 
 
@@ -55,7 +55,7 @@ class Config(object):
     MAIL_USE_SSL = True
     MAIL_USE_TLS = False
     MAIL_USERNAME = 'hello@produvia.com'
-    MAIL_PASSWORD = get_from_datastore('MAIL_PASSWORD')
+    MAIL_PASSWORD = get_from_datastore('MAIL_PASSWORD', 'production')
     MAIL_DEFAULT_SENDER = '"Kryptos AI" <noreply@example.com>'
 
     # Flask-User settings
@@ -78,7 +78,7 @@ class ProdConfig(Config):
     FRONTEND_URL = "http://kryptos.produvia.com"
     API_URL = "http://web:5000/api"
     TELEGRAM_BOT = 'KryptosAIBot'
-    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN')
 
 class DockerDevConfig(Config):
@@ -92,6 +92,7 @@ class DockerDevConfig(Config):
     TELEGRAM_BOT = 'kryptos_dev_bot'
     MAIL_USERNAME = 'testkryptos123@gmail.com'
     MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
+    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
 
 
 class DevConfig(Config):
@@ -103,7 +104,8 @@ class DevConfig(Config):
     FRONTEND_URL = BASE_URL
     API_URL = os.path.join(BASE_URL, 'api')
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/kryptos'
-    # SQLALCHEMY_DATABASE_URI= 'postgresql+psycopg2://postgres:ssBB8jz1iDhCE7v2@127.0.0.1:5432/kryptos'
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+
 
     USER_ENABLE_CONFIRM_EMAIL = False
     TELEGRAM_BOT = 'kryptos_dev_bot'
