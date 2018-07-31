@@ -4,17 +4,21 @@
 See https://github.com/sloria/cookiecutter-flask for configuration options with other flask-extensions
 """
 import os
+from google.auth import app_engine
 from google.cloud import datastore
 
-datastore = datastore.Client.from_service_account_json('kryptos-stage-a7f9fd94cd62.json')
-
+credentials = app_engine.Credentials()
+try:
+    ds = datastore.Client()
+except:
+    ds = datastore.Client(credentials=credentials)
 
 
 def get_from_datastore(config_key, env):
     print('Fetching {}'.format(config_key))
 
-    product_key = datastore.key('Settings', env)
-    entity = datastore.get(product_key)
+    product_key = ds.key('Settings', env)
+    entity = ds.get(product_key)
 
     # print(value['SQLALCHEMY_DATABASE_URI'])
     return entity[config_key]
@@ -84,7 +88,7 @@ class ProdConfig(Config):
 class DockerDevConfig(Config):
     ENV = "docker-dev"
     DEBUG = True
-    BASE_URL = os.getenv('NGROK_URL', 'http://0.0.0.0:5000/')
+    BASE_URL = os.getenv('NGROK_URL', 'http://0.0.0.0:8080/')
     FRONTEND_URL = BASE_URL
     API_URL = "http://web:5000/api"
     USER_ENABLE_CONFIRM_EMAIL = False
