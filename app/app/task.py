@@ -19,7 +19,7 @@ QUEUE_NAMES = ['paper', 'live', 'backtest']
 #     return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
 
 def get_queue(queue_name):
-    CONN = redis.Redis(host=current_app['REDIS_HOST'], port=current_app['REDIS_PORT'])
+    CONN = redis.Redis(host=current_app.config['REDIS_HOST'], port=current_app.config['REDIS_PORT'])
     return Queue(queue_name, connection=CONN)
 
 def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
