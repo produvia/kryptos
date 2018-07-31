@@ -17,7 +17,7 @@ from kryptos.settings import QUEUE_NAMES
 REDIS_HOST = os.getenv('REDIS_HOST', '10.0.0.3')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
 
-CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+CONN = redis.Redis(host='35.233.161.198', port=REDIS_PORT)
 
 log = logbook.Logger('WorkerManager')
 logger_group.add_logger(log)
