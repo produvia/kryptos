@@ -28,11 +28,6 @@ COPY . /app
 ## all app code needs to be in /app/app
 ## uwsgi needs to be in /app
 
-
-# NGINX config
-ENV UWSGI_INI /app/uwsgi.ini
-
 WORKDIR /app
-
 EXPOSE 8080
 ENTRYPOINT gunicorn -b :8080 autoapp:app
