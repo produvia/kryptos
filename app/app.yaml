@@ -11,7 +11,7 @@ env_variables:
     TELEGRAM_BOT: KryptosAIBot
 
 beta_settings:
-    cloud_sql_instances: kryptos-stage:us-central1:kryptos-stage-db
+    cloud_sql_instances: kryptos-205115:us-west1:kryptos-db
 
 
 # This sample incurs costs to run on the App Engine flexible environment.
