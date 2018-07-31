@@ -21,4 +21,4 @@ WORKDIR /core
 RUN pip install -e .
 
 WORKDIR /core
-ENTRYPOINT honcho start -f procfile worker monitor
+ENTRYPOINT honcho start -f procfile worker monitor ingest
