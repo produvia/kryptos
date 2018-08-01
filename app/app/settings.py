@@ -102,9 +102,10 @@ class DockerDevConfig(Config):
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'dev')
 
     MAIL_USERNAME = 'testkryptos123@gmail.com'
-    MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
-    # SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
-    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
+    MAIL_PASSWORD = get_from_datastore('MAIL_PASSWORD', 'dev')
+
+    # uses docker db or prod proxy if not set as env
+    SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI') or get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
     REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'dev')
