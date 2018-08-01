@@ -69,7 +69,7 @@ def manage_workers():
     # create paper/live queues when needed
     while True:
 
-        queue_names = ['paper', 'live']
+        queue_names = ['paper', 'live'', backtest]
         with Connection(CONN):
             if workers_required() > 0:
                 log.info(f"{workers_required()} workers required")
