@@ -20,7 +20,7 @@ def index():
     REDIS_PASSWORD = current_app.config.get('REDIS_PASSWORD')
 
     redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-    current_app.logger.warn(f'Testing Redis Conenction: {REDIS_HOST}:{REDI_PORT}')
+    current_app.logger.warn(f'Testing Redis Conenction: {REDIS_HOST}:{REDIS_PORT}')
     value = redis_client.incr('counter', 1)
     return 'Visitor number: {}'.format(value)
 

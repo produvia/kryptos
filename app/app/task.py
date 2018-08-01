@@ -1,3 +1,4 @@
+import os
 import json
 import redis
 from rq import Queue, Connection, Worker
@@ -7,22 +8,20 @@ from flask import current_app
 
 from app.models.user import StrategyModel
 from app.extensions import db
+from app.settings import get_from_datastore
 
 
 QUEUE_NAMES = ['paper', 'live', 'backtest']
 
+REDIS_HOST, REDIS_PORT = os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT')
 
-# def get_conn():
-#
-#     CONN = redis.Redis(host=redis_host, port=redis_port, password=redis_pw)
-#     # from logbook.compat import redirect_logging
-#     return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
+# env var set in app creation after fetchign from datastore
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+
 
 def get_queue(queue_name):
-    REDIS_HOST, REDIS_PORT = current_app.config['REDIS_HOST'], current_app.config['REDIS_PORT']
-    REDIS_PASSWORD = current_app.config.get('REDIS_PASSWORD')
-
-    CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
     current_app.logger.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
     return Queue(queue_name, connection=CONN)
 
