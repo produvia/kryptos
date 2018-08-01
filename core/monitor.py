@@ -6,9 +6,12 @@ import redis
 
 app = Flask(__name__)
 
-redis_host = os.environ.get('REDIS_HOST')
-redis_port = int(os.environ.get('REDIS_PORT', 6379))
-redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
+REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+
 
 
 @app.route('/')

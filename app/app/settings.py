@@ -85,6 +85,7 @@ class ProdConfig(Config):
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
     REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
     REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+    REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 
 
 
@@ -103,6 +104,7 @@ class DockerDevConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
+    REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 
 
 

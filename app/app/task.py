@@ -20,12 +20,14 @@ QUEUE_NAMES = ['paper', 'live', 'backtest']
 
 def get_queue(queue_name):
     REDIS_HOST, REDIS_PORT = current_app.config['REDIS_HOST'], current_app.config['REDIS_PORT']
-    CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+    REDIS_PASSWORD = current_app.config.get('REDIS_PASSWORD')
+
+    CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
     current_app.logger.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
     return Queue(queue_name, connection=CONN)
 
 def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
-    current_app.logger.debug(f'Queueing new strat with user_id {user_id}')
+    current_app.logger.info(f'Queueing new strat with user_id {user_id}')
     strat_model = StrategyModel.from_json(strat_json, user_id=user_id)
 
     if live and simulate_orders:
