@@ -9,11 +9,14 @@ env_variables:
     FLASK_ENV: 'prod'
     FLASK_APP: autoapp:app
     TELEGRAM_BOT: KryptosAIBot
+    REDIS_HOST: '10.0.0.3'
+    REDIS_PORT: 6379
 
 beta_settings:
     cloud_sql_instances: kryptos-205115:us-west1:kryptos-db
 
-
+network:
+  name: default
 # This sample incurs costs to run on the App Engine flexible environment.
 # The settings below are to reduce costs during testing and are not appropriate
 # for production use. For more information, see:
