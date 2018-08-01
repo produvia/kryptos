@@ -11,8 +11,8 @@ env_variables:
     TELEGRAM_BOT: KryptosAIBot
     # REDIS_HOST: '10.138.0.4'
     # REDIS_PORT: 6379
-    REDIS_HOST: redis-16113.c1.us-central1-2.gce.cloud.redislabs.com
-    REDIS_PORT: 16113
+    REDIS_HOST: redis-19779.c1.us-central1-2.gce.cloud.redislabs.com
+    REDIS_PORT: 19779
 
 beta_settings:
     cloud_sql_instances: kryptos-205115:us-west1:kryptos-db
