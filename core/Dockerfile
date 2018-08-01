@@ -20,5 +20,6 @@ COPY . /core
 WORKDIR /core
 RUN pip install -e .
 
+EXPOSE 8080
 WORKDIR /core
 ENTRYPOINT honcho start -f procfile worker monitor ingest
