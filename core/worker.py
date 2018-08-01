@@ -16,8 +16,6 @@ from kryptos.settings import QUEUE_NAMES
 
 REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
-REDIS_HOST = '10.138.0.4'
-REDIS_PORT = 6379
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
