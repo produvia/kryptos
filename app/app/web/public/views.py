@@ -8,9 +8,6 @@ import logging
 blueprint = Blueprint('public', __name__, url_prefix='/')
 
 
-REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
-REDI_PORT = int(os.environ.get('REDIS_PORT', 6379))
-redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDI_PORT)
 
 @blueprint.route('/')
 def home_page():
@@ -19,6 +16,10 @@ def home_page():
 
 @blueprint.route('/testredis')
 def index():
+    REDIS_HOST, REDIS_PORT = current_app.config['REDIS_HOST'], current_app.config['REDIS_PORT']
+    REDIS_PASSWORD = current_app.config.get('REDIS_PASSWORD')
+
+    redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
     current_app.logger.warn(f'Testing Redis Conenction: {REDIS_HOST}:{REDI_PORT}')
     value = redis_client.incr('counter', 1)
     return 'Visitor number: {}'.format(value)
