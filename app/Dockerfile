@@ -30,4 +30,4 @@ COPY . /app
 
 WORKDIR /app
 EXPOSE 8080
-ENTRYPOINT gunicorn -b :8080 autoapp:app
+ENTRYPOINT gunicorn -b :8080 autoapp:app --log-level debug
