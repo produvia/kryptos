@@ -83,7 +83,7 @@ class ProdConfig(Config):
     TELEGRAM_BOT = 'KryptosAIBot'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
-    REDIS_HOST = os.getenv('REDIS_HOST', '10.0.0.3')
+    REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
     REDIS_PORT = os.getenv('REDIS_PORT', 6379)
 
 

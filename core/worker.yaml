@@ -2,8 +2,13 @@ runtime: custom
 env: flex
 service: worker
 skip_files: [logs, performance_results]
-# env_variables:
-#     REDIS_HOST: 'redis-16113.c1.us-central1-2.gce.cloud.redislabs.com'
-#     REDIS_PORT: 16113
+env_variables:
+    REDIS_HOST: '10.138.0.4'
+    REDIS_PORT: 6379
 #     REDIS_URL: 'redis-16113.c1.us-central1-2.gce.cloud.redislabs.com:16113'
 #     REDIS_PASSWORD: '6858xsu5pmGbi2MnaDZJSQnJpohyWZ64'
+network:
+  name: default
+
+readiness_check:
+    app_start_timeout_sec: 3600

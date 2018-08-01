@@ -9,7 +9,7 @@ env_variables:
     FLASK_ENV: 'prod'
     FLASK_APP: autoapp:app
     TELEGRAM_BOT: KryptosAIBot
-    REDIS_HOST: '10.0.0.3'
+    REDIS_HOST: '10.138.0.4'
     REDIS_PORT: 6379
 
 beta_settings:
