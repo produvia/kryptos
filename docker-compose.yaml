@@ -2,51 +2,49 @@ version: '3'
 services:
   web:
     container_name: web
-    image: kryptos-web
+    image: kryptos-local-app
     build:
       context: ./app
       dockerfile: Dockerfile
     ports:
-     - "80:80"
+     - "8080:8080"
+    volumes:
+     - ./app:/app
     environment:
-      - FLASK_DEBUG=0
-      - FLASK_ENV='prod'
-      - FLASK_APP=autoapp.py
+      - FLASK_DEBUG=1
+      - FLASK_ENV=docker-dev
+      # uses docker redis and db, but fetches other credentials from datastore
       - REDIS_HOST=redis
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/kryptos
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_BOT=KryptosAIBot
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
+      - FLASK_APP=autoapp.py
+      - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
+
     depends_on:
       - redis
       - db
-    # Infinite loop, to keep it alive, for debugging
+    # # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
-    # command: ['flask', 'run']
-
+    command: ['flask', 'run', '--host=0.0.0.0', '--port=8080']
   worker:
-    image: kryptos-core
+    image: kryptos-local-worker
     container_name: worker
     build:
       context: ./core
       dockerfile: Dockerfile
     volumes:
       - catalyst:/root/.catalyst
+      - ./core:/core
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
 
-    entrypoint: ['python', 'worker.py']
+    # entrypoint: ['python', 'worker.py']
     depends_on:
     - redis
 
-  ingester:
-    image: kryptos-core
-    container_name: ingester
-    build:
-      context: ./core
-      dockerfile: Dockerfile
-    volumes:
-      - catalyst:/root/.catalyst
-    entrypoint: ['python', 'ingester.py']
-    depends_on:
-    - worker
 
   db:
     container_name: db
@@ -58,10 +56,15 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
 
+     # expose port 5433 instead of default
+     # in case postgres already on host machine
+    ports:
+      - "5433:5432"
 
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
+    command: redis-server --requirepass password
 
 
 volumes:
