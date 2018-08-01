@@ -1,40 +1,32 @@
+import logging
 import os
-import sys
 
 from flask import Flask
+import redis
+
+app = Flask(__name__)
+
+redis_host = os.environ.get('REDISHOST')
+redis_port = int(os.environ.get('REDISPORT', 6379))
+redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
 
 
-# The app checks this file for the PID of the process to monitor.
-PID_FILE = None
-
-
-# Create app to handle health checks and monitor the queue worker. This will
-# run alongside the worker, see procfile.
-monitor_app = Flask(__name__)
-
-
-# The health check reads the PID file created by psqworker and checks the proc
-# filesystem to see if the worker is running. This same pattern can be used for
-# rq and celery.
-@monitor_app.route('/_ah/health')
-def health():
-    # if not os.path.exists(PID_FILE):
-    #     return 'Worker pid not found', 503
-    #
-    # with open(PID_FILE, 'r') as pidfile:
-    #     pid = pidfile.read()
-    #
-    # if not os.path.exists('/proc/{}'.format(pid)):
-    #     return 'Worker not running', 503
-
-    return 'healthy', 200
-
-
-@monitor_app.route('/')
+@app.route('/')
 def index():
-    return health()
+    value = redis_client.incr('counter', 1)
+    return 'Visitor number: {}'.format(value)
+
+
+@app.errorhandler(500)
+def server_error(e):
+    logging.exception('An error occurred during a request.')
+    return """
+    An internal error occurred: <pre>{}</pre>
+    See logs for full stacktrace.
+    """.format(e), 500
 
 
 if __name__ == '__main__':
-    PID_FILE = sys.argv[1]
-    monitor_app.run('0.0.0.0', 8080)
+    # This is used when running locally. Gunicorn is used to run the
+    # application on Google App Engine. See entrypoint in app.yaml.
+    app.run(host='127.0.0.1', port=8080, debug=True)
