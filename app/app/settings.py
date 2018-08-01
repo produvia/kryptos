@@ -80,9 +80,11 @@ class ProdConfig(Config):
     DEBUG = False
     FRONTEND_URL = "https://kryptos-205115.appspot.com"
     API_URL = "http://web:5000/api"
+
     TELEGRAM_BOT = 'KryptosAIBot'
-    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
+
+    SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
     REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
     REDIS_PORT = os.getenv('REDIS_PORT', 6379)
     REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'production')
@@ -95,17 +97,20 @@ class DockerDevConfig(Config):
     BASE_URL = os.getenv('NGROK_URL', 'http://0.0.0.0:8080/')
     FRONTEND_URL = BASE_URL
     API_URL = "http://web:5000/api"
-    USER_ENABLE_CONFIRM_EMAIL = False
-    USER_SEND_REGISTERED_EMAIL = True
+
     TELEGRAM_BOT = 'kryptos_dev_bot'
+    TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'dev')
+
     MAIL_USERNAME = 'testkryptos123@gmail.com'
     MAIL_PASSWORD = 'lulxeqhsnlbnsjyd'
     # SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI')
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
-    REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'dev')
 
+    USER_ENABLE_CONFIRM_EMAIL = False
+    USER_SEND_REGISTERED_EMAIL = True
 
 
 
