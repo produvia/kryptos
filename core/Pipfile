@@ -28,6 +28,7 @@ logbook = "*"
 google-cloud = "*"
 honcho = "*"
 google-cloud-datastore = "*"
+gunicorn = "*"
 
 [dev-packages]
 black = "==18.4a4"
