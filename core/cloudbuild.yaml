@@ -5,7 +5,7 @@ steps:
   args: [
             'build',
             '-t', 'gcr.io/$PROJECT_ID/kryptos-worker',
-            # '--cache-from', 'gcr.io/$PROJECT_ID/kryptos-worker',
+            '--cache-from', 'gcr.io/$PROJECT_ID/kryptos-worker',
             'core/'
         ]
 
