@@ -78,7 +78,7 @@ class ProdConfig(Config):
 
     ENV = "prod"
     DEBUG = False
-    FRONTEND_URL = "http://kryptos.produvia.com"
+    FRONTEND_URL = "https://kryptos-205115.appspot.com"
     API_URL = "http://web:5000/api"
     TELEGRAM_BOT = 'KryptosAIBot'
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'production')
