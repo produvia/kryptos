@@ -6,13 +6,14 @@ import redis
 
 app = Flask(__name__)
 
-redis_host = os.environ.get('REDISHOST')
-redis_port = int(os.environ.get('REDISPORT', 6379))
+redis_host = os.environ.get('REDIS_HOST')
+redis_port = int(os.environ.get('REDIS_PORT', 6379))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
 
 
 @app.route('/')
 def index():
+    logging.warn('Testing redis connection {}:{}'.format)
     value = redis_client.incr('counter', 1)
     return 'Visitor number: {}'.format(value)
 
