@@ -2,11 +2,12 @@ import pandas as pd
 pd.options.mode.chained_assignment = None # Disable chained assignments
 
 from kryptos.settings import MLConfig as CONFIG
-from kryptos.ml.feature_engineering import add_ta_features, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
+from kryptos.ml.feature_engineering import add_ta_features, add_ta_features2, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
 from kryptos.utils import merge_two_dicts
 from kryptos.ml.models import xgb
 
-def labeling_regression_data(df):
+
+def labeling_regression_data(df, to_optimize=False):
     """Preprocessing data to resolve a regression machine learning problem.
     """
     # Prepare labelling classification problem (1=UP / 2=DOWN)
@@ -26,16 +27,7 @@ def labeling_regression_data(df):
     X = df[cols]
     y = df['target']
 
-    if not to_optimize:
-        # Adding different features (feature engineering)
-        X = _add_fe(X)
-
-        # Drop nan values after feature engineering process
-        X, y = _dropna_after_fe(X, y)
-
-    # Prepare data struct
-    X_train, y_train, X_test = _prepare_ml_data(X, y, to_optimize)
-
+    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
     return X_train, y_train, X_test
 
 
@@ -57,16 +49,7 @@ def labeling_binary_data(df, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    if not to_optimize:
-        # Adding different features (feature engineering)
-        X = _add_fe(X)
-
-        # Drop nan values after feature engineering process
-        X, y = _dropna_after_fe(X, y)
-
-    # Prepare data struct
-    X_train, y_train, X_test = _prepare_ml_data(X, y, to_optimize)
-
+    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
     return X_train, y_train.astype('int'), X_test
 
 
@@ -98,7 +81,13 @@ def labeling_multiclass_data(df, to_optimize=False):
     X = df[cols]
     y = df['target']
 
+    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    return X_train, y_train.astype('int'), X_test
+
+
+def _preprocessing_feature_engineering(X, y, to_optimize):
     if not to_optimize:
+
         # Adding different features (feature engineering)
         X = _add_fe(X)
 
@@ -108,7 +97,7 @@ def labeling_multiclass_data(df, to_optimize=False):
     # Prepare data struct
     X_train, y_train, X_test = _prepare_ml_data(X, y, to_optimize)
 
-    return X_train, y_train.astype('int'), X_test
+    return X_train, y_train, X_test
 
 
 def _add_fe(df):
@@ -126,6 +115,10 @@ def _add_fe(df):
     # Add ta-lib features
     if CONFIG.FE_TA['enabled']:
         df = add_ta_features(df, CONFIG.FE_TA)
+
+    # Add ta bukosabino library features
+    if CONFIG.FE_TA2:
+        df = add_ta_features2(df, CONFIG.FE_TA2)
 
     # Add fbprophet features
     if CONFIG.FE_FBPROPHET['enabled']:

@@ -14,7 +14,7 @@ if CONFIG.CLASSIFICATION_TYPE == 1:
 elif CONFIG.CLASSIFICATION_TYPE == 2:
     FIXED_PARAMS_DEFAULT = {
         'objective': 'binary:logistic',
-        'eval_metric': 'error@0.9', # 'error@0.9', auc
+        'eval_metric': 'auc', # 'error@0.9', auc
         'tree_method': 'exact', # TODO: gpu_exact
         'silent': 1,
         'seed': XGBOOST_SEED

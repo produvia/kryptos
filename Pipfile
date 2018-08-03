@@ -23,6 +23,7 @@ xgboost = "*"
 sklearn = "*"
 setuptools = "==38.5.1"
 flask-cors = "*"
+ta = "*"
 
 [dev-packages]
 black = "==18.4a4"

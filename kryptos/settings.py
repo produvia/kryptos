@@ -114,7 +114,7 @@ class MLConfig(object):
     MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
 
     if CLASSIFICATION_TYPE == 2:
-        THRESHOLD = 0.8 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
+        THRESHOLD = 0.6 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
 
     if CLASSIFICATION_TYPE == 3:
         PERCENT_UP = 0.015 # up signal % (if CLASSIFICATION_TYPE == 3)
@@ -155,6 +155,9 @@ class MLConfig(object):
         'math_transforms': False,
         'math_operators': False,
     }
+
+    # Feature Engineering: https://github.com/bukosabino/ta
+    FE_TA2 = True
 
     # Feature Engineering: fbprophet
     FE_FBPROPHET = {
