@@ -1,16 +1,30 @@
+import os
 import time
 from logbook import Logger
 import multiprocessing
 from catalyst.exchange.exchange_bundle import ExchangeBundle
 from rq import Connection, Worker
 import pandas as pd
+import redis
 
 from kryptos import logger_group
-from kryptos.worker.worker import CONN, get_queue
+
+REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 
 log = Logger("INGESTER")
 logger_group.add_logger(log)
+log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
+
+def get_queue(queue_name):
+    if queue_name in ['paper', 'live']:
+        return Queue(queue_name, connection=CONN)
+    return Queue(queue_name, connection=CONN)
+
 
 
 def ingest_exchange(exchange, symbol=None, start=None, end=None):

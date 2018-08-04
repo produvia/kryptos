@@ -25,6 +25,10 @@ setuptools = "==38.5.1"
 python-telegram-bot = "*"
 logbook = "*"
 "e1839a8" = {path = ".", editable = true}
+google-cloud = "*"
+honcho = "*"
+google-cloud-datastore = "*"
+gunicorn = "*"
 
 [dev-packages]
 black = "==18.4a4"

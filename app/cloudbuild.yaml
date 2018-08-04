@@ -1,0 +1,16 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['pull', 'gcr.io/$PROJECT_ID/kryptos-app']
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+            'build',
+            '-t', 'gcr.io/$PROJECT_ID/kryptos-app',
+            '--cache-from', 'gcr.io/$PROJECT_ID/kryptos-app',
+            'app/'
+        ]
+
+- name: "gcr.io/cloud-builders/gcloud"
+  args: ["app", "deploy", 'app/app.yaml', '--image-url=gcr.io/$PROJECT_ID/kryptos-app', '--stop-previous-version']
+
+images: ['gcr.io/$PROJECT_ID/kryptos-app']
+timeout: '1200s'

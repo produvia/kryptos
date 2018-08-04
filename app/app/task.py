@@ -1,3 +1,4 @@
+import os
 import json
 import redis
 from rq import Queue, Connection, Worker
@@ -7,20 +8,25 @@ from flask import current_app
 
 from app.models.user import StrategyModel
 from app.extensions import db
-
+from app.settings import get_from_datastore
 
 
 QUEUE_NAMES = ['paper', 'live', 'backtest']
 
+REDIS_HOST, REDIS_PORT = os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT')
 
-def get_conn():
-    return redis.Redis(host=current_app.config['REDIS_HOST'], port=6379)
+# env var set in app creation after fetchign from datastore
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+
 
 def get_queue(queue_name):
-    return Queue(queue_name, connection=get_conn())
+    current_app.logger.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
+    return Queue(queue_name, connection=CONN)
 
 def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
-    current_app.logger.debug(f'Queueing new strat with user_id {user_id}')
+    current_app.logger.info(f'Queueing new strat with user_id {user_id}')
     strat_model = StrategyModel.from_json(strat_json, user_id=user_id)
 
     if live and simulate_orders:

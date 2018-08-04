@@ -14,6 +14,7 @@ from app.extensions import jsonrpc, cors, db, migrate
 from app.settings import DevConfig, DockerDevConfig, ProdConfig
 
 
+
 logging.getLogger('flask_assistant').setLevel(logging.INFO)
 
 def in_docker():
@@ -30,10 +31,10 @@ def in_docker():
 
 
 def get_config():
-    if not in_docker():
-        config = DevConfig
+    # if not in_docker():
+    #     config = DevConfig
 
-    elif get_debug_flag():
+    if get_debug_flag():
         config = DockerDevConfig
 
     else:
@@ -55,6 +56,9 @@ def create_app(config_object=None):
     app.logger.warn("Using {}".format(config_object))
     register_extensions(app)
     register_blueprints(app)
+
+    # TODO cleaner way
+    os.environ['REDIS_PASSWORD'] = app.config['REDIS_PASSWORD']
     return app
 
 
