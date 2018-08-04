@@ -30,4 +30,4 @@ COPY . /app
 
 WORKDIR /app
 
-ENTRYPOINT gunicorn -b :8080 autoapp:app --log-level debug --timeout 90
+ENTRYPOINT gunicorn -b :8080 autoapp:app
