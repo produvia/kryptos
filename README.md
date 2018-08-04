@@ -34,7 +34,7 @@ The web app will be accessible at http://0.0.0.0:8080
 
 
 
-## Run the CloudSQL proxy
+## Connecting to the CloudSQL database locally
 
 To connect to the production database instead of the docker container, install the google cloud local cloud-sql-proxy
 ```bash
@@ -74,8 +74,8 @@ In the Google Cloud console, create a new Instance Template
     - `--log-opt gcp-log-cmd=true`
 - Set the `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` env variables
 -Create a host directory mount
-    - Mount path: /root/.catalyst
-    - Host path: catalyst-dir
+    - Mount path: `/root/.catalyst`
+    - Host path: `catalyst-dir`
     - Read/Write
 
 Once the template is setup you can create new VMs from it which will pull and start the latest worker image
