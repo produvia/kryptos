@@ -1,0 +1,130 @@
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.13/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" ></script>
+
+</head>
+
+{% extends "base.html" %}
+{% block content %}
+
+    <h1 class="text-center">Strategy Results</h1>
+
+    <div class="container text-center justify-left">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Name: {{strat.name}}
+                </h4>
+                <h4>Status: {{strat.status}}</h4>
+            <div class="card-text">
+                Strategy ID: <small>{{strat.uuid}}</small> <br>
+            </div>
+
+            </div>
+        </div>
+    </div>
+
+<div class="row">
+
+    <div class=" text-center col-xs-12 col-sm-6">
+        <h4>Trade Configuration</h4><hr>
+            <div class="card col-centered">
+              <ul class="list-group list-group-flush">
+                {% for k, v in strat.trading_config.items() %}
+                    <li class="list-group-item text-left">
+                        {{k.title()}}: {{ v }}
+                    </li>
+                {% endfor %}
+              </ul>
+            </div>
+    </div>
+
+    <div class="text-center col-xs-12 col-sm-6">
+        <h4>Result</h4><hr>
+            <div class="card col-centered">
+              <ul class="list-group list-group-flush">
+                {% for k, v in strat.parsed_result_json.items() %}
+                    <li class="list-group-item text-left col-sm-6">
+                        {{k.title()}}: {{ v }}
+                    </li>
+                {% endfor %}
+              </ul>
+          </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="text-center col-xs-12 col-sm-6 col-centered">
+        <h4>Indicators</h4><hr>
+            <div class="row text-center">
+             {% for i in strat.indicators_config %}
+                <div class="col-xs-6 col-md-4">
+                    <div class="card">
+                        <h4 class="card-title">{{ i['name'] }}</h4>
+                      <ul class="list-group list-group-flush text-left">
+                        <li class="list-group-item">Label: {{ i['label'] }}</li>
+                        <li class="list-group-item">Symbol: {{ i['symbol'] }}</li>
+
+                        {% if i.get('params') %}
+                            {% for p, v in i.get('params', {}).items() %}
+                                <li class="list-group-item">{{p}}: {{v}}</li>
+                            {% endfor %}
+                        {% endif %}
+
+
+                      </ul>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+    </div>
+
+    <div class="text-center col-xs-12 col-sm-6 col-centered">
+        <h4>Signals</h4><hr>
+            <div class="row">
+                <h4>Buy</h4> <hr>
+                {% for i in strat.signals_config['buy'] %}
+                <div class="col-xs-6 col-md-6">
+                    <div class="card">
+                        <h4 class="card-title">{{ i['name'] }}</h4>
+                      <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Series: {{ i['params']['series'] }}</li>
+                        <li class="list-group-item">Funtion: {{ i['func'] }}</li>
+                        {% if i['params'].get('period') %}
+                                <li class="list-group-item">Period: {{ i['params']['period'] }}</li>
+                        {% else %}
+                                <li class="list-group-item">Trigger: {{ i['params']['trigger'] }}</li>
+                        {% endif %}
+
+                      </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="row">
+                <h4>Sell</h4> <hr>
+                {% for i in strat.signals_config['sell'] %}
+                <div class="card">
+                    <h4 class="card-title">{{ i['name'] }}</h4>
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Series: {{ i['params']['series'] }}</li>
+                    <li class="list-group-item">Funtion: {{ i['func'] }}</li>
+                    {% if i['params'].get('period') %}
+                            <li class="list-group-item">Period: {{ i['params']['period'] }}</li>
+                    {% else %}
+                            <li class="list-group-item">Trigger: {{ i['params']['trigger'] }}</li>
+                    {% endif %}
+
+                  </ul>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+
+
+
+{% endblock %}
