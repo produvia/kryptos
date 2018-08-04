@@ -67,11 +67,11 @@ def manage_workers():
 
 
 
-    # create paper/live queues when needed
-    while True:
+        # create paper/live queues when needed
+        while True:
 
-        queue_names = ['paper', 'live', 'backtest']
-        with Connection(CONN):
+            queue_names = ['paper', 'live', 'backtest']
+
             if workers_required() > 0:
                 log.info(f"{workers_required()} workers required")
                 for i in range(workers_required()):
@@ -79,47 +79,6 @@ def manage_workers():
                     multiprocessing.Process(target=Worker(queue_names).work, kwargs={'burst': True}).start()
             else:
                 time.sleep(5)
-
-
-
-# def retry_handler(job, exc_type, exc_value, traceback):
-#     job.meta.setdefault('failures', 0)
-#     job.meta['failures'] += 1
-#
-#     # Too many failures
-#     if job.meta['failures'] >= MAX_FAILURES:
-#         log.warn('job %s: failed too many times times - moving to failed queue' % job.id)
-#         job.save()
-#         return True
-#
-#     # Requeue job and stop it from being moved into the failed queue
-#     log.warn('job %s: failed %d times - retrying' % (job.id, job.meta['failures']))
-#
-#     fq = get_failed_queue()
-#     fq.quarantine(job, Exception('Some fake error'))
-#     # assert fq.count == 1
-#
-#     job.meta['failures'] += 1
-#     job.save()
-#     fq.requeue(job.id)
-#
-#     # for q_name in QUEUE_NAMES:
-#     #     q = get_queue(q_name)
-#     #     if q.name == job.origin:
-#     #         q.enqueue_job(job)
-#     #         return False
-#
-#     # Can't find queue, which should basically never happen as we only work jobs that match the given queue names and
-#     # queues are transient in rq.
-#     # log.warn('job %s: cannot find queue %s - moving to failed queue' % (job.id, job.origin))
-#     # return True
-#
-# def spawn_worker_process(queues, name=None, burst=False, allow_retry=True):
-#     worker = Worker(QUEUE_NAMES, name=name)
-#     if allow_retry:
-#         worker.push_exc_handler(retry_handler)
-#     multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
-
 
 
 
