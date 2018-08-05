@@ -6,7 +6,7 @@ import click
 import time
 from flask import current_app
 
-from app.models.user import StrategyModel
+from app.models.user import StrategyModel, User
 from app.extensions import db
 from app.settings import get_from_datastore
 
@@ -25,9 +25,15 @@ def get_queue(queue_name):
     current_app.logger.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
     return Queue(queue_name, connection=CONN)
 
+
 def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
     current_app.logger.info(f'Queueing new strat with user_id {user_id}')
     strat_model = StrategyModel.from_json(strat_json, user_id=user_id)
+
+    telegram_id = None
+    if user_id is not None:
+        user = User.query.get(user_id)
+        telegram_id = user.telegram_id
 
     if live and simulate_orders:
         q = get_queue('paper')
@@ -44,6 +50,7 @@ def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depe
         kwargs={
             'strat_json': strat_json,
             'strat_id': strat_model.uuid,
+            'telegram_id': telegram_id, # allows worker to queue notfication w/o db
             'live': live,
             'simulate_orders': simulate_orders
         },
