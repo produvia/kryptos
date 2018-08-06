@@ -61,6 +61,7 @@ class XGBOOST(MLIndicator):
         super(XGBOOST, self).__init__("XGBOOST", **kw)
         self.num_boost_rounds = None
         self.first_iteration = True
+        self.current_date = None
 
     @property
     def signals_buy(self):
@@ -80,6 +81,9 @@ class XGBOOST(MLIndicator):
 
     @property
     def signals_sell(self):
+        # TODO: Delete
+        # return False
+
         signal = False
         if CONFIG.CLASSIFICATION_TYPE == 1:
             if self.result <= 0:
@@ -96,9 +100,10 @@ class XGBOOST(MLIndicator):
 
     def calculate(self, df, **kw):
         self.idx += 1
+        self.current_date = get_datetime()
 
         if CONFIG.DEBUG:
-            print(str(self.idx) + ' - ' + str(get_datetime()))
+            self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
 
         # Dataframe size is enough to apply Machine Learning
         if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
@@ -169,10 +174,13 @@ class XGBOOST(MLIndicator):
         else:
             self.df_final.loc[df.index[-1]] = df.iloc[-1]
 
+        # TODO: log more details
         if self.signals_buy:
-            self.log.debug("Signals BUY")
+            self.log.info("buy signal")
         elif self.signals_sell:
-            self.log.debug("Signals SELL")
+            self.log.info("sell signal")
+        else:
+            self.log.info("keep signal")
 
     def analyze(self, namespace):
 

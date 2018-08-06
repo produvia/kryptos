@@ -20,6 +20,7 @@ from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
 from kryptos.settings import DEFAULT_CONFIG
+from kryptos.settings import MLConfig as CONFIG
 from kryptos.analysis import quant
 
 
@@ -81,6 +82,7 @@ class Strategy(object):
         self.viz = True
         self.quant_results = None
         self.in_job = False
+        self.position = None
 
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
@@ -311,6 +313,10 @@ class Strategy(object):
                     context.prices.index.tz = None
                     context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
                 i.calculate(context.prices)
+
+                # Checking Stop-Loss open positions (increase stop loss values or sell open position)
+                self.check_stop_loss(context)
+
         else:
             for dataset, manager in self._datasets.items():
                 manager.calculate(context)
@@ -554,7 +560,7 @@ class Strategy(object):
 
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
-            self.log.debug("Skipping signaled sell due b/c no position")
+            self.log.warn("Skipping signaled sell due b/c no position")
             return
 
         self.log.info("Making Sell Order")
@@ -563,16 +569,64 @@ class Strategy(object):
 
         self._sell_func(context)
 
+    def check_stop_loss(self, context):
+        if self.position is not None:
+            cost_basis = self.position['cost_basis']
+            amount = self.position['amount']
+            self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(
+                            amount=amount, cost_basis=cost_basis))
+            stop = self.position['stop']
+
+            target = cost_basis * (1 + CONFIG.TARGET_PRICE)
+            if context.price >= target:
+                self.log.info("Upload stop-loss position from {old_cost_basis} to {new_cost_basis}".format(
+                        old_cost_basis=self.position['cost_basis'], new_cost_basis=context.price))
+                self.position['cost_basis'] = context.price
+                self.position['stop'] = CONFIG.STOP_LOSS_UPDATED
+
+            stop_target = CONFIG.STOP_LOSS if stop is None else CONFIG.STOP_LOSS_UPDATED
+            if context.price < cost_basis * (1 - stop_target):
+                self._stop_loss_sell(context, amount)
+
+    def _stop_loss_sell(self, context, amount):
+        order(
+            asset=context.asset,
+            amount=-amount,
+            # limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+        )
+
+        profit = (context.price * amount) - (self.position['cost_basis_initial'] * amount)
+        self.log.info(
+            "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
+                amount=amount, price=context.price, profit=profit
+            )
+        )
+        self.position = None
+        context.portfolio.positions = {}
+
     def _default_buy(self, context, size=None, price=None, slippage=None):
-        if context.asset not in context.portfolio.positions:
+        if context.asset not in context.portfolio.positions and self.position is None:
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
-                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED),
+                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
             self.log.info(
                 "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
             )
+
+            self.position = dict(
+                cost_basis_initial=context.price,
+                cost_basis=context.price,
+                amount=context.ORDER_SIZE,
+                stop=None
+            )
+        else:
+            if self.position is not None:
+                self.log.warn("Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
+                                amount=context.ORDER_SIZE, cost_basis=self.position['cost_basis']))
+            else:
+                self.log.warn("Skipping signaled buy due to open position.") # TODO: explore open position
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(context.asset)
@@ -599,6 +653,7 @@ class Strategy(object):
                 amount=position.amount, price=context.price, profit=profit
             )
         )
+        self.position = None
 
     # Save the prices and analysis to send to analyze
 

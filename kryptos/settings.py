@@ -114,11 +114,16 @@ class MLConfig(object):
     MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
 
     if CLASSIFICATION_TYPE == 2:
-        THRESHOLD = 0.6 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
+        THRESHOLD = 0.5 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
 
     if CLASSIFICATION_TYPE == 3:
         PERCENT_UP = 0.015 # up signal % (if CLASSIFICATION_TYPE == 3)
         PERCENT_DOWN = 0.015 # down signal % (if CLASSIFICATION_TYPE == 3)
+
+    ## STOP LOSS STRATEGY
+    STOP_LOSS = 0.03 # Stop-Loss
+    STOP_LOSS_UPDATED = 0.02 # Stop-Loss updated when TARGET_PRICE is raised.
+    TARGET_PRICE = 0.02 # When target price is raised, we update stop-loss values. Don't take profit.
 
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     SIZE_TEST_TO_OPTIMIZE = 20 # Test dataframe size to optimize model params

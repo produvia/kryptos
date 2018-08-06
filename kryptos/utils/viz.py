@@ -80,11 +80,9 @@ def plot_percent_return(results, name=None, pos=211):
 
 
 def plot_benchmark(results, pos=211):
-
     ax = plt.subplot(pos)
     bench = results.loc[:, ["benchmark_period_return"]]
     ax.plot(bench, label="Benchmark", linestyle="--")
-    return ax
 
 
 def plot_as_points(results, column, pos, y_val=None, label=None, marker="o", color="green"):
