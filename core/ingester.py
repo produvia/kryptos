@@ -20,12 +20,6 @@ log = Logger("INGESTER")
 logger_group.add_logger(log)
 log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
 
-def get_queue(queue_name):
-    if queue_name in ['paper', 'live']:
-        return Queue(queue_name, connection=CONN)
-    return Queue(queue_name, connection=CONN)
-
-
 
 def ingest_exchange(exchange, symbol=None, start=None, end=None):
     exchange_bundle = ExchangeBundle(exchange)
@@ -96,7 +90,7 @@ def queue_ingest(exchange, symbol=None, start=None, end=None):
     else:
         log.warn(f'Queuing ingest {exchange} for {symbol}')
 
-    q = get_queue("ingest")
+    q = Queue('ingest', connection=CONN)
     return q.enqueue(load.ingest_exchange, args=(exchange, symbol, start, end))
 
 
