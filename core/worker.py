@@ -61,11 +61,11 @@ def manage_workers():
         log.info('Starting worker for BACKTEST queue')
         multiprocessing.Process(target=Worker(['backtest'],).work).start()
 
-        log.info('Starting worker for PAPER/LIVE queues')
-        multiprocessing.Process(target=Worker(['paper', 'live']).work).start()
+        log.info('Starting worker for PAPER queues')
+        multiprocessing.Process(target=Worker(['paper']).work).start()
 
-
-
+        log.info('Starting worker for LIVE queues')
+        multiprocessing.Process(target=Worker(['live']).work).start()
 
         # create paper/live queues when needed
         while True:
