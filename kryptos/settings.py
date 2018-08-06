@@ -99,18 +99,18 @@ class TAConfig(object):
     STOCH_OVERSOLD = 20
 
 
-# Machine Learning Settings
+## Machine Learning Settings
 class MLConfig(object):
 
     DEBUG = True
 
-    # Machine Learning General Settings
+    ## MACHINE LEARNING GENERAL SETTINGS
     """
         1 - Regression
         2 - Binary Classification (DOWN / UP)
         3 - Multiclass Classification (DOWN / KEEP / UP)
     """
-    CLASSIFICATION_TYPE = 2
+    CLASSIFICATION_TYPE = 1
     MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
 
     if CLASSIFICATION_TYPE == 2:
@@ -120,16 +120,18 @@ class MLConfig(object):
         PERCENT_UP = 0.015 # up signal % (if CLASSIFICATION_TYPE == 3)
         PERCENT_DOWN = 0.015 # down signal % (if CLASSIFICATION_TYPE == 3)
 
-    # Hyper parameters
+    ## MODEL HYPER PARAMETERS OPTIMIZATION
     SIZE_TEST_TO_OPTIMIZE = 20 # Test dataframe size to optimize model params
     N_HYPEROPT_EVALS = 250 # Number of evaluations to hyperopt
     OPTIMIZE_PARAMS = False # OPTIMIZE HYPER MODEL PARAMS
     ITERATIONS_PARAMS_OPTIMIZE = 30 # Number of iterations to optimize model params
 
-    # Feature Selection
+    ## FEATURE SELECTION
     PERFORM_FEATURE_SELECTION = True # APPLY FEATURE SELECTION
     ITERATIONS_FEATURE_SELECTION = 10 # Number of iterations to perform feature selection
     TYPE_FEATURE_SELECTION = 'embedded' # https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
+
+    ## FEATURE ENGINEERING
 
     # Feature Engineering: dates
     FE_DATES = True # True to add dates feature engineering
@@ -167,11 +169,14 @@ class MLConfig(object):
     # Feature Engineering: utils
     FE_UTILS = True
 
+    ## CHECKS
+
     # Check if size test dataframe is less than total dataframe
     assert SIZE_TEST_TO_OPTIMIZE < MIN_ROWS_TO_ML
 
     # Check if min rows is less than dataframe size.
     assert MIN_ROWS_TO_ML <= DEFAULT_CONFIG['BARS']
 
-    # Check if threshold is in range [0,1]
-    assert THRESHOLD <= 1.0 and THRESHOLD >= 0.0
+    if CLASSIFICATION_TYPE == 2:
+        # Check if threshold is in range [0,1]
+        assert THRESHOLD <= 1.0 and THRESHOLD >= 0.0

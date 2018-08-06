@@ -108,7 +108,7 @@ class XGBOOST(MLIndicator):
 
                 # Prepare data to machine learning problem
                 if CONFIG.CLASSIFICATION_TYPE == 1:
-                    pass
+                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
                 elif CONFIG.CLASSIFICATION_TYPE == 2:
                     X_train_optimize, y_train_optimize, X_test_optimize = labeling_binary_data(df, to_optimize=True)
                 elif CONFIG.CLASSIFICATION_TYPE == 3:
@@ -152,7 +152,12 @@ class XGBOOST(MLIndicator):
             self.result = xgboost_test(model, X_test)
 
             # Results
-            self.df_results.loc[get_datetime()] = self.result
+            if CONFIG.CLASSIFICATION_TYPE == 1:
+                self.df_results.loc[get_datetime()] = 1 if self.result > 0 else 0
+            elif CONFIG.CLASSIFICATION_TYPE == 2 or CONFIG.CLASSIFICATION_TYPE == 3:
+                self.df_results.loc[get_datetime()] = self.result
+            else:
+                raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
         else:
             self.result = 0
@@ -172,7 +177,9 @@ class XGBOOST(MLIndicator):
     def analyze(self, namespace):
 
         if CONFIG.CLASSIFICATION_TYPE == 1:
-            pass
+            # Post processing of target column
+            self.df_final['target'] = 0 # 'KEEP - DOWN'
+            self.df_final.loc[self.df_final.price < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
         elif CONFIG.CLASSIFICATION_TYPE == 2:
             # Post processing of target column
             self.df_final['target'] = 0 # 'KEEP - DOWN'
@@ -182,6 +189,8 @@ class XGBOOST(MLIndicator):
             self.df_final['target'] = 0 # 'KEEP'
             self.df_final.loc[self.df_final.price + (self.df_final.price * CONFIG.PERCENT_UP) < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
             self.df_final.loc[self.df_final.price - (self.df_final.price * CONFIG.PERCENT_DOWN) >= self.df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
+        else:
+            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
         if DEFAULT_CONFIG['DATA_FREQ'] == 'daily':
             self.results_pred = self.df_results.pred.astype('int').values

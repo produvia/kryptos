@@ -12,14 +12,9 @@ def labeling_regression_data(df, to_optimize=False):
     """
     # Prepare labelling classification problem (1=UP / 2=DOWN)
     df['last_price'] = df['price'].shift(1)
-    df['target_past'] = 0 # 'KEEP'
-    df.loc[df.last_price < df.price, 'target_past'] = 1 # 'UP'
-    df.loc[df.last_price >= df.price, 'target_past'] = 2 # 'DOWN'
     df = df.dropna()
-    df['diff_past'] = df['price'] - df['last_price']
-    df['target'] = df['diff_past'].shift(-1).copy()
-
-    # TODO: check out target column
+    df['target_past'] = df['price'] - df['last_price']
+    df['target'] = df['target_past'].shift(-1).copy()
 
     # Prepare data structure X and y
     excl = ['target', 'pred', 'id']
