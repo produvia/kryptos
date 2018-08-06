@@ -108,7 +108,7 @@ class DockerDevConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI') or get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
-    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'dev')
+    REDIS_PASSWORD = os.getenv('REDIS_PASSWORD') or get_from_datastore('REDIS_PASSWORD', 'dev')
 
     USER_ENABLE_CONFIRM_EMAIL = False
     USER_SEND_REGISTERED_EMAIL = True
