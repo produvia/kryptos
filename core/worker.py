@@ -41,11 +41,9 @@ def run_strat(strat_json, strat_id, telegram_id=None, live=False, simulate_order
 
     return result_df.to_json()
 
-
-def workers_required():
-    paper_q, live_q = get_queue('paper'), get_queue('live')
-    total_queued = len(paper_q) + len(live_q)
-    return total_queued
+def workers_required(queue_name):
+    q = get_queue(queue_name)
+    return len(q)
 
 
 
@@ -68,18 +66,17 @@ def manage_workers():
 
 
 
+
         # create paper/live queues when needed
         while True:
+            for q in QUEUE_NAMES:
+                required = workers_required(q)
+                log.info(f"{required} workers required for {q}")
+                for i in range(required):
+                    log.info(f"Creating {q} worker")
+                    multiprocessing.Process(target=Worker([q]).work, kwargs={'burst': True}).start()
 
-            queue_names = ['paper', 'live', 'backtest']
-
-            if workers_required() > 0:
-                log.info(f"{workers_required()} workers required")
-                for i in range(workers_required()):
-                    log.info("Creating live.paper worker")
-                    multiprocessing.Process(target=Worker(queue_names).work, kwargs={'burst': True}).start()
-            else:
-                time.sleep(5)
+            time.sleep(5)
 
 
 
