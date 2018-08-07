@@ -26,7 +26,7 @@ services:
       - db
     # # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
-    command: ['flask', 'run', '--host=0.0.0.0', '--port=8080']
+    command: ['honcho', 'start', 'dev', 'updater', '--no-prefix']
   worker:
     image: kryptos-local-worker
     container_name: worker
@@ -42,6 +42,7 @@ services:
       - REDIS_PASSWORD=password
 
     # entrypoint: ['python', 'worker.py']
+    command: ['honcho', 'start', 'worker', 'ingest', '--no-prefix']
     depends_on:
     - redis
 

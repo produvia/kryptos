@@ -30,4 +30,4 @@ COPY . /app
 
 WORKDIR /app
 
-ENTRYPOINT gunicorn -b :8080 autoapp:app
+ENTRYPOINT honcho start app updater
