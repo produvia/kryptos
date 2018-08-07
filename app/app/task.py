@@ -12,11 +12,9 @@ from app.settings import get_from_datastore
 
 
 QUEUE_NAMES = ['paper', 'live', 'backtest']
-
 REDIS_HOST, REDIS_PORT = os.getenv('REDIS_HOST'), os.getenv('REDIS_PORT')
 
-# env var set in app creation after fetchign from datastore
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD') or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 

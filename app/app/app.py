@@ -57,8 +57,6 @@ def create_app(config_object=None):
     register_extensions(app)
     register_blueprints(app)
 
-    # TODO cleaner way
-    os.environ['REDIS_PASSWORD'] = app.config['REDIS_PASSWORD']
     return app
 
 
