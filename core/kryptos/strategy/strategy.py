@@ -648,7 +648,7 @@ class Strategy(object):
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
         if context.asset not in context.portfolio.positions and self.position is None:
-        self.log.info('Using default buy function')
+            self.log.info('Using default buy function')
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
