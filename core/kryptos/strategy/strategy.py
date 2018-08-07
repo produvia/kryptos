@@ -12,10 +12,11 @@ from rq import get_current_job
 
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
+from catalyst.exchange.utils import stats_utils
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 from ccxt.base import errors as ccxt_errors
 
-from kryptos.utils import load, viz, outputs
+from kryptos.utils import load, viz, outputs, tasks
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
@@ -41,6 +42,9 @@ class StratLogger(logbook.Logger):
             job = get_current_job()
             job.meta['output'] = record.msg
             job.save_meta()
+
+            if self.strat.telegram_id and record.level_name == 'NOTICE':
+                tasks.queue_notification(record.msg, self.strat.telegram_id)
 
 
 class Strategy(object):
@@ -88,6 +92,9 @@ class Strategy(object):
         self.quant_results = None
         self.in_job = False
         self.position = None
+
+        self.telegram_id = None
+
 
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
@@ -376,6 +383,15 @@ class Strategy(object):
 
         self._extra_handle(context, data)
         self._count_signals(context, data)
+
+        if context.frame_stats:
+            pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
+            job.meta['output'] = pretty_output
+            self.log.info(pretty_output)
+            # queue_update(self.id, result_json=json.loads(context.frame_stats))
+
+            if self.telegram_id:
+                tasks.queue_notification(pretty_output, self.telegram_id)
 
     @property
     def total_plots(self):
