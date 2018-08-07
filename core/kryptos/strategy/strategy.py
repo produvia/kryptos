@@ -293,6 +293,7 @@ class Strategy(object):
         # The frequency attribute determine the bar size. We use this convention
         # for the frequency alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+        self.log.debug('Fetching history')
         context.prices = data.history(
             context.asset,
             bar_count=context.BARS,
@@ -341,6 +342,10 @@ class Strategy(object):
 
         except ccxt_errors.ExchangeNotAvailable:
             self.log.error('Exchange API is currently unavailable, skipping trading step')
+            return
+
+        except ccxt_errors.DDoSProtection:
+            self.log.error('Hit Rate limit, skipping trade step')
             return
 
         if self._ml_models:
@@ -407,8 +412,8 @@ class Strategy(object):
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
         ending_cash = results.cash[-1]
-        self.log.info('Ending cash: ${}'.format(ending_cash))
-        self.log.info('Completed for {} trading periods'.format(context.i))
+        self.log.notice('Ending cash: ${}'.format(ending_cash))
+        self.log.notice('Completed for {} trading periods'.format(context.i))
         try:
             if self.viz:
                 self._make_plots(context, results)
@@ -486,7 +491,7 @@ class Strategy(object):
         params = obj.get('params', {})
 
         kwargs = self._get_kw_from_signal_params(params, func)
-        self.log.info('Calculating {}'.format(func.__name__))
+        self.log.debug('Calculating {}'.format(func.__name__))
         return func(**kwargs)
 
     def _calculate_custom_signals(self, context, data):
@@ -494,14 +499,14 @@ class Strategy(object):
         for i in self._buy_signal_objs:
             if self._construct_signal(i):
                 buys += 1
-                self.log.debug("Custom: BUY")
+                self.log.debug("Custom Signal: BUY")
             else:
                 neutrals += 1
 
         for i in self._sell_signal_objs:
             if self._construct_signal(i):
                 sells += 1
-                self.log.debug("Custom: SELL")
+                self.log.debug("Custom Signal: SELL")
             else:
                 neutrals += 1
 
@@ -515,14 +520,12 @@ class Strategy(object):
 
         for f in self._signal_buy_funcs:
             if f(context, data):
-                self.log.debug("Custom: BUY")
                 buys += 1
             else:
                 neutrals += 1
 
         for f in self._signal_sell_funcs:
             if f(context, data):
-                self.log.debug("Custom: SELL")
                 sells += 1
             else:
                 neutrals += 1
@@ -570,10 +573,10 @@ class Strategy(object):
             "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
         )
         if buys > sells:
-            self.log.debug("Signaling to buy")
+            self.log.notice("Signaling to buy")
             self.make_buy(context)
         elif sells > buys:
-            self.log.debug("Signaling to sell")
+            self.log.notice("Signaling to sell")
             self.make_sell(context)
 
     def make_buy(self, context):
@@ -585,7 +588,7 @@ class Strategy(object):
             )
             return
 
-        self.log.info("Making Buy Order")
+        self.log.notice("Making Buy Order")
         if self._buy_func is None:
             return self._default_buy(context)
 
@@ -593,35 +596,37 @@ class Strategy(object):
 
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
-            self.log.debug("Skipping signaled sell due b/c no position")
+            self.log.warn("Skipping signaled sell due b/c no position")
             return
 
-        self.log.info("Making Sell Order")
+        self.log.notice("Making Sell Order")
         if self._sell_func is None:
             return self._default_sell(context)
 
         self._sell_func(context)
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
+        self.log.info('Using default buy function')
         if context.asset not in context.portfolio.positions:
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
                 limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED),
             )
-            self.log.info(
+            self.log.notice(
                 "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
             )
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
+        self.log.info('Using default sell function')
         position = context.portfolio.positions.get(context.asset)
         if position == 0:
-            self.log.debug("Position Zero")
+            self.log.warn("Position Zero, skipping sell")
             return
 
         # Cost Basis
         cost_basis = position.cost_basis
-        self.log.info(
+        self.log.notice(
             "Holdings: {amount} @ {cost_basis}".format(
                 amount=position.amount, cost_basis=cost_basis
             )
@@ -633,7 +638,7 @@ class Strategy(object):
             target=0,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
-        self.log.info(
+        self.log.notice(
             "Sold {amount} @ {price} Profit: {profit}".format(
                 amount=position.amount, price=context.price, profit=profit
             )
@@ -663,8 +668,7 @@ class Strategy(object):
                 self.run_backtest()
 
         except PricingDataNotLoadedError as e:
-            self.log.error('Failed to run stratey Requires data ingestion')
-            self.log.warn(f"Starting ingest job for {self.trading_info['EXCHANGE']}")
+            self.log.critical('Failed to run stratey Requires data ingestion')
             raise e
             # from kryptos.worker import ingester
             # ingester.run_ingest(self.trading_info['EXCHANGE'], symbol=self.trading_info['ASSET'])
@@ -688,7 +692,7 @@ class Strategy(object):
 
 
     def run_live(self, simulate_orders=True):
-        self.log.info('Running live trading, suimulating orders: {}'.format(simulate_orders))
+        self.log.notice('Running live trading, suimulating orders: {}'.format(simulate_orders))
         self.is_live = True
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],

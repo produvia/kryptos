@@ -1,3 +1,4 @@
+import os
 import json
 import redis
 from rq import Queue, Connection, Worker
@@ -12,15 +13,16 @@ from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
 
-host = 'redis' if in_docker() else 'localhost'
-CONN = redis.Redis(host=host, port=6379)
 
+REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
+REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
 
-from logbook.compat import redirect_logging
-redirect_logging()
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 log = logbook.Logger('WorkerManager')
 logger_group.add_logger(log)
+log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
 
 def get_queue(queue_name):
     if queue_name in ['paper', 'live']:
@@ -58,18 +60,18 @@ def manage_workers():
         log.info('Starting initial workers')
 
         log.info('Starting worker for BACKTEST queue')
-        multiprocessing.Process(target=Worker(['backtest']).work).start()
+        multiprocessing.Process(target=Worker(['backtest'],).work).start()
 
         log.info('Starting worker for PAPER/LIVE queues')
         multiprocessing.Process(target=Worker(['paper', 'live']).work).start()
 
 
 
-    # create paper/live queues when needed
-    while True:
+        # create paper/live queues when needed
+        while True:
 
-        queue_names = ['paper', 'live']
-        with Connection(CONN):
+            queue_names = ['paper', 'live', 'backtest']
+
             if workers_required() > 0:
                 log.info(f"{workers_required()} workers required")
                 for i in range(workers_required()):
@@ -77,10 +79,6 @@ def manage_workers():
                     multiprocessing.Process(target=Worker(queue_names).work, kwargs={'burst': True}).start()
             else:
                 time.sleep(5)
-
-
-
-
 
 
 

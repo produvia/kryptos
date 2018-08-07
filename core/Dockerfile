@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.6 as base
 
 # install xgboost library
 RUN git clone --recursive https://github.com/dmlc/xgboost \
@@ -15,12 +15,23 @@ RUN apt-get -y update \
     && make install \
     && rm -rf ta-lib*
 
+FROM base as builder
+
+RUN mkdir /install
+WORKDIR /install
 # copy only the requirements to prevent rebuild for any changes
-COPY requirements.txt /core/requirements.txt
+COPY requirements.txt /requirements.txt
 
 # ensure numpy installed before ta-lib, matplotlib, etc
 RUN pip install 'numpy==1.14.3'
-RUN pip install -r /core/requirements.txt
+RUN pip install -r /requirements.txt
+
+
+FROM builder
+
+COPY --from=builder /root/.cache /root/.cache
+COPY --from=builder /requirements.txt /core/requirements.txt
+RUN pip install -r /core/requirements.txt && rm -rf /root/.cache
 
 
 # Above lines represent the dependencies
@@ -35,4 +46,6 @@ COPY . /core
 WORKDIR /core
 RUN pip install -e .
 
-WORKDIR /core/kryptos/worker
+EXPOSE 8080
+WORKDIR /core
+ENTRYPOINT honcho start -f procfile worker monitor

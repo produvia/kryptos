@@ -1,5 +1,4 @@
-FROM tiangolo/uwsgi-nginx-flask:python3.6
-
+FROM python:3.6
 
 #TODO remove the need for ta-lib
 # install TA_LIB library and other dependencies
@@ -29,12 +28,6 @@ COPY . /app
 ## all app code needs to be in /app/app
 ## uwsgi needs to be in /app
 
-
-# NGINX config
-ENV UWSGI_INI /app/uwsgi.ini
-
 WORKDIR /app
 
-ENV REDIS_HOST REDIS
-
-EXPOSE 80
+ENTRYPOINT gunicorn -b :8080 autoapp:app

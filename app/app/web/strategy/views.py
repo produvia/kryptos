@@ -110,6 +110,7 @@ def build_signals():
     if not strat_dict.get('trading', {}):
         return redirect(url_for('strategy.build_strategy'))
 
+    live, simulate_orders = strat_dict['live'], strat_dict['simulate_orders']
     # get indicators from session
     # to use as param options
     # submit strat if no indicators chosen
