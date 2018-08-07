@@ -21,6 +21,7 @@ gunicorn = "*"
 shortuuid = "*"
 honcho = "*"
 google-cloud-datastore = "*"
+logbook = "*"
 
 [dev-packages]
 black = "==18.4a4"
