@@ -6,9 +6,15 @@ import logbook
 
 from telegram import Bot
 
+from app.settings import get_from_datastore
 log = logbook.Logger('UPDATER')
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+CONFIG_ENV = os.getenv('CONFIG_ENV')
+
+if CONFIG_ENV == 'dev':
+    TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'dev')
+else:
+    TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
 
 bot = Bot(TELEGRAM_TOKEN)
 

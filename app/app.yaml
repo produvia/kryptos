@@ -13,6 +13,7 @@ env_variables:
     # REDIS_PORT: 6379
     REDIS_HOST: redis-19779.c1.us-central1-2.gce.cloud.redislabs.com
     REDIS_PORT: 19779
+    CONFIG_ENV: 'production'
 
 beta_settings:
     cloud_sql_instances: kryptos-205115:us-west1:kryptos-db

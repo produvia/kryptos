@@ -20,7 +20,7 @@ services:
       - FLASK_APP=autoapp.py
       - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
       - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
-
+      - CONFIG_ENV=dev
     depends_on:
       - redis
       - db
