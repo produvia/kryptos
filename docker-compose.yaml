@@ -2,48 +2,71 @@ version: '3'
 services:
   web:
     container_name: web
-    image: kryptos
+    image: kryptos-local-app
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile
     ports:
-     - "80:80"
+     - "8080:8080"
+    volumes:
+     - ./app:/app
     environment:
-      - FLASK_DEBUG=0
+      - FLASK_DEBUG=1
+      - FLASK_ENV=docker-dev
+      # uses docker redis and db, but fetches other credentials from datastore
       - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
+      - FLASK_APP=autoapp.py
+      - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
 
-    networks:
-      - kryptos-net
     depends_on:
       - redis
-    # Infinite loop, to keep it alive, for debugging
+      - db
+    # # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
-    # command: ['flask', 'run']
-
+    command: ['flask', 'run', '--host=0.0.0.0', '--port=8080']
   worker:
-    image: kryptos
+    image: kryptos-local-worker
     container_name: worker
     build:
-      context: .
+      context: ./core
       dockerfile: Dockerfile
     volumes:
       - catalyst:/root/.catalyst
+      - ./core:/core
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
 
-    entrypoint: ['python', 'kryptos/worker/worker.py']
-    networks:
-      - kryptos-net
-
+    # entrypoint: ['python', 'worker.py']
     depends_on:
     - redis
+
+
+  db:
+    container_name: db
+    image: postgres:10.4-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: 'kryptos'
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+     # expose port 5433 instead of default
+     # in case postgres already on host machine
+    ports:
+      - "5433:5432"
 
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
-    networks:
-      - kryptos-net
+    command: redis-server --requirepass password
 
-networks:
-  kryptos-net:
 
 volumes:
   catalyst:
+  postgres_data:

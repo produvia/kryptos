@@ -1,0 +1,122 @@
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.13/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" ></script>
+
+</head>
+
+{% extends "base.html" %}
+{% block content %}
+<div id="app">
+    <h1 class="text-center">[[stratInfo.meta.config.name]]</h1>
+
+    <div class="container text-center justify-left">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Status: [[stratInfo.status]]
+
+                </h4>
+            <div class="card-text">
+                Strategy ID: <small>[[strat_id]]</small> <br>
+                Name: [[stratInfo.meta.config.name]] <br>
+                Job started at: [[stratInfo.started_at || '']] <br>
+
+            </div>
+
+            </div>
+        </div>
+    </div>
+
+<div class="container-fluid row">
+    <div class="col-sm-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Config
+                </h4>
+            <div class="card-text">
+                <pre>[[stratInfo.meta.config || '']]</pre>
+            </div>
+
+            </div>
+        </div>
+        </div>
+    <div class="col-sm-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Logs
+                </h4>
+            <div class="card-text">
+                    Date: <pre>[[stratInfo.meta.date || ""]]</pre> <br>
+                    Output: <pre>[[stratInfo.meta.output]]</pre> <br>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">
+                    Result
+                </h4>
+            <div class="card-text">
+                <pre>[[stratInfo.result || '']]</pre> <br>
+            </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+
+
+</div>
+<script>
+new Vue({
+  el: '#app',
+  data: {
+    strat_id: window.location.href.substr(window.location.href.lastIndexOf('/') + 1),
+    stratInfo: {
+      meta: {}
+    }
+  },
+  delimiters: ['[[',']]'],
+  methods: {
+    startPolling () {
+      let self = this
+      setInterval(function () {
+        self.getStatus()
+      }, 3000)
+    },
+    getStatus () {
+      const path = '/api/monitor'
+      return axios.get(path, {
+          // crossdomain: true,
+        params: {
+          strat_id: this.strat_id,
+          queue_name: null // TODO change to route prop
+        }
+      })
+      .then(response => {
+        this.stratInfo = response.data.strat_info
+        console.log(response.data.stratInfo)
+      })
+      .catch(error => {
+        console.log(error)
+      })
+    },
+  },
+  mounted () {
+    this.getStatus()
+    .then(resp => {
+      this.startPolling()
+    })
+
+  }
+})
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+
+
+     {% block content %}
+
+     <div class="jumbotron">
+         <div class="text-center">
+             <h1 class="display-4">Kryptos AI</h1>
+             <p class="lead">A virtual investment assistant that manages your cryptocurrency portfolio</p>
+             <hr class="my-4">
+             <p>Join the Cryptocurrency Revolution Today</p>
+
+            {% if current_user.is_authenticated %}
+                <a class="btn btn-primary btn-md "href={{ url_for("account.manage_exchanges") }}>Manage Exchanges</a>
+                <a class="btn btn-primary btn-md "href={{ url_for("strategy.build_strategy") }}>Build A Strategy</a>
+                <a class="btn btn-primary btn-md "href={{ url_for("account.user_strategies") }}>View Strategies</a>
+            {% else %}
+                <a class="btn btn-primary btn-md" href={{ url_for('user.register') }} role="button">Register</a>
+                <a class="btn btn-primary btn-md" href={{ url_for('user.login') }}>{%trans%}Sign in{%endtrans%}</a>
+
+            {% endif %}
+        </div>
+
+        <div class=" container text-center">
+
+             <h3 class="display-3">
+                Start Chatting
+                 <a href="{{ 'https://t.me/' + config['TELEGRAM_BOT']}}"><i class="fab fa-telegram"></i></a>
+             </h3>
+
+         </div>
+     </div>
+
+{% endblock %}

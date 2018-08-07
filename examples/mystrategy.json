@@ -1,0 +1,55 @@
+{
+   "trading": {
+      "EXCHANGE": "bitfinex",
+      "ASSET": "btc_usd",
+      "DATA_FREQ": "daily",
+      "HISTORY_FREQ": "1d",
+      "CAPITAL_BASE": 5000,
+      "BASE_CURRENCY": "usd",
+      "START": "2016-10-10",
+      "END": "2018-3-28"
+   },
+   "datasets": [],
+   "indicators": [
+      {
+         "name": "MACDFIX",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "MACDFIX",
+         "params": {
+            "signalperiod": 4
+         }
+      },
+      {
+         "name": "SMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "SMA",
+         "params": {
+            "timeperiod": 30
+         }
+      },
+      {
+         "name": "EMA",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "EMA",
+         "params": {
+            "timeperiod": 30
+         }
+      },
+      {
+         "name": "BBANDS",
+         "symbol": "btc_usd",
+         "dataset": null,
+         "label": "BBANDS",
+         "params": {
+            "timeperiod": 5,
+            "nbdevup": 2,
+            "nbdevdn": 2,
+            "matype": 0
+         }
+      }
+   ],
+   "signals": {}
+}

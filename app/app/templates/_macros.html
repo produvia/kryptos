@@ -1,0 +1,32 @@
+{% from "flask_user/_macros.html" import render_field, render_checkbox_field, render_submit_field, render_form %}
+
+
+{% macro render_form(form) -%}
+<form action="" method="POST" class="form" role="form">
+    {{ form.hidden_tag() }}
+    {% for field in form %}
+        {% if not field.flags.hidden %}
+            {% if field.type=='SubmitField' %}
+                {{ render_submit_field(field, tabindex=loop.index*10) }}
+            {% else %}
+                {{ render_field(field, tabindex=loop.index*10) }}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+</form>
+<br/>
+{%- endmacro %}
+
+{% macro input(name, value='', type='text', size=20) -%}
+    <input type="{{ type }}" name="{{ name }}" value="{{
+        value|e }}" size="{{ size }}">
+{%- endmacro %}
+
+
+{% macro render_submit_as_btn(field, label=None, tabindex=None) -%}
+    {% if not label %}{% set label=field.label.text %}{% endif %}
+    {#<button type="submit" class="btn btn-default btn-primary" name={{label}}>{{label}}</button>#}
+    <input type="submit" class="btn btn-default btn-primary" value="{{label}}" name="{{field.name}}"
+           {% if tabindex %}tabindex="{{ tabindex }}"{% endif %}
+           >
+{%- endmacro %}
