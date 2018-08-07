@@ -71,7 +71,7 @@ def manage_workers():
         while True:
             for q in QUEUE_NAMES:
                 required = workers_required(q)
-                log.info(f"{required} workers required for {q}")
+                log.debug(f"{required} workers required for {q}")
                 for i in range(required):
                     log.info(f"Creating {q} worker")
                     multiprocessing.Process(target=Worker([q]).work, kwargs={'burst': True}).start()
