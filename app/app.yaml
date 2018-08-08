@@ -4,7 +4,6 @@ service: default
 runtime_config:
   python_version: 3
 
-entrypoint: honcho start app
 env_variables:
     FLASK_DEBUG: 0
     FLASK_ENV: 'prod'

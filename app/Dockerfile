@@ -29,3 +29,4 @@ COPY . /app
 ## uwsgi needs to be in /app
 
 WORKDIR /app
+ENTRYPOINT honcho start app updater
