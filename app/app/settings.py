@@ -4,8 +4,8 @@
 See https://github.com/sloria/cookiecutter-flask for configuration options with other flask-extensions
 """
 import os
-from google.auth import app_engine
 from google.cloud import datastore
+
 
 ds = datastore.Client()
 
@@ -16,7 +16,6 @@ def get_from_datastore(config_key, env):
     product_key = ds.key('Settings', env)
     entity = ds.get(product_key)
 
-    # print(value['SQLALCHEMY_DATABASE_URI'])
     return entity[config_key]
 
 
