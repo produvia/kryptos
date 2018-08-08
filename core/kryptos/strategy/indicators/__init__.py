@@ -1,3 +1,4 @@
+import pandas as pd
 import logbook
 from rq import get_current_job
 
@@ -56,6 +57,8 @@ class AbstractIndicator(object):
         self.outputs = None
         self.current_date = None
         self.result = None
+        self.df_results = pd.DataFrame(columns=['pred'])
+        self.df_final = pd.DataFrame()
         self.results_pred = []
         self.results_real = []
         self.idx = -1

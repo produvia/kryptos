@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import talib as ta
 from datetime import datetime
+from ta import add_all_ta_features
 
 from kryptos.settings import DEFAULT_CONFIG_FILE
 
@@ -38,6 +39,28 @@ def add_dates_features(df):
     # TODO: only if minute frequency:
     df['date_hour'] = df.timestamp.dt.hour
     df['date_minute'] = df.timestamp.dt.minute
+    return df
+
+
+def add_ta_features2(df, ta_settings):
+    """Add technial analysis features from typical financial dataset that
+    typically include columns such as "open", "high", "low", "price" and
+    "volume".
+
+    http://github.com/bukosabino/ta
+
+    Args:
+        df(pandas.DataFrame): original DataFrame.
+        ta_settings(dict): configuration.
+    Returns:
+        pandas.DataFrame: DataFrame with new features included.
+    """
+
+    if ta_settings:
+        # Add ta features filling NaN values
+        df = add_all_ta_features(df, "open", "high", "low", "price", "volume",
+                                    fillna=True)
+
     return df
 
 

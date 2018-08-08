@@ -2,16 +2,50 @@ import pandas as pd
 pd.options.mode.chained_assignment = None # Disable chained assignments
 
 from kryptos.settings import MLConfig as CONFIG
-from kryptos.ml.feature_engineering import add_ta_features, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
+from kryptos.ml.feature_engineering import add_ta_features, add_ta_features2, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
 from kryptos.utils import merge_two_dicts
 from kryptos.ml.models import xgb
 
-def preprocessing_binary_data(df):
-    """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
-    learning problem.
+
+def labeling_regression_data(df, to_optimize=False):
+    """Preprocessing data to resolve a regression machine learning problem.
     """
-    # TODO:
-    pass
+    # Prepare labelling classification problem (1=UP / 2=DOWN)
+    df['last_price'] = df['price'].shift(1)
+    df = df.dropna()
+    df['target_past'] = df['price'] - df['last_price']
+    df['target'] = df['target_past'].shift(-1).copy()
+
+    # Prepare data structure X and y
+    excl = ['target', 'pred', 'id']
+    cols = [c for c in df.columns if c not in excl]
+    X = df[cols]
+    y = df['target']
+
+    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    return X_train, y_train, X_test
+
+
+def labeling_binary_data(df, to_optimize=False):
+    """Preprocessing data to resolve a multiclass (UP, DOWN) machine learning
+    problem.
+    """
+    # Prepare labelling classification problem (1=UP / 2=DOWN)
+    df['last_price'] = df['price'].shift(1)
+    df['target_past'] = 0 # 'KEEP & DOWN'
+    df.loc[df.last_price < df.price, 'target_past'] = 1 # 'UP'
+    df = df.dropna()
+    df['diff_past'] = df['price'] - df['last_price']
+    df['target'] = df['target_past'].astype('int').shift(-1).copy()
+
+    # Prepare data structure X and y
+    excl = ['target', 'pred', 'id']
+    cols = [c for c in df.columns if c not in excl]
+    X = df[cols]
+    y = df['target']
+
+    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    return X_train, y_train.astype('int'), X_test
 
 
 def clean_params(params):
@@ -23,28 +57,34 @@ def clean_params(params):
     return ml_params
 
 
-def preprocessing_multiclass_data(df, to_optimize=False):
+def labeling_multiclass_data(df, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
     learning problem.
     """
-
-    # Prepare signal classification problem (0=KEPP / 1=UP / 2=DOWN)
+    # Prepare labelling classification problem (0=KEPP / 1=UP / 2=DOWN)
     df['last_price'] = df['price'].shift(1)
     df['target_past'] = 0 # 'KEEP'
     df.loc[df.last_price + (df.last_price * CONFIG.PERCENT_UP) < df.price, 'target_past'] = 1 # 'UP'
-    df.loc[df.last_price - (df.last_price * CONFIG.PERCENT_DOWN) > df.price, 'target_past'] = 2 # 'DOWN'
-    df['target'] = df['target_past'].shift(1).copy()
+    df.loc[df.last_price - (df.last_price * CONFIG.PERCENT_DOWN) >= df.price, 'target_past'] = 2 # 'DOWN'
     df = df.dropna()
-    df['target'] = df['target'].astype('int')
+    df['diff_past'] = df['price'] - df['last_price']
+    df['target'] = df['target_past'].astype('int').shift(-1).copy()
 
+    # Prepare data structure X and y
     excl = ['target', 'pred', 'id']
     cols = [c for c in df.columns if c not in excl]
-    y = df['target']
     X = df[cols]
+    y = df['target']
 
+    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    return X_train, y_train.astype('int'), X_test
+
+
+def _preprocessing_feature_engineering(X, y, to_optimize):
     if not to_optimize:
+
         # Adding different features (feature engineering)
-        X = add_fe(X)
+        X = _add_fe(X)
 
         # Drop nan values after feature engineering process
         X, y = _dropna_after_fe(X, y)
@@ -55,7 +95,7 @@ def preprocessing_multiclass_data(df, to_optimize=False):
     return X_train, y_train, X_test
 
 
-def add_fe(df):
+def _add_fe(df):
 
     df['timestamp'] = df.index
 
@@ -70,6 +110,10 @@ def add_fe(df):
     # Add ta-lib features
     if CONFIG.FE_TA['enabled']:
         df = add_ta_features(df, CONFIG.FE_TA)
+
+    # Add ta bukosabino library features
+    if CONFIG.FE_TA2:
+        df = add_ta_features2(df, CONFIG.FE_TA2)
 
     # Add fbprophet features
     if CONFIG.FE_FBPROPHET['enabled']:
