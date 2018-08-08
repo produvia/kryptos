@@ -48,4 +48,3 @@ RUN pip install -e .
 
 EXPOSE 8080
 WORKDIR /core
-ENTRYPOINT honcho start worker monitor ingest
