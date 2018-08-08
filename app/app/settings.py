@@ -7,10 +7,11 @@ import os
 from google.cloud import datastore
 
 
-ds = datastore.Client()
+
 
 
 def get_from_datastore(config_key, env):
+    ds = datastore.Client()
     print('Fetching {}'.format(config_key))
 
     product_key = ds.key('Settings', env)

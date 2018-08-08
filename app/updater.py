@@ -12,15 +12,18 @@ log = logbook.Logger('UPDATER')
 CONFIG_ENV = os.getenv('CONFIG_ENV')
 
 if CONFIG_ENV == 'dev':
+    log.warn('Using dev telegram token')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'dev')
 else:
+    log.warn('Using production telegram token')
     TELEGRAM_TOKEN = get_from_datastore('TELEGRAM_TOKEN', 'production')
+
 
 bot = Bot(TELEGRAM_TOKEN)
 
 REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
