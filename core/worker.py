@@ -25,8 +25,6 @@ logger_group.add_logger(log)
 log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
 
 def get_queue(queue_name):
-    if queue_name in ['paper', 'live']:
-        return Queue(queue_name, connection=CONN)
     return Queue(queue_name, connection=CONN)
 
 
