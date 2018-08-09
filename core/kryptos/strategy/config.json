@@ -1,13 +1,15 @@
 {
-   "EXCHANGE": "bitfinex",
-   "ASSET": "btc_usd",
-   "DATA_FREQ": "daily",
-   "HISTORY_FREQ": "1d",
-   "CAPITAL_BASE": 50000,
+   "EXCHANGE": "poloniex",
+   "ASSET": "btc_usdt",
+   "DATA_FREQ": "minute", "doc":"fixed value",
+   "HISTORY_FREQ": "1T", "doc": "fixed value",
+   "MINUTE_FREQ": "360", "doc":"minute interval",
+   "MINUTE_TO_OPERATE": "2", "doc":"minute to operate on range [0, MINUTE_FREQ]",
+   "CAPITAL_BASE": 20000,
    "BASE_CURRENCY": "usd",
-   "START": "2018-2-1",
-   "END": "2018-2-9",
-   "BARS": 800,
+   "START": "2018-2-8",
+   "END": "2018-2-14",
+   "BARS": 2000, "doc": "Use values > 200 if you want apply ML techniques",
    "ORDER_SIZE": 1,
    "SLIPPAGE_ALLOWED": 0.05
 }
