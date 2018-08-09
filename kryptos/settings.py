@@ -122,8 +122,7 @@ class MLConfig(object):
 
     ## STOP LOSS STRATEGY
     STOP_LOSS = 0.03 # Stop-Loss
-    STOP_LOSS_UPDATED = 0.02 # Stop-Loss updated when TARGET_PRICE is raised.
-    TARGET_PRICE = 0.02 # When target price is raised, we update stop-loss values. Don't take profit.
+    TAKE_PROFIT = 0.06 # Take-Profit
 
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     SIZE_TEST_TO_OPTIMIZE = 20 # Test dataframe size to optimize model params

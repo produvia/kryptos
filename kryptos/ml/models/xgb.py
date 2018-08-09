@@ -14,7 +14,7 @@ if CONFIG.CLASSIFICATION_TYPE == 1:
         'tree_method': 'hist',
         'grow_policy': 'depthwise',
         'min_child_weight' : 160,
-        'base_score': 0,
+        'base_score': 0.0,
         'eval_metric': 'rmse'
     }
 
@@ -45,7 +45,7 @@ FIXED_PARAMS = {
 
 OPTIMIZABLE_PARAMS = {
     'n_trees': 800,
-    'eta': 0.01, # 0.0045 0.05
+    'eta': 0.03, # 0.0045 0.05
     'max_depth': 30,
     'subsample': 1,
     'colsample_bytree': 1,

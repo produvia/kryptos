@@ -11,7 +11,7 @@ import pandas as pd
 from rq import get_current_job
 
 from catalyst import run_algorithm
-from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
+from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
 from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
 
 from kryptos.utils import load, viz, outputs
@@ -82,7 +82,6 @@ class Strategy(object):
         self.viz = True
         self.quant_results = None
         self.in_job = False
-        self.position = None
 
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
@@ -240,8 +239,6 @@ class Strategy(object):
         self._load_datasets(strat_dict)
         self._load_signals(strat_dict)
 
-
-
     def load_from_json(self, json_file):
         with open(json_file, "r") as f:
             d = json.load(f)
@@ -263,6 +260,8 @@ class Strategy(object):
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
+        if context.DATA_FREQ == 'minute': # TODO: delete condition
+            context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
 
     def _process_data(self, context, data):
         """Called at each algo iteration
@@ -275,6 +274,20 @@ class Strategy(object):
             data {pandas.Datframe} -- Catalyst data object
         """
         context.i += 1
+
+        # Update actual context.price
+        context.current = data.current(assets=context.asset,
+                    fields=["close", "price", "open", "high", "low", "volume"])
+        context.price = context.current.price
+        record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+
+        # To check to apply stop-loss, take-profit or keep position
+        self.check_open_positions(context)
+
+        # Filter minute frequency
+        if (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
+            return
+
         # set date first for logging purposes
         self.current_date = context.blotter.current_dt.date()
 
@@ -288,13 +301,6 @@ class Strategy(object):
             self.log.debug("Canceling unfilled open order {}".format(i))
             cancel_order(i)
 
-        price = data.current(context.asset, "price")
-        volume = data.current(context.asset, "volume")
-        cash = context.portfolio.cash
-        record(price=price, cash=cash, volume=volume)
-
-        context.price = price
-
         # Get price, open, high, low, close
         # The frequency attribute determine the bar size. We use this convention
         # for the frequency alias:
@@ -306,6 +312,17 @@ class Strategy(object):
             frequency=context.HISTORY_FREQ,
         )
 
+        # Filter historic data according to minute frequency
+        # for the freq alias:
+        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+        filter_dates = pd.date_range(start=context.prices.iloc[0].name,
+                            end=context.prices.iloc[-1].name,
+                            freq=str(context.MINUTE_FREQ)+"min")
+        context.prices = context.prices.loc[filter_dates]
+
+        # Add current values to historic
+        context.prices.loc[get_datetime()] = context.current
+
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
             for i in self._ml_models:
@@ -313,9 +330,6 @@ class Strategy(object):
                     context.prices.index.tz = None
                     context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
                 i.calculate(context.prices)
-
-                # Checking Stop-Loss open positions (increase stop loss values or sell open position)
-                self.check_stop_loss(context)
 
         else:
             for dataset, manager in self._datasets.items():
@@ -569,24 +583,30 @@ class Strategy(object):
 
         self._sell_func(context)
 
-    def check_stop_loss(self, context):
-        if self.position is not None:
-            cost_basis = self.position['cost_basis']
-            amount = self.position['amount']
-            self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(
-                            amount=amount, cost_basis=cost_basis))
-            stop = self.position['stop']
+    def check_open_positions(self, context):
+        """Check open positions to sell to take profit or to stop loss.
+        """
+        if context.asset in context.portfolio.positions:
+            position = context.portfolio.positions.get(context.asset)
+            # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis} at {date} with price: {price}'.format(amount=position.amount, cost_basis=position.cost_basis, date=get_datetime(), price=context.price))
 
-            target = cost_basis * (1 + CONFIG.TARGET_PRICE)
-            if context.price >= target:
-                self.log.info("Upload stop-loss position from {old_cost_basis} to {new_cost_basis}".format(
-                        old_cost_basis=self.position['cost_basis'], new_cost_basis=context.price))
-                self.position['cost_basis'] = context.price
-                self.position['stop'] = CONFIG.STOP_LOSS_UPDATED
+            if context.price >= position.cost_basis * (1 + CONFIG.TAKE_PROFIT): # Take Profit
+                self._take_profit_sell(context, position.amount)
 
-            stop_target = CONFIG.STOP_LOSS if stop is None else CONFIG.STOP_LOSS_UPDATED
-            if context.price < cost_basis * (1 - stop_target):
-                self._stop_loss_sell(context, amount)
+            if context.price < position.cost_basis * (1 - CONFIG.STOP_LOSS): # Stop Loss
+                self._stop_loss_sell(context, position.amount)
+
+    def _take_profit_sell(self, context, amount):
+        order(
+            asset=context.asset,
+            amount=-amount,
+            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+        )
+
+        position = context.portfolio.positions.get(context.asset)
+        profit = (context.price * amount) - (position.cost_basis * amount)
+        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal at {date}".format(
+                amount=amount, price=context.price, profit=profit, date=get_datetime()))
 
     def _stop_loss_sell(self, context, amount):
         order(
@@ -595,17 +615,14 @@ class Strategy(object):
             # limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
 
-        profit = (context.price * amount) - (self.position['cost_basis_initial'] * amount)
-        self.log.info(
-            "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
-                amount=amount, price=context.price, profit=profit
-            )
-        )
-        self.position = None
-        context.portfolio.positions = {}
+        position = context.portfolio.positions.get(context.asset)
+        profit = (context.price * amount) - (position.cost_basis * amount)
+        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
+                amount=amount, price=context.price, profit=profit, date=get_datetime()))
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
-        if context.asset not in context.portfolio.positions and self.position is None:
+        position = context.portfolio.positions.get(context.asset)
+        if position is None:
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
@@ -614,19 +631,9 @@ class Strategy(object):
             self.log.info(
                 "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
             )
-
-            self.position = dict(
-                cost_basis_initial=context.price,
-                cost_basis=context.price,
-                amount=context.ORDER_SIZE,
-                stop=None
-            )
         else:
-            if self.position is not None:
-                self.log.warn("Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
-                                amount=context.ORDER_SIZE, cost_basis=self.position['cost_basis']))
-            else:
-                self.log.warn("Skipping signaled buy due to open position.") # TODO: explore open position
+            self.log.warn("Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
+                            amount=position.amount, cost_basis=position.cost_basis))
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(context.asset)
@@ -653,7 +660,6 @@ class Strategy(object):
                 amount=position.amount, price=context.price, profit=profit
             )
         )
-        self.position = None
 
     # Save the prices and analysis to send to analyze
 

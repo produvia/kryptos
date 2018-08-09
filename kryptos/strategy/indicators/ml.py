@@ -81,9 +81,6 @@ class XGBOOST(MLIndicator):
 
     @property
     def signals_sell(self):
-        # TODO: Delete
-        # return False
-
         signal = False
         if CONFIG.CLASSIFICATION_TYPE == 1:
             if self.result <= 0:
@@ -104,6 +101,7 @@ class XGBOOST(MLIndicator):
 
         if CONFIG.DEBUG:
             self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
+            self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
         # Dataframe size is enough to apply Machine Learning
         if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
@@ -140,15 +138,20 @@ class XGBOOST(MLIndicator):
             if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
                 if CONFIG.TYPE_FEATURE_SELECTION == 'embedded':
                     model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-                    self.feature_selected_columns = embedded_feature_selection(model, 'all', 0.8)
+                    self.feature_selected_columns = embedded_feature_selection(model, 'all', 0.9)
                 elif CONFIG.TYPE_FEATURE_SELECTION == 'filter':
-                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
+                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.9)
                 elif CONFIG.TYPE_FEATURE_SELECTION == 'wrapper':
                     self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
 
             if self.feature_selected_columns:
                 X_train = X_train[self.feature_selected_columns]
                 X_test = X_test[self.feature_selected_columns]
+
+            if CONFIG.DEBUG:
+                X_train_shape = X_train.shape
+                self.log.info('X_train number of rows: {rows} number of columns {columns}'.format(
+                                    rows=X_train_shape[0], columns=X_train_shape[1]))
 
             # Train XGBoost
             model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
