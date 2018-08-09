@@ -5,6 +5,7 @@ import os
 import inspect
 import datetime
 import copy
+from textwrap import dedent
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -38,13 +39,10 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
 
-        if self.strat.in_job:
+        if self.strat.in_job and record.level_name == 'NOTICE':
             job = get_current_job()
             job.meta['output'] = record.msg
             job.save_meta()
-
-            if self.strat.telegram_id and record.level_name == 'NOTICE':
-                tasks.queue_notification(record.msg, self.strat.telegram_id)
 
 
 class Strategy(object):
@@ -279,6 +277,10 @@ class Strategy(object):
         instance.load_json_file(json_file)
         return instance
 
+    def notify(self, msg):
+        if self.telegram_id:
+            tasks.queue_notification(msg, self.telegram_id)
+
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
@@ -296,6 +298,7 @@ class Strategy(object):
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
+        self.notify('Your strategy has started!')
 
     def _fetch_history(self, context, data):
         # Get price, open, high, low, close
@@ -386,12 +389,8 @@ class Strategy(object):
 
         if context.frame_stats:
             pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
-            job.meta['output'] = pretty_output
-            self.log.info(pretty_output)
-            # queue_update(self.id, result_json=json.loads(context.frame_stats))
+            self.log.notice(pretty_output)
 
-            if self.telegram_id:
-                tasks.queue_notification(pretty_output, self.telegram_id)
 
     @property
     def total_plots(self):
@@ -608,6 +607,12 @@ class Strategy(object):
                     context.portfolio.cash, (context.price * context.ORDER_SIZE)
                 )
             )
+
+            msg = """
+            A signaled buy order was cancelled, because you don't have enough cash for the order.\n
+            Consider adding more cash to your account or adjusting your order size
+            """
+            self.notify(dedent(msg))
             return
 
         self.log.notice("Making Buy Order")
@@ -619,6 +624,10 @@ class Strategy(object):
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
             self.log.warn("Skipping signaled sell due b/c no position")
+            msg = """\
+            A signaled sell order was cancelled, because you currently have no posiiton.\n
+            """
+            self.notify(dedent(msg))
             return
 
         self.log.notice("Making Sell Order")
@@ -654,11 +663,12 @@ class Strategy(object):
         )
 
         profit = (context.price * amount) - (self.position['cost_basis_initial'] * amount)
-        self.log.info(
-            "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
-                amount=amount, price=context.price, profit=profit
-            )
+
+        msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
+            amount=amount, price=context.price, profit=profit
         )
+        self.log.notice(msg)
+        self.notify(dedent(msg))
         self.position = None
         context.portfolio.positions = {}
 
@@ -670,9 +680,9 @@ class Strategy(object):
                 amount=context.ORDER_SIZE,
                 limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
-            self.log.notice(
-                "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
-            )
+            msg = "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
+            self.log.notice(msg)
+            self.notify(msg)
 
             self.position = dict(
                 cost_basis_initial=context.price,
@@ -708,11 +718,11 @@ class Strategy(object):
             target=0,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
-        self.log.notice(
-            "Sold {amount} @ {price} Profit: {profit}".format(
-                amount=position.amount, price=context.price, profit=profit
-            )
+        msg = "Sold {amount} @ {price} Profit: {profit}".format(
+            amount=position.amount, price=context.price, profit=profit
         )
+        self.log.notice(msg)
+        self.notify(msg)
         self.position = None
 
     # Save the prices and analysis to send to analyze
