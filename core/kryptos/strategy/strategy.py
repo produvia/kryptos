@@ -343,7 +343,7 @@ class Strategy(object):
             return
 
         # set date first for logging purposes
-        self.current_date = context.blotter.current_dt.date()
+        self.current_date = get_datetime()
 
         if self.in_job:
             job = get_current_job()
