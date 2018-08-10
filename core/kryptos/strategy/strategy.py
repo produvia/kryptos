@@ -287,9 +287,22 @@ class Strategy(object):
         self._extra_init(context)
         self.log.info("Initilized Strategy")
 
+
+        self._check_configuration(context)
+
         # Set context.BARS size to work with custom minute frequency
-        if context.DATA_FREQ == 'minute': # TODO: delete condition
+        if context.DATA_FREQ == 'minute':
             context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
+
+    def _check_configuration(self, context):
+        """Checking config.json valid values"""
+        # Checks
+        if context.DATA_FREQ != 'minute' and context.DATA_FREQ != 'daily':
+            raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" or "daily"')
+        if context.DATA_FREQ == 'minute' and context.HISTORY_FREQ != "1T":
+            raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "1T"')
+        elif context.DATA_FREQ == 'daily' and context.HISTORY_FREQ != "1d":
+            raise ValueError('Internal Error: When context.DATA_FREQ=="daily" the value of context.HISTORY_FREQ shoud be "1d"')
 
     def _fetch_history(self, context, data):
         # Get price, open, high, low, close
@@ -326,7 +339,7 @@ class Strategy(object):
         self.check_open_positions(context)
 
         # Filter minute frequency
-        if (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
+        if context.DATA_FREQ == 'minute' and (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
             return
 
         # set date first for logging purposes
@@ -360,13 +373,14 @@ class Strategy(object):
         # Filter historic data according to minute frequency
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        filter_dates = pd.date_range(start=context.prices.iloc[0].name,
-                            end=context.prices.iloc[-1].name,
-                            freq=str(context.MINUTE_FREQ)+"min")
-        context.prices = context.prices.loc[filter_dates]
+        if context.DATA_FREQ == 'minute':
+            filter_dates = pd.date_range(start=context.prices.iloc[0].name,
+                                end=context.prices.iloc[-1].name,
+                                freq=str(context.MINUTE_FREQ)+"min")
+            context.prices = context.prices.loc[filter_dates]
 
-        # Add current values to historic
-        context.prices.loc[get_datetime()] = context.current
+            # Add current values to historic
+            context.prices.loc[get_datetime()] = context.current
 
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
