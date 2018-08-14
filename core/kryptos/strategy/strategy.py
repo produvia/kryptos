@@ -358,7 +358,7 @@ class Strategy(object):
 
         if self.in_job:
             job = get_current_job()
-            job.meta['date'] = self.current_date
+            job.meta['date'] = str(self.current_date)
             job.save_meta()
 
         self.log.debug("Processing algo iteration")
