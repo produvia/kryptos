@@ -14,7 +14,7 @@ from rq import get_current_job
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
 from catalyst.exchange.utils import stats_utils
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField
 from ccxt.base import errors as ccxt_errors
 
 from kryptos.utils import load, viz, outputs, tasks
@@ -340,11 +340,17 @@ class Strategy(object):
         """
         context.i += 1
 
-        # Update actual context.price
-        context.current = data.current(assets=context.asset,
-                    fields=["close", "price", "open", "high", "low", "volume"])
-        context.price = context.current.price
-        record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+        try:
+            # Update actual context.price
+            context.current = data.current(assets=context.asset,
+                        fields=["close", "price", "open", "high", "low", "volume"])
+            context.price = context.current.price
+            record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+
+        except NoValueForField as e:
+            self.log.warn(e)
+            self.log.warn('Skipping trade period')
+            return
 
         # To check to apply stop-loss, take-profit or keep position
         self.check_open_positions(context)
