@@ -153,6 +153,9 @@ def select_strategy(existing_strategy):
 
     backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
     backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
+    backtest_dict['trading']['DATA_FREQ'] = 'daily'
+    backtest_dict['trading']['HISTORY_FREQ'] = '1d'
+
 
 
     backtest_id, _ = task.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
