@@ -1,6 +1,6 @@
 {
-   "EXCHANGE": "poloniex",
-   "ASSET": "btc_usdt",
+   "EXCHANGE": "bitfinex",
+   "ASSET": "btc_usd",
    "DATA_FREQ": "daily",
    "HISTORY_FREQ": "1d",
    "MINUTE_FREQ": "720", "doc":"minute interval",
