@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import StandardScaler, MaxAbsScaler, MinMaxScaler
 pd.options.mode.chained_assignment = None # Disable chained assignments
 
 from kryptos.settings import MLConfig as CONFIG
@@ -78,6 +79,30 @@ def labeling_multiclass_data(df, to_optimize=False):
 
     X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
     return X_train, y_train.astype('int'), X_test
+
+
+def normalize_data(X_train, y_train, X_test, method='std'):
+    """Normalize dataset. Please note that it doesn't modify the original
+    dataset, it just returns a new dataset that you can use to modify
+    the original dataset or create a new one.
+    """
+    if CONFIG.NORMALIZATION['method'] == 'max':
+        scaler = MaxAbsScaler()
+        scaler_y = MaxAbsScaler()
+    elif CONFIG.NORMALIZATION['method'] == 'diff':
+        scaler = MinMaxScaler()
+        scaler_y = MinMaxScaler()
+    elif CONFIG.NORMALIZATION['method'] == 'std':
+        scaler = StandardScaler()
+        scaler_y = StandardScaler()
+
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # scaler_y = scaler_y.fit(y_train.values.reshape(-1, 1))
+    # y_train = scaler_y.transform(y_train.values.reshape(-1, 1))
+    y_train = scaler_y.fit_transform(y_train.values.reshape(-1, 1))
+    return X_train, y_train, X_test, scaler_y
 
 
 def _preprocessing_feature_engineering(X, y, to_optimize):

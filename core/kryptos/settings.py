@@ -113,6 +113,12 @@ class MLConfig(object):
     CLASSIFICATION_TYPE = 1
     MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
 
+    # Normalize data
+    NORMALIZATION = {
+        'enabled': True,
+        'method': 'diff' # 'max', 'diff' or 'std'
+    }
+
     if CLASSIFICATION_TYPE == 2:
         THRESHOLD = 0.5 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
 

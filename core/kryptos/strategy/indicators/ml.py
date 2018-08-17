@@ -9,7 +9,7 @@ from kryptos.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_
 from kryptos.ml.feature_selection.xgb import embedded_feature_selection
 from kryptos.ml.feature_selection.filter import filter_feature_selection
 from kryptos.ml.feature_selection.wrapper import wrapper_feature_selection
-from kryptos.ml.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params
+from kryptos.ml.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params, normalize_data
 from kryptos.ml.metric import classification_metrics
 from kryptos.settings import MLConfig as CONFIG
 from kryptos.settings import DEFAULT_CONFIG
@@ -138,9 +138,9 @@ class XGBOOST(MLIndicator):
             if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
                 if CONFIG.TYPE_FEATURE_SELECTION == 'embedded':
                     model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-                    self.feature_selected_columns = embedded_feature_selection(model, 'all', 0.9)
+                    self.feature_selected_columns = embedded_feature_selection(model, 'all', 0.8)
                 elif CONFIG.TYPE_FEATURE_SELECTION == 'filter':
-                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.9)
+                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
                 elif CONFIG.TYPE_FEATURE_SELECTION == 'wrapper':
                     self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
 
@@ -153,11 +153,22 @@ class XGBOOST(MLIndicator):
                 self.log.info('X_train number of rows: {rows} number of columns {columns}'.format(
                                     rows=X_train_shape[0], columns=X_train_shape[1]))
 
+            # Normalize data
+            if CONFIG.NORMALIZATION['enabled']:
+                X_train, y_train, X_test, scaler_y = normalize_data(X_train, y_train, X_test, method=CONFIG.NORMALIZATION['method'])
+
             # Train XGBoost
             model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
 
             # Predict results
             self.result = xgboost_test(model, X_test)
+
+            # Revert normalization
+            if CONFIG.NORMALIZATION['enabled']:
+                if CONFIG.NORMALIZATION['method'] == 'std':
+                    self.result = scaler_y.inverse_transform([float(self.result)])[0]
+                else:
+                    self.result = scaler_y.inverse_transform(self.result)[0][0]
 
             # Results
             if CONFIG.CLASSIFICATION_TYPE == 1:
