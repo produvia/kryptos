@@ -645,37 +645,35 @@ class Strategy(object):
         """
         if context.asset in context.portfolio.positions:
             position = context.portfolio.positions.get(context.asset)
-            # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis} at {date} with price: {price}'.format(amount=position.amount, cost_basis=position.cost_basis, date=get_datetime(), price=context.price))
+            # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
             if context.price >= position.cost_basis * (1 + CONFIG.TAKE_PROFIT): # Take Profit
-                self._take_profit_sell(context, position.amount)
+                self._take_profit_sell(context, position)
 
             if context.price < position.cost_basis * (1 - CONFIG.STOP_LOSS): # Stop Loss
-                self._stop_loss_sell(context, position.amount)
+                self._stop_loss_sell(context, position)
 
-    def _take_profit_sell(self, context, amount):
+    def _take_profit_sell(self, context, position):
         order(
             asset=context.asset,
-            amount=-amount,
+            amount=-position.amount,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
 
-        position = context.portfolio.positions.get(context.asset)
-        profit = (context.price * amount) - (position.cost_basis * amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal at {date}".format(
-                amount=amount, price=context.price, profit=profit, date=get_datetime()))
+        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
 
-    def _stop_loss_sell(self, context, amount):
+    def _stop_loss_sell(self, context, position):
         order(
             asset=context.asset,
-            amount=-amount,
+            amount=-position.amount,
             # limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
 
-        position = context.portfolio.positions.get(context.asset)
-        profit = (context.price * amount) - (position.cost_basis * amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-                amount=amount, price=context.price, profit=profit, date=get_datetime()))
+        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(context.asset)
