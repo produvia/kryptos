@@ -98,10 +98,8 @@ def normalize_data(X_train, y_train, X_test, method='std'):
 
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-
-    # scaler_y = scaler_y.fit(y_train.values.reshape(-1, 1))
-    # y_train = scaler_y.transform(y_train.values.reshape(-1, 1))
     y_train = scaler_y.fit_transform(y_train.values.reshape(-1, 1))
+    
     return X_train, y_train, X_test, scaler_y
 
 
