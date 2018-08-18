@@ -294,6 +294,9 @@ class Strategy(object):
         if context.DATA_FREQ == 'minute':
             context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
 
+        # Set commissions
+        context.set_commission(maker=context.MAKER_COMMISSION, taker=context.TAKER_COMMISSION)
+
     def _check_configuration(self, context):
         """Checking config.json valid values"""
         # Checks

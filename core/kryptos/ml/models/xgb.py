@@ -45,7 +45,7 @@ FIXED_PARAMS = {
 
 OPTIMIZABLE_PARAMS = {
     'n_trees': 800,
-    'eta': 0.03, # 0.0045 0.05
+    'eta': 0.02, # 0.0045 0.05
     'max_depth': 30,
     'subsample': 1,
     'colsample_bytree': 1,
