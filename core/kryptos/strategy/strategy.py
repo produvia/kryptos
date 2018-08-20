@@ -773,6 +773,7 @@ class Strategy(object):
         if self.in_job:
             job = get_current_job()
             job.meta['config'] = self.to_dict()
+            job.meta['telegram_id'] = self.telegram_id
             job.save_meta()
 
         try:
