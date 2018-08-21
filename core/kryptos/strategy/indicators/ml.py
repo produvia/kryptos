@@ -58,7 +58,6 @@ class MLIndicator(AbstractIndicator):
 
             # Optimize Hyper Params for Xgboost model
             if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_PARAMS_OPTIMIZE) == 0:
-
                 # Prepare data to machine learning problem
                 if CONFIG.CLASSIFICATION_TYPE == 1:
                     X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
@@ -86,7 +85,7 @@ class MLIndicator(AbstractIndicator):
 
             # Feature Selection
             if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
-                self.feature_selected_columns = child_indicator.feature_selection(X_train, y_train, self.hyper_params, self.num_boost_rounds, CONFIG.TYPE_FEATURE_SELECTION)
+                method = CONFIG.TYPE_FEATURE_SELECTION
                 if method == 'embedded':
                     if name == 'XGBOOST':
                         model = xgboost_train(X_train, y_train, hyper_params, num_boost_rounds)
