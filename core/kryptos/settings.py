@@ -127,8 +127,8 @@ class MLConfig(object):
         PERCENT_DOWN = 0.015 # down signal % (if CLASSIFICATION_TYPE == 3)
 
     ## STOP LOSS STRATEGY
-    STOP_LOSS = 0.03 # Stop-Loss
-    TAKE_PROFIT = 0.06 # Take-Profit
+    STOP_LOSS = 0.02 # Stop-Loss
+    TAKE_PROFIT = 0.04 # Take-Profit
 
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     SIZE_TEST_TO_OPTIMIZE = 20 # Test dataframe size to optimize model params

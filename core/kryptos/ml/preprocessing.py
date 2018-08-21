@@ -81,7 +81,7 @@ def labeling_multiclass_data(df, to_optimize=False):
     return X_train, y_train.astype('int'), X_test
 
 
-def normalize_data(X_train, y_train, X_test, method='std'):
+def normalize_data(X_train, y_train, X_test, name, method='diff'):
     """Normalize dataset. Please note that it doesn't modify the original
     dataset, it just returns a new dataset that you can use to modify
     the original dataset or create a new one.
@@ -95,12 +95,27 @@ def normalize_data(X_train, y_train, X_test, method='std'):
     elif CONFIG.NORMALIZATION['method'] == 'std':
         scaler = StandardScaler()
         scaler_y = StandardScaler()
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.NORMALIZATION["method"] should be "max", "diff", "std".')
 
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
     y_train = scaler_y.fit_transform(y_train.values.reshape(-1, 1))
-    
+
+    if name == 'LIGHTGBM':
+        y_train = [i[0] for i in y_train] # TODO: more efficient
+
     return X_train, y_train, X_test, scaler_y
+
+
+def inverse_normalize_data(result, scaler, method):
+    if method == 'std':
+        result = scaler.inverse_transform([float(result)])[0]
+    elif method == 'max' or method == 'diff':
+        result = scaler.inverse_transform(result)[0][0]
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.NORMALIZATION["method"] should be "max", "diff", "std".')
+    return result
 
 
 def _preprocessing_feature_engineering(X, y, to_optimize):
