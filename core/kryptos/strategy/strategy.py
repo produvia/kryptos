@@ -813,6 +813,10 @@ class Strategy(object):
     def run_live(self, simulate_orders=True):
         self.log.notice('Running live trading, suimulating orders: {}'.format(simulate_orders))
         self.is_live = True
+        if self.trading_info['DATA_FREQ'] != 'minute':
+            self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
+            self.trading_info['DATA_FREQ'] = 'minute'
+
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
             initialize=self._init_func,
