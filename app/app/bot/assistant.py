@@ -147,14 +147,13 @@ def select_strategy(existing_strategy):
     # Can't use today as the end date bc data bundles are updated daily,
     # so current market data won't be avialable for backtest until the following day
     # use past week up to yesterday
-    back_start = datetime.datetime.today() - datetime.timedelta(days=100)
-    back_end = datetime.datetime.today() - datetime.timedelta(days=7)
-
+    back_start = datetime.datetime.today() - datetime.timedelta(days=4)
+    back_end = datetime.datetime.today() - datetime.timedelta(days=1)
 
     backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
     backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
-    backtest_dict['trading']['DATA_FREQ'] = 'daily'
-    backtest_dict['trading']['HISTORY_FREQ'] = '1d'
+    backtest_dict['trading']['DATA_FREQ'] = 'minute'
+    backtest_dict['trading']['HISTORY_FREQ'] = '1T'
 
 
 
@@ -164,7 +163,7 @@ def select_strategy(existing_strategy):
 
 
 
-    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 100 days'
+    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days.'
 
     resp = inline_keyboard(dedent(speech))
     resp.add_button('View Past Performance', url=backtest_url)
