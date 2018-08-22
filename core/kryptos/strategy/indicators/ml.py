@@ -88,19 +88,18 @@ class MLIndicator(AbstractIndicator):
                 method = CONFIG.TYPE_FEATURE_SELECTION
                 if method == 'embedded':
                     if name == 'XGBOOST':
-                        model = xgboost_train(X_train, y_train, hyper_params, num_boost_rounds)
-                        feature_selected_columns = xgb_embedded_feature_selection(model, 'all', 0.8)
+                        model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
+                        self.feature_selected_columns = xgb_embedded_feature_selection(model, 'all', 0.8)
                     elif name == 'LIGHTGBM':
-                        feature_selected_columns = lgb_embedded_feature_selection(X_train, y_train)
+                        self.feature_selected_columns = lgb_embedded_feature_selection(X_train, y_train)
                     else:
                         raise NotImplementedError
                 elif method == 'filter':
-                    feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
+                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
                 elif method == 'wrapper':
-                    feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
+                    self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
                 else:
                     raise ValueError('Internal Error: Value of CONFIG.TYPE_FEATURE_SELECTION should be "embedded", "filter" or "wrapper"')
-                return feature_selected_columns
 
             if self.feature_selected_columns:
                 X_train = X_train[self.feature_selected_columns]

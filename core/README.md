@@ -114,11 +114,11 @@ By default, Machine Learning models use:
 Using dates features, tsfresh, fbprophet and technical analysis (ta-lib) libraries.
 
 You need to set the next setting variables:
-FE_DATES = -> True to add dates features; False don't add any feature.
-FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
-FE_TA -> True to add ta features; False don't add any feature.
-FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
-FE_UTILS -> True to add utils features; False don't add any feature.
+  * FE_DATES = -> True to add dates features; False don't add any feature.
+  * FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
+  * FE_TA -> True to add ta features; False don't add any feature.
+  * FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
+  * FE_UTILS -> True to add utils features; False don't add any feature.
 
 
 #### Hyper parameters optimization

@@ -18,10 +18,20 @@ if CONFIG.CLASSIFICATION_TYPE == 1:
     }
 
 elif CONFIG.CLASSIFICATION_TYPE == 2:
-    raise NotImplementedError
+    FIXED_PARAMS_DEFAULT = {
+        'boosting_type': 'gbdt',
+        'objective': 'binary',
+        'metric': 'binary_error'
+    }
 
 elif CONFIG.CLASSIFICATION_TYPE == 3:
-    raise NotImplementedError
+    FIXED_PARAMS_DEFAULT = {
+        'boosting_type': 'gbdt',
+        'objective': 'softmax',
+        'metric': 'softmax',
+        'num_classes': 3
+    }
+
 
 else:
     raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
@@ -35,19 +45,21 @@ FIXED_PARAMS = {
 
 
 OPTIMIZABLE_PARAMS = {
-    # 'num_trees': 1200,
     'num_leaves': 255,
     'learning_rate': 0.05,
     'bagging_fraction': 1, # 1
     'feature_fraction': 1, # 1
     'bagging_freq': 5,
-    'max_depth': -1,
+    'max_depth': 20,
     'min_data_in_leaf': 350 # default=20
-
 }
 
 
 DEFAULT_PARAMS = merge_two_dicts(OPTIMIZABLE_PARAMS, FIXED_PARAMS)
+
+
+def optimize_lightgbm_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize):
+    raise NotImplementedError
 
 
 def lightgbm_train(X_train, y_train, lgb_params=None, num_boost_rounds=None):
@@ -78,7 +90,7 @@ def lightgbm_test(model, X_test):
             raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
     elif CONFIG.CLASSIFICATION_TYPE == 3:
-        y_pred = int(y_pred[0])
+        y_pred = np.argmax(y_pred[0])
 
     else:
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
