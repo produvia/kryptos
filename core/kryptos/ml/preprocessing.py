@@ -190,7 +190,7 @@ def _prepare_ml_data(X, y, to_optimize=False):
         X(pandas.DataFrame): X dataset.
         y(pandas.DataFrame): target.
         optimize(bool): if False, size of test equals 1; if True equals
-        CONFIG.SIZE_TEST_TO_OPTIMIZE.
+        CONFIG.OPTIMIZE_PARAMS['size'].
 
     Returns:
         X_train(pandas.DataFrame): X_train.
@@ -199,7 +199,7 @@ def _prepare_ml_data(X, y, to_optimize=False):
     """
     size_test = 1
     if to_optimize:
-        size_test = CONFIG.SIZE_TEST_TO_OPTIMIZE
+        size_test = CONFIG.OPTIMIZE_PARAMS['size']
     X_train = X.iloc[:-size_test]
     y_train = y.iloc[:-size_test]
     X_test = X.iloc[-size_test:]

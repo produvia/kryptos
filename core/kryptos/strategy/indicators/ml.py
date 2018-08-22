@@ -57,7 +57,7 @@ class MLIndicator(AbstractIndicator):
         if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
             # Optimize Hyper Params for Xgboost model
-            if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_PARAMS_OPTIMIZE) == 0:
+            if CONFIG.OPTIMIZE_PARAMS['enabled'] and (self.idx % CONFIG.OPTIMIZE_PARAMS['iterations']) == 0:
                 # Prepare data to machine learning problem
                 if CONFIG.CLASSIFICATION_TYPE == 1:
                     X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
@@ -68,7 +68,7 @@ class MLIndicator(AbstractIndicator):
                 else:
                     raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
-                y_test_optimize = df['target'].tail(CONFIG.SIZE_TEST_TO_OPTIMIZE).values
+                y_test_optimize = df['target'].tail(CONFIG.OPTIMIZE_PARAMS['size']).values
                 params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
                 self.num_boost_rounds = int(params['num_boost_rounds'])
                 self.hyper_params = clean_params(params)
@@ -84,8 +84,8 @@ class MLIndicator(AbstractIndicator):
                 raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
             # Feature Selection
-            if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
-                method = CONFIG.TYPE_FEATURE_SELECTION
+            if CONFIG.FEATURE_SELECTION['enabled'] and (self.idx % CONFIG.FEATURE_SELECTION['n_iterations']) == 0:
+                method = CONFIG.FEATURE_SELECTION['method']
                 if method == 'embedded':
                     if name == 'XGBOOST':
                         model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
@@ -99,7 +99,7 @@ class MLIndicator(AbstractIndicator):
                 elif method == 'wrapper':
                     self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
                 else:
-                    raise ValueError('Internal Error: Value of CONFIG.TYPE_FEATURE_SELECTION should be "embedded", "filter" or "wrapper"')
+                    raise ValueError('Internal Error: Value of CONFIG.FEATURE_SELECTION["method"] should be "embedded", "filter" or "wrapper"')
 
             if self.feature_selected_columns:
                 X_train = X_train[self.feature_selected_columns]
