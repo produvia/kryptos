@@ -341,15 +341,19 @@ class Strategy(object):
         context.i += 1
 
         try:
+            # In live mode, "volume", "close" and "price" are the only available fields.
+            # In live mode, "volume" returns the last 24 hour trading volume.
+
             # Update actual context.price
             context.current = data.current(assets=context.asset,
-                        fields=["close", "price", "open", "high", "low", "volume"])
+                        fields=["volume", "close", "price"])
             context.price = context.current.price
             record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
 
+
         except NoValueForField as e:
             self.log.warn(e)
-            self.log.warn('Skipping trade period')
+            self.log.warn(f'Skipping trade period: {e}')
             return
 
         # To check to apply stop-loss, take-profit or keep position
