@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix, classification_report, cohen_kappa
 
 from kryptos.utils.outputs import get_algo_dir
 
-def classification_metrics(namespace, file_name, y_true, y_pred, y_pred_proba=False):
+def classification_metrics(namespace, file_name, y_true, y_pred, extra_results, y_pred_proba=False):
     target_names = ['KEEP', 'UP', 'DOWN']
     algo_dir = get_algo_dir(namespace)
     f_path = os.path.join(algo_dir, file_name)
@@ -18,8 +18,11 @@ def classification_metrics(namespace, file_name, y_true, y_pred, y_pred_proba=Fa
             f.write('Accuracy: {}'.format(accuracy_score(y_true, y_pred)) + '\n')
             f.write('Coefficient Kappa: {}'.format(cohen_kappa_score(y_true, y_pred)) + '\n')
             f.write('Classification Report:' + '\n')
-            f.write(classification_report(y_true, y_pred, target_names=target_names))
-            f.write("\n Confussion Matrix:" + '\n')
-            f.write(str(confusion_matrix(y_true, y_pred)) + '\n')
-            # TODO: sharpe ratio y porcentaje de retorno
+            f.write(classification_report(y_true, y_pred, target_names=target_names))            
+            f.write("Confussion Matrix:" + '\n')
+            f.write(str(confusion_matrix(y_true, y_pred)))
+            f.write('\n')
+            f.write('Return Profit Percentage: {}'.format(extra_results['return_profit_pct']) + '\n')
+            f.write('Sharpe Ratio: {}'.format(extra_results['sharpe_ratio']) + '\n')
+            f.write('Sharpe Ratio (Bitcoin Benchmark): {}'.format(extra_results['sharpe_ratio_benchmark']) + '\n')
             f.close()

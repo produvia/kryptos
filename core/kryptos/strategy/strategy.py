@@ -107,6 +107,7 @@ class Strategy(object):
         logger_group.add_logger(self.log)
 
         self.current_date = None
+        self.filter_dates = None
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -382,6 +383,11 @@ class Strategy(object):
                                 freq=str(context.MINUTE_FREQ)+"min")
             context.prices = context.prices.loc[filter_dates]
 
+            if self.filter_dates is not None:
+                self.filter_dates = self.filter_dates.append(self.filter_dates.symmetric_difference(filter_dates))
+            else:
+                self.filter_dates = filter_dates
+
             # Add current values to historic
             context.prices.loc[get_datetime()] = context.current
 
@@ -461,8 +467,27 @@ class Strategy(object):
 
         self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
+        extra_results = self.get_extra_results(context, results)
+
         for i in self._ml_models:
-            i.analyze(self.name)
+            i.analyze(self.name, extra_results)
+
+    def get_extra_results(self, context, results):
+
+        extra_results = {
+            'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
+            'sharpe_ratio' : '',
+            'sharpe_ratio_benchmark': '',
+        }
+
+        if context.DATA_FREQ == 'minute':
+            self.filter_dates.append(results.algorithm_period_return.tail(1).index)
+            extra_results['sharpe_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / results.algorithm_period_return.loc[self.filter_dates].dropna().std()
+            extra_results['sharpe_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std()
+        else:
+            extra_results['sharpe_ratio'] = results.sharpe[30:].mean()
+
+        return extra_results
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""

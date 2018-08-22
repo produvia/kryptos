@@ -148,7 +148,7 @@ class MLIndicator(AbstractIndicator):
             else:
                 self.log.info("keep signal")
 
-    def analyze(self, namespace, name):
+    def analyze(self, namespace, name, extra_results):
 
         if CONFIG.CLASSIFICATION_TYPE == 1:
             # Post processing of target column
@@ -179,10 +179,10 @@ class MLIndicator(AbstractIndicator):
 
         if name == 'XGBOOST':
             classification_metrics(namespace, 'xgboost_confussion_matrix.txt',
-                                    self.results_real, self.results_pred)
+                                    self.results_real, self.results_pred, extra_results)
         elif name == 'LIGHTGBM':
             classification_metrics(namespace, 'lightgbm_confussion_matrix.txt',
-                                    self.results_real, self.results_pred)
+                                    self.results_real, self.results_pred, extra_results)
 
     @property
     def signals_buy(self):
@@ -235,8 +235,8 @@ class XGBOOST(MLIndicator):
     def calculate(self, df, **kw):
         super(XGBOOST, self).calculate(df, "XGBOOST", **kw)
 
-    def analyze(self, namespace):
-        super(XGBOOST, self).analyze(namespace, "XGBOOST")
+    def analyze(self, namespace, extra_results):
+        super(XGBOOST, self).analyze(namespace, "XGBOOST", extra_results)
 
     def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
         # Train
@@ -287,8 +287,8 @@ class LIGHTGBM(MLIndicator):
     def calculate(self, df, **kw):
         super(LIGHTGBM, self).calculate(df, "LIGHTGBM", **kw)
 
-    def analyze(self, namespace):
-        super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM")
+    def analyze(self, namespace, extra_results):
+        super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", extra_results)
 
     def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
         # Train
