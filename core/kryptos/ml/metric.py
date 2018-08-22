@@ -1,5 +1,7 @@
 import os
+import time
 from sklearn.metrics import confusion_matrix, classification_report, cohen_kappa_score, accuracy_score
+
 from kryptos.utils.outputs import get_algo_dir
 
 def classification_metrics(namespace, file_name, y_true, y_pred, y_pred_proba=False):
@@ -12,12 +14,12 @@ def classification_metrics(namespace, file_name, y_true, y_pred, y_pred_proba=Fa
 
     if len(y_true) > 0 and len(y_pred):
         with open(f_path, "a") as f:
+            f.write(time.strftime("%Y/%m/%d %H:%M:%S") + '\n')
             f.write('Accuracy: {}'.format(accuracy_score(y_true, y_pred)) + '\n')
             f.write('Coefficient Kappa: {}'.format(cohen_kappa_score(y_true, y_pred)) + '\n')
             f.write('Classification Report:' + '\n')
             f.write(classification_report(y_true, y_pred, target_names=target_names))
-            f.write('\n')
-            f.write("Confussion Matrix:" + '\n')
-            f.write(str(confusion_matrix(y_true, y_pred)))
-            f.write('\n')
+            f.write("\n Confussion Matrix:" + '\n')
+            f.write(str(confusion_matrix(y_true, y_pred)) + '\n')
+            # TODO: sharpe ratio y porcentaje de retorno
             f.close()
