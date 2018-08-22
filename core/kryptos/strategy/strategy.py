@@ -41,7 +41,10 @@ class StratLogger(logbook.Logger):
 
         if self.strat.in_job and record.level_name == 'NOTICE':
             job = get_current_job()
-            job.meta['output'] = record.msg
+            if not job.meta.get('output'):
+                job.meta['output'] = record.msg
+            else:
+                job.meta['output'] += record.msg + '\n'
             job.save_meta()
 
 
@@ -361,6 +364,7 @@ class Strategy(object):
 
         # Filter minute frequency
         if context.DATA_FREQ == 'minute' and (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
+            self.log.debug('Skipping due to minute frequency')
             return
 
         # set date first for logging purposes
@@ -811,7 +815,7 @@ class Strategy(object):
 
 
     def run_live(self, simulate_orders=True):
-        self.log.notice('Running live trading, suimulating orders: {}'.format(simulate_orders))
+        self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
         self.is_live = True
         if self.trading_info['DATA_FREQ'] != 'minute':
             self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
