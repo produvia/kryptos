@@ -8,11 +8,18 @@ import time
 import logbook
 from catalyst.exchange.exchange_bundle import ExchangeBundle
 
+from raven import Client
+from raven.transport.http import HTTPTransport
+from rq.contrib.sentry import register_sentry
+
 from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.settings import QUEUE_NAMES
 
+
+SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
+client = Client(SENTRY_DSN, transport=HTTPTransport)
 
 REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
@@ -57,13 +64,19 @@ def manage_workers():
         log.info('Starting initial workers')
 
         log.info('Starting worker for BACKTEST queue')
-        multiprocessing.Process(target=Worker(['backtest'],).work).start()
+        backtest_worker = Worker(['backtest'])
+        register_sentry(client, backtest_worker)
+        multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info('Starting worker for PAPER queues')
-        multiprocessing.Process(target=Worker(['paper']).work).start()
+        paper_worker = Worker(['paper'])
+        register_sentry(client, paper_worker)
+        multiprocessing.Process(target=paper_worker.work).start()
 
         log.info('Starting worker for LIVE queues')
-        multiprocessing.Process(target=Worker(['live']).work).start()
+        live_worker = Worker(['live'])
+        register_sentry(client, live_worker)
+        multiprocessing.Process(target=live_worker.work).start()
 
         # create paper/live queues when needed
         while True:
@@ -72,7 +85,10 @@ def manage_workers():
                 log.debug(f"{required} workers required for {q}")
                 for i in range(required):
                     log.info(f"Creating {q} worker")
-                    multiprocessing.Process(target=Worker([q]).work, kwargs={'burst': True}).start()
+                    worker = Worker([q])
+                    register_sentry(client, live_worker)
+                    multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
+
 
             time.sleep(5)
 

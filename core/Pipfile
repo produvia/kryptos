@@ -30,6 +30,7 @@ honcho = "*"
 google-cloud-datastore = "*"
 gunicorn = "*"
 ta = "*"
+raven = "*"
 
 [dev-packages]
 black = "==18.4a4"
