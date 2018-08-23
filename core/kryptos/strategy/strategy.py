@@ -5,6 +5,7 @@ import os
 import inspect
 import datetime
 import copy
+from textwrap import dedent
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -12,10 +13,11 @@ from rq import get_current_job
 
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+from catalyst.exchange.utils import stats_utils
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField
 from ccxt.base import errors as ccxt_errors
 
-from kryptos.utils import load, viz, outputs
+from kryptos.utils import load, viz, outputs, tasks
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
@@ -37,9 +39,12 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
 
-        if self.strat.in_job:
+        if self.strat.in_job and record.level_name == 'NOTICE':
             job = get_current_job()
-            job.meta['output'] = record.msg
+            if not job.meta.get('output'):
+                job.meta['output'] = record.msg
+            else:
+                job.meta['output'] += record.msg + '\n'
             job.save_meta()
 
 
@@ -87,6 +92,9 @@ class Strategy(object):
         self.viz = True
         self.quant_results = None
         self.in_job = False
+
+        self.telegram_id = None
+
 
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
@@ -270,6 +278,11 @@ class Strategy(object):
         instance.load_json_file(json_file)
         return instance
 
+    def notify(self, msg):
+        if self.telegram_id:
+            tasks.queue_notification(msg, self.telegram_id)
+
+
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
         context.asset = symbol(self.trading_info["ASSET"])
@@ -286,6 +299,7 @@ class Strategy(object):
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
+        self.notify('Your strategy has started!')
 
 
         self._check_configuration(context)
@@ -329,17 +343,28 @@ class Strategy(object):
         """
         context.i += 1
 
-        # Update actual context.price
-        context.current = data.current(assets=context.asset,
-                    fields=["close", "price", "open", "high", "low", "volume"])
-        context.price = context.current.price
-        record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+        try:
+            # In live mode, "volume", "close" and "price" are the only available fields.
+            # In live mode, "volume" returns the last 24 hour trading volume.
+
+            # Update actual context.price
+            context.current = data.current(assets=context.asset,
+                        fields=["volume", "close", "price"])
+            context.price = context.current.price
+            record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+
+
+        except NoValueForField as e:
+            self.log.warn(e)
+            self.log.warn(f'Skipping trade period: {e}')
+            return
 
         # To check to apply stop-loss, take-profit or keep position
         self.check_open_positions(context)
 
         # Filter minute frequency
         if context.DATA_FREQ == 'minute' and (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
+            self.log.debug('Skipping due to minute frequency')
             return
 
         # set date first for logging purposes
@@ -347,12 +372,14 @@ class Strategy(object):
 
         if self.in_job:
             job = get_current_job()
-            job.meta['date'] = self.current_date
+            job.meta['date'] = str(self.current_date)
             job.save_meta()
 
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
-            self.log.debug("Canceling unfilled open order {}".format(i))
+            msg = "Canceling unfilled open order {}".format(i)
+            self.log.debug(msg)
+            self.notify(msg)
             cancel_order(i)
 
         try:
@@ -406,6 +433,11 @@ class Strategy(object):
         self._extra_handle(context, data)
         self._count_signals(context, data)
 
+        if context.frame_stats:
+            pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
+            self.log.notice(pretty_output)
+
+
     @property
     def total_plots(self):
         dataset_inds = 0
@@ -449,6 +481,8 @@ class Strategy(object):
         ending_cash = results.cash[-1]
         self.log.notice('Ending cash: ${}'.format(ending_cash))
         self.log.notice('Completed for {} trading periods'.format(context.i))
+        self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
+
         try:
             if self.viz:
                 self._make_plots(context, results)
@@ -608,10 +642,15 @@ class Strategy(object):
             "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
         )
         if buys > sells:
-            self.log.notice("Signaling to buy")
+            msg = "Signaling to buy"
+            self.log.notice(msg)
+            self.notify(msg)
             self.make_buy(context)
+
         elif sells > buys:
-            self.log.notice("Signaling to sell")
+            msg = "Signaling to sell"
+            self.log.notice(msg)
+            self.notify(msg)
             self.make_sell(context)
 
     def make_buy(self, context):
@@ -621,6 +660,12 @@ class Strategy(object):
                     context.portfolio.cash, (context.price * context.ORDER_SIZE)
                 )
             )
+
+            msg = """
+            A signaled buy order was cancelled, because you don't have enough cash for the order.\n
+            Consider adding more cash to your account or adjusting your order size
+            """
+            self.notify(dedent(msg))
             return
 
         self.log.notice("Making Buy Order")
@@ -632,6 +677,10 @@ class Strategy(object):
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
             self.log.warn("Skipping signaled sell due b/c no position")
+            msg = """\
+            A signaled sell order was cancelled, because you currently have no posiiton.\n
+            """
+            self.notify(dedent(msg))
             return
 
         self.log.notice("Making Sell Order")
@@ -677,6 +726,12 @@ class Strategy(object):
         self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
                 amount=amount, price=context.price, profit=profit, date=get_datetime()))
 
+        msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
+                amount=amount, price=context.price, profit=profit, date=get_datetime())
+
+        self.log.notice(msg)
+        self.notify(dedent(msg))
+
     def _default_buy(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(context.asset)
         if position is None:
@@ -686,12 +741,14 @@ class Strategy(object):
                 amount=context.ORDER_SIZE,
                 limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
-            self.log.notice(
-                "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
-            )
+            msg = "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
+            self.log.notice(msg)
+            self.notify(msg)
         else:
-            self.log.warn("Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
-                            amount=position.amount, cost_basis=position.cost_basis))
+            msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
+                            amount=position.amount, cost_basis=position.cost_basis)
+            self.log.warn(msg)
+            self.notify(msg)
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         self.log.info('Using default sell function')
@@ -714,11 +771,11 @@ class Strategy(object):
             target=0,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
-        self.log.notice(
-            "Sold {amount} @ {price} Profit: {profit}".format(
-                amount=position.amount, price=context.price, profit=profit
-            )
+        msg = "Sold {amount} @ {price} Profit: {profit}".format(
+            amount=position.amount, price=context.price, profit=profit
         )
+        self.log.notice(msg)
+        self.notify(msg)
 
     # Save the prices and analysis to send to analyze
 
@@ -735,6 +792,7 @@ class Strategy(object):
         if self.in_job:
             job = get_current_job()
             job.meta['config'] = self.to_dict()
+            job.meta['telegram_id'] = self.telegram_id
             job.save_meta()
 
         try:
@@ -768,8 +826,12 @@ class Strategy(object):
 
 
     def run_live(self, simulate_orders=True):
-        self.log.notice('Running live trading, suimulating orders: {}'.format(simulate_orders))
+        self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
         self.is_live = True
+        if self.trading_info['DATA_FREQ'] != 'minute':
+            self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
+            self.trading_info['DATA_FREQ'] = 'minute'
+
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
             initialize=self._init_func,

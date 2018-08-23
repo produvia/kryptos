@@ -7,7 +7,6 @@ from flask_user import current_user, login_required
 from app.extensions import db
 from app.forms import forms, utils
 from app.models import User, StrategyModel
-from app.bot import bot_utils
 from app import task
 
 blueprint = Blueprint('strategy', __name__, url_prefix='/strategy')

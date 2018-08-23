@@ -19,7 +19,9 @@ numpy = "*"
 ta-lib = "*"
 gunicorn = "*"
 shortuuid = "*"
-google-cloud = "*"
+honcho = "*"
+google-cloud-datastore = "*"
+logbook = "*"
 
 [dev-packages]
 black = "==18.4a4"

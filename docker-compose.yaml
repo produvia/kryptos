@@ -20,13 +20,33 @@ services:
       - FLASK_APP=autoapp.py
       - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
       - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
-
+      - CONFIG_ENV=dev
     depends_on:
       - redis
       - db
     # # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"\
-    command: ['flask', 'run', '--host=0.0.0.0', '--port=8080']
+    entrypoint: ['honcho', 'start', 'dev', '--no-prefix']
+
+  updater:
+    container_name: updater
+    image: kryptos-local-app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    volumes:
+     - ./app:/app
+    environment:
+     - REDIS_HOST=redis
+     - REDIS_PORT=6379
+     - REDIS_PASSWORD=password
+     - CONFIG_ENV=dev
+     - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
+    depends_on:
+      - redis
+      - db
+    entrypoint: ['honcho', 'start', 'updater', '--no-prefix']
+
   worker:
     image: kryptos-local-worker
     container_name: worker
@@ -42,6 +62,7 @@ services:
       - REDIS_PASSWORD=password
 
     # entrypoint: ['python', 'worker.py']
+    entrypoint: ['honcho', 'start', 'worker', 'ingest', '--no-prefix']
     depends_on:
     - redis
 
