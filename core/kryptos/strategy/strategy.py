@@ -377,7 +377,9 @@ class Strategy(object):
 
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
-            self.log.debug("Canceling unfilled open order {}".format(i))
+            msg = "Canceling unfilled open order {}".format(i)
+            self.log.debug(msg)
+            self.notify(msg)
             cancel_order(i)
 
         try:
@@ -479,6 +481,8 @@ class Strategy(object):
         ending_cash = results.cash[-1]
         self.log.notice('Ending cash: ${}'.format(ending_cash))
         self.log.notice('Completed for {} trading periods'.format(context.i))
+        self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
+
         try:
             if self.viz:
                 self._make_plots(context, results)
@@ -638,10 +642,15 @@ class Strategy(object):
             "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
         )
         if buys > sells:
-            self.log.notice("Signaling to buy")
+            msg = "Signaling to buy"
+            self.log.notice(msg)
+            self.notify(msg)
             self.make_buy(context)
-        elif sells > buys:
-            self.log.notice("Signaling to sell")
+
+        elif sells > buys:\
+            msg = "Signaling to sell"
+            self.log.notice(msg)
+            self.notify(msg)
             self.make_sell(context)
 
     def make_buy(self, context):
@@ -736,8 +745,10 @@ class Strategy(object):
             self.log.notice(msg)
             self.notify(msg)
         else:
-            self.log.warn("Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
-                            amount=position.amount, cost_basis=position.cost_basis))
+            msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
+                            amount=position.amount, cost_basis=position.cost_basis)
+            self.log.warn(msg)
+            self.notify(msg)
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         self.log.info('Using default sell function')
