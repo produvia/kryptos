@@ -647,7 +647,7 @@ class Strategy(object):
             self.notify(msg)
             self.make_buy(context)
 
-        elif sells > buys:\
+        elif sells > buys:
             msg = "Signaling to sell"
             self.log.notice(msg)
             self.notify(msg)
