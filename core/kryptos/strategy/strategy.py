@@ -8,6 +8,7 @@ import copy
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from rq import get_current_job
 
 from catalyst import run_algorithm
@@ -473,17 +474,20 @@ class Strategy(object):
             i.analyze(self.name, extra_results)
 
     def get_extra_results(self, context, results):
-
         extra_results = {
             'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
             'sharpe_ratio' : '',
             'sharpe_ratio_benchmark': '',
+            'sortino_ratio': '',
+            'sortino_ratio_benchmark': ''
         }
 
         if context.DATA_FREQ == 'minute':
-            self.filter_dates.append(results.algorithm_period_return.tail(1).index)
+            self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
             extra_results['sharpe_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / results.algorithm_period_return.loc[self.filter_dates].dropna().std()
             extra_results['sharpe_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std()
+            extra_results['sortino_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / np.sqrt(np.power(results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna(), 2).mean())
+            extra_results['sortino_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
         else:
             extra_results['sharpe_ratio'] = results.sharpe[30:].mean()
 
