@@ -301,13 +301,16 @@ class Strategy(object):
 
     def _check_configuration(self, context):
         """Checking config.json valid values"""
-        # Checks
         if context.DATA_FREQ != 'minute' and context.DATA_FREQ != 'daily':
             raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" or "daily"')
-        if context.DATA_FREQ == 'minute' and context.HISTORY_FREQ != "1T":
-            raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "1T"')
-        elif context.DATA_FREQ == 'daily' and context.HISTORY_FREQ != "1d":
-            raise ValueError('Internal Error: When context.DATA_FREQ=="daily" the value of context.HISTORY_FREQ shoud be "1d"')
+        if context.DATA_FREQ == 'minute':
+            if context.HISTORY_FREQ[-1] != "T":
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"')
+            if int(context.MINUTE_FREQ) % int(context.HISTORY_FREQ[:-1]) != 0:
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" context.HISTORY_FREQ shoud be divisible by context.MINUTE_FREQ')
+        elif context.DATA_FREQ == 'daily':
+            if context.HISTORY_FREQ[-1] != "d":
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
 
     def _fetch_history(self, context, data):
         # Get price, open, high, low, close
@@ -486,7 +489,7 @@ class Strategy(object):
             self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
             extra_results['sharpe_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / results.algorithm_period_return.loc[self.filter_dates].dropna().std()
             extra_results['sharpe_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std()
-            extra_results['sortino_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / np.sqrt(np.power(results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna(), 2).mean())
+            extra_results['sortino_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
             extra_results['sortino_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
         else:
             extra_results['sharpe_ratio'] = results.sharpe[30:].mean()
