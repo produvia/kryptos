@@ -478,6 +478,9 @@ class Strategy(object):
 
     def get_extra_results(self, context, results):
         extra_results = {
+            'start': context.START,
+            'end': context.END,
+            'minute_freq': context.MINUTE_FREQ,
             'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
             'sharpe_ratio' : '',
             'sharpe_ratio_benchmark': '',

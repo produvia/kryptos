@@ -15,6 +15,9 @@ def classification_metrics(namespace, file_name, y_true, y_pred, extra_results, 
     if len(y_true) > 0 and len(y_pred):
         with open(f_path, "a") as f:
             f.write(time.strftime("%Y/%m/%d %H:%M:%S") + '\n')
+            f.write('Date Start: {}'.format(extra_results['start']) + '\n')
+            f.write('Date End: {}'.format(extra_results['end']) + '\n')
+            f.write('Minute Frequency: {}'.format(extra_results['minute_freq']) + '\n')
             f.write('Accuracy: {}'.format(accuracy_score(y_true, y_pred)) + '\n')
             f.write('Coefficient Kappa: {}'.format(cohen_kappa_score(y_true, y_pred)) + '\n')
             f.write('Classification Report:' + '\n')
