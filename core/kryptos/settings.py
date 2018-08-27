@@ -111,29 +111,40 @@ class MLConfig(object):
         3 - Multiclass Classification (DOWN / KEEP / UP)
     """
     CLASSIFICATION_TYPE = 1
-    MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
 
     if CLASSIFICATION_TYPE == 2:
         THRESHOLD = 0.5 # binary classification probability [0,1]. So default value is 0.5; THRESHOLD to buy order
 
     if CLASSIFICATION_TYPE == 3:
-        PERCENT_UP = 0.015 # up signal % (if CLASSIFICATION_TYPE == 3)
-        PERCENT_DOWN = 0.015 # down signal % (if CLASSIFICATION_TYPE == 3)
+        PERCENT_UP = 0.005 # up signal % (if CLASSIFICATION_TYPE == 3)
+        PERCENT_DOWN = 0.005 # down signal % (if CLASSIFICATION_TYPE == 3)
 
-    ## STOP LOSS STRATEGY
-    STOP_LOSS = 0.03 # Stop-Loss
-    TAKE_PROFIT = 0.06 # Take-Profit
+    MIN_ROWS_TO_ML = 50 # Minimum number of rows in the dataset to apply Machine Learning
+
+    ## NORMALIZE DATA
+    NORMALIZATION = {
+        'enabled': True,
+        'method': 'diff' # 'max', 'diff' or 'std'
+    }
+
+    ## TAKE-PROFIT / STOP-LOSS STRATEGY
+    TAKE_PROFIT = 0.04 # Take-Profit
+    STOP_LOSS = 0.02 # Stop-Loss
 
     ## MODEL HYPER PARAMETERS OPTIMIZATION
-    SIZE_TEST_TO_OPTIMIZE = 20 # Test dataframe size to optimize model params
-    N_HYPEROPT_EVALS = 250 # Number of evaluations to hyperopt
-    OPTIMIZE_PARAMS = False # OPTIMIZE HYPER MODEL PARAMS
-    ITERATIONS_PARAMS_OPTIMIZE = 30 # Number of iterations to optimize model params
+    OPTIMIZE_PARAMS = {
+        'enabled': False, # Apply hyper model params optimization
+        'iterations': 30, # Test dataframe size to optimize model params
+        'n_evals': 250, # Number of evaluations to hyperopt
+        'size': 100 # Test dataframe size to optimize model params
+    }
 
     ## FEATURE SELECTION
-    PERFORM_FEATURE_SELECTION = True # APPLY FEATURE SELECTION
-    ITERATIONS_FEATURE_SELECTION = 10 # Number of iterations to perform feature selection
-    TYPE_FEATURE_SELECTION = 'embedded' # https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
+    FEATURE_SELECTION = {
+        'enabled': True, # Apply feature selection
+        'n_iterations': 10, # Number of iterations to perform feature selection
+        'method': 'embedded' # https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
+    }
 
     ## FEATURE ENGINEERING
 
@@ -143,7 +154,7 @@ class MLConfig(object):
     # Feature Engineering: tsfresh
     FE_TSFRESH = {
         'enabled': False,
-        # 'kind': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
+        # 'method': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
         'window': 30,
     }
 
@@ -176,7 +187,7 @@ class MLConfig(object):
     ## CHECKS
 
     # Check if size test dataframe is less than total dataframe
-    assert SIZE_TEST_TO_OPTIMIZE < MIN_ROWS_TO_ML
+    # assert OPTIMIZE_PARAMS['size'] < MIN_ROWS_TO_ML # TODO: check
 
     # Check if min rows is less than dataframe size.
     assert MIN_ROWS_TO_ML <= DEFAULT_CONFIG['BARS']

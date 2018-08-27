@@ -1,15 +1,17 @@
 {
-   "EXCHANGE": "bitfinex",
-   "ASSET": "btc_usd",
+   "EXCHANGE": "binance",
+   "ASSET": "btc_usdt",
    "DATA_FREQ": "minute",
    "HISTORY_FREQ": "1T",
-   "MINUTE_FREQ": "720", "doc":"minute interval",
-   "MINUTE_TO_OPERATE": "2", "doc":"minute to operate on range [0, MINUTE_FREQ]",
-   "CAPITAL_BASE": 20000,
+   "MINUTE_FREQ": "120", "doc":"minute interval",
+   "MINUTE_TO_OPERATE": "3", "doc":"minute to operate on range [0, MINUTE_FREQ]",
+   "CAPITAL_BASE": 10000,
    "BASE_CURRENCY": "usd",
-   "START": "2018-1-1",
-   "END": "2018-1-30",
+   "START": "2018-8-10",
+   "END": "2018-8-15",
    "BARS": 2000, "doc": "Use values > 200 if you want apply ML techniques",
-   "ORDER_SIZE": 1,
-   "SLIPPAGE_ALLOWED": 0.05
+   "ORDER_SIZE": 0.5,
+   "SLIPPAGE_ALLOWED": 0.02,
+   "MAKER_COMMISSION": 0.0,
+   "TAKER_COMMISSION": 0.0
 }

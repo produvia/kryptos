@@ -92,45 +92,56 @@ $ strat -d google -c 'btc usd' -i 'relchange'
 To create a strategy using ML models:
 ```bash
 $ strat -ml xgboost
+$ strat -ml lightgbm
+$ strat -ml lightgbm -ml xgboost # You buy if both models get buy signal and vice-versa.
 ```
 
 By default, Machine Learning models use:
   * MIN_ROWS_TO_ML -> Minimum number of rows in the dataset to apply Machine Learning
-  * LABELLING -> [UP, KEEP, DOWN]
+
+  * CLASSIFICATION_TYPE -> Labeling type:
+      1. Regression
+      2. Binary Classification (DOWN / UP)
+      3. Multiclass Classification (DOWN / KEEP / UP)
+
+  * STOP_LOSS -> Percentage to Stop-Loss
+  * TAKE_PROFIT -> Percentage to Take-Profit
+  * NORMALIZATION -> True to set up data normalizated; False don't set up. Also, you can select the method to use ('max', 'diff' or 'std').
+
 
 #### Feature Engineering techniques
 
 Using dates features, tsfresh, fbprophet and technical analysis (ta-lib) libraries.
 
 You need to set the next setting variables:
-FE_DATES = -> True to add dates features; False don't add any feature.
-FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
-FE_TA -> True to add ta features; False don't add any feature.
-FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
-FE_UTILS -> True to add utils features; False don't add any feature.
+  * FE_DATES -> True to add dates features; False don't add any feature.
+  * FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
+  * FE_TA -> True to add ta features; False don't add any feature.
+  * FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
+  * FE_UTILS -> True to add utils features; False don't add any feature.
 
 
 #### Hyper parameters optimization
 
 Using Hyperopt library.
 
-You need to set the next setting variables:
-  * SIZE_TEST_TO_OPTIMIZE -> Test dataframe size to optimize model params
-  * N_HYPEROPT_EVALS -> Number of evaluations to hyperopt
-  * OPTIMIZE_PARAMS -> True to optimize; False don't optimize
-  * ITERATIONS_PARAMS_OPTIMIZE -> Number of iterations to optimize model params
-
+You need to set the OPTIMIZE_PARAMS setting variable:
+  * 'enabled' -> True to apply hyper model params optimization; False don't apply.
+  * 'iterations' -> Test dataframe size to optimize model params
+  * 'n_evals' -> Number of evaluations to hyperopt
+  * 'size' -> Test dataframe size to optimize model params
 
 #### Feature Selection techniques
 
 Using embedded, filter and wrapper methods: https://machinelearningmastery.com/an-introduction-to-feature-selection/
 
-You need to set the next setting variables:
-  * PERFORM_FEATURE_SELECTION -> True to apply feature selection; False to don't apply feature selection.
-  * ITERATIONS_FEATURE_SELECTION -> Number of iterations to perform feature selection.
-  * TYPE_FEATURE_SELECTION -> {'embedded', 'filter', 'wrapper'}
+You need to set the FEATURE SELECTION setting variable:
 
-Also, you can add external datasets as features too:
+  * 'enabled' -> Apply feature selection
+  * 'n_iterations' -> Number of iterations to perform feature selection
+  * 'method' -> https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
+
+Also, you can add external datasets as features too (to work with daily frequency only):
 
 Google Trends
 ```bash
