@@ -141,7 +141,7 @@ You need to set the FEATURE SELECTION setting variable:
   * 'n_iterations' -> Number of iterations to perform feature selection
   * 'method' -> https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
 
-Also, you can add external datasets as features too:
+Also, you can add external datasets as features too (to work with daily frequency only):
 
 Google Trends
 ```bash

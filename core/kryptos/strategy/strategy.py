@@ -110,6 +110,7 @@ class Strategy(object):
         self.current_date = None
         self.last_date = None
         self.filter_dates = None
+        self.date_init_reference = None
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -301,6 +302,8 @@ class Strategy(object):
         if context.DATA_FREQ == 'minute':
             context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
 
+        self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(context.MINUTE_TO_OPERATE))
+
         # Set commissions
         context.set_commission(maker=context.MAKER_COMMISSION, taker=context.TAKER_COMMISSION)
 
@@ -356,12 +359,17 @@ class Strategy(object):
 
         # Filter minute frequency
         if context.DATA_FREQ == 'minute':
+            # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
             if self.last_date is None:
-                self.last_date = self._get_last_date(context, data)
-            # minutes between the last iteration and first iteration
-            base_minutes = (self.current_date - self.last_date) / np.timedelta64(1, 'm')
-            if (base_minutes + (context.i - 1)) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
+                last_date = self._get_last_date(context, data)
+            else:
+                last_date = self.last_date
+            base_minutes = (self.current_date - last_date) / np.timedelta64(1, 'm')
+            if base_minutes != int(context.MINUTE_FREQ):
                 return
+
+            if self.last_date is None:
+                self.last_date = last_date
 
         if self.in_job:
             job = get_current_job()
@@ -392,7 +400,9 @@ class Strategy(object):
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         if context.DATA_FREQ == 'minute':
-            filter_dates = pd.date_range(start=context.prices.iloc[0].name, end=context.prices.iloc[-1].name, freq=str(context.MINUTE_FREQ)+"min")
+            filter_dates = pd.date_range(start=self.date_init_reference,
+                                        end=context.prices.iloc[-1].name,
+                                        freq=str(context.MINUTE_FREQ)+"min")
             context.prices = context.prices.loc[filter_dates]
 
             if self.filter_dates is not None:
@@ -449,9 +459,10 @@ class Strategy(object):
                   cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
 
             # Filter selected dates
-            filter_dates = pd.date_range(start=context.prices.iloc[int(context.MINUTE_TO_OPERATE)].name,
-                                end=context.prices.iloc[-1].name,
-                                freq=str(context.MINUTE_FREQ)+"min")
+            filter_dates = pd.date_range(start=self.date_init_reference,
+                                        end=context.prices.iloc[-1].name,
+                                        freq=str(context.MINUTE_FREQ)+"min")
+
             context.prices = context.prices.loc[filter_dates]
 
             return context.prices.iloc[-1].name
