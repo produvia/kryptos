@@ -284,8 +284,12 @@ class Strategy(object):
             if "__" not in k:
                 setattr(context, k, v)
 
-        for dataset, manager in self._datasets.items():
-            manager.fetch_data()
+        if self._datasets.items():
+            if context.DATA_FREQ == 'daily':
+                for dataset, manager in self._datasets.items():
+                    manager.fetch_data()
+            else:
+                raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
@@ -403,9 +407,10 @@ class Strategy(object):
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
             for i in self._ml_models:
-                for dataset, manager in self._datasets.items():
-                    context.prices.index.tz = None
-                    context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
+                if context.DATA_FREQ == 'daily':
+                    for dataset, manager in self._datasets.items():
+                        context.prices.index.tz = None
+                        context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
                 i.calculate(context.prices)
 
         else:
