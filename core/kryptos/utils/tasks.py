@@ -11,6 +11,8 @@ CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 
 def queue_notification(msg, telegram_id):
+    if telegram_id is None:
+        return
     with Connection(CONN):
         q = Queue('updates')
         q.enqueue(
@@ -18,4 +20,3 @@ def queue_notification(msg, telegram_id):
             msg=msg,
             telegram_id=telegram_id
         )
-
