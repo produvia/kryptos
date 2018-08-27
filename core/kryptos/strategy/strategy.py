@@ -108,6 +108,7 @@ class Strategy(object):
         logger_group.add_logger(self.log)
 
         self.current_date = None
+        self.last_date = None
         self.filter_dates = None
 
     def serialize(self):
@@ -346,12 +347,17 @@ class Strategy(object):
         # To check to apply stop-loss, take-profit or keep position
         self.check_open_positions(context)
 
-        # Filter minute frequency
-        if context.DATA_FREQ == 'minute' and (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
-            return
-
         # set date first for logging purposes
         self.current_date = get_datetime()
+
+        # Filter minute frequency
+        if context.DATA_FREQ == 'minute':
+            if self.last_date is None:
+                self.last_date = self._get_last_date(context, data)
+            # minutes between the last iteration and first iteration
+            base_minutes = (self.current_date - self.last_date) / np.timedelta64(1, 'm')
+            if (base_minutes + (context.i - 1)) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
+                return
 
         if self.in_job:
             job = get_current_job()
@@ -382,9 +388,7 @@ class Strategy(object):
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         if context.DATA_FREQ == 'minute':
-            filter_dates = pd.date_range(start=context.prices.iloc[0].name,
-                                end=context.prices.iloc[-1].name,
-                                freq=str(context.MINUTE_FREQ)+"min")
+            filter_dates = pd.date_range(start=context.prices.iloc[0].name, end=context.prices.iloc[-1].name, freq=str(context.MINUTE_FREQ)+"min")
             context.prices = context.prices.loc[filter_dates]
 
             if self.filter_dates is not None:
@@ -393,7 +397,8 @@ class Strategy(object):
                 self.filter_dates = filter_dates
 
             # Add current values to historic
-            context.prices.loc[get_datetime()] = context.current
+            self.last_date = get_datetime()
+            context.prices.loc[self.last_date] = context.current
 
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
@@ -426,6 +431,25 @@ class Strategy(object):
             dataset_inds += len(m._indicators)
 
         return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
+
+    def _get_last_date(self, context, data):
+        """Get last date filtered to work in the train dataset.
+        """
+        if self.last_date is None:
+            # Get historic prices
+            retry(self._fetch_history,
+                  sleeptime=5,
+                  retry_exceptions=(ccxt_errors.RequestTimeout),
+                  args=(context, data),
+                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+
+            # Filter selected dates
+            filter_dates = pd.date_range(start=context.prices.iloc[int(context.MINUTE_TO_OPERATE)].name,
+                                end=context.prices.iloc[-1].name,
+                                freq=str(context.MINUTE_FREQ)+"min")
+            context.prices = context.prices.loc[filter_dates]
+
+            return context.prices.iloc[-1].name
 
     def _make_plots(self, context, results):
         # strat_plots = len(self._market_indicators) + len(self._datasets)

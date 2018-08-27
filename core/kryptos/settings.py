@@ -128,8 +128,8 @@ class MLConfig(object):
     }
 
     ## TAKE-PROFIT / STOP-LOSS STRATEGY
-    STOP_LOSS = 0.02 # Stop-Loss
     TAKE_PROFIT = 0.04 # Take-Profit
+    STOP_LOSS = 0.02 # Stop-Loss
 
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     OPTIMIZE_PARAMS = {
@@ -154,7 +154,7 @@ class MLConfig(object):
     # Feature Engineering: tsfresh
     FE_TSFRESH = {
         'enabled': False,
-        # 'kind': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
+        # 'method': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
         'window': 30,
     }
 
