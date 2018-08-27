@@ -53,6 +53,19 @@ def workers_required(queue_name):
     return len(q)
 
 
+def remove_zombie_workers():
+    log.warn('Removing zombie workers')
+    workers = Worker.all(connection=CONN)
+    for worker in workers:
+        if len(worker.queues) < 1:
+            log.warn("f")
+            log.warn(f"{worker} is a zombie, killing...")
+            job = worker.get_current_job()
+            if job is not None:
+                job.ended_at = datetime.datetime.utcnow()
+                worker.failed_queue.quarantine(job, exc_info=("Dead worker", "Moving job to failed queue"))
+            worker.register_death()
+
 
 @click.command()
 def manage_workers():
@@ -61,6 +74,7 @@ def manage_workers():
     # from app.extensions import jsonrpc
     # from kryptos.utils.outputs import in_docker
 
+    remove_zombie_workers()
     #start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
@@ -84,7 +98,6 @@ def manage_workers():
         while True:
             for q in QUEUE_NAMES:
                 required = workers_required(q)
-                log.debug(f"{required} workers required for {q}")
                 for i in range(required):
                     log.info(f"Creating {q} worker")
                     worker = Worker([q], exception_handlers=[retry_handler])
