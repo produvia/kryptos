@@ -39,7 +39,7 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
 
-        if self.strat.in_job and record.level_name == 'NOTICE':
+        if self.strat.in_job: # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
             if not job.meta.get('output'):
                 job.meta['output'] = record.msg
@@ -378,7 +378,7 @@ class Strategy(object):
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
             msg = "Canceling unfilled open order {}".format(i)
-            self.log.debug(msg)
+            self.log.info(msg)
             self.notify(msg)
             cancel_order(i)
 
