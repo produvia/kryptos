@@ -32,23 +32,35 @@ class MLIndicator(AbstractIndicator):
 
         self.first_iteration = True
         self.current_date = None
-        self.signals_buy = False
-        self.signals_sell = False
+
+        # buy/sell are set as attributes rather than calculated properties for ML
+        # because the results are returned from the worker processes
+        # in which the MLIndicator instance is not available
+        self._signals_buy = False
+        self._signals_sell = False
+
+        @property
+        def signals_buy(self):
+            return self._signals_buy
+
+        @property
+        def signals_sell(self):
+            return self._signals_buy
 
     def calculate(self, df, name, **kw):
-        self.signals_buy = False
-        self.signals_sell = False
+        self._signals_buy = False
+        self._signals_sell = False
         self.idx += 1
         self.current_date = get_datetime()
         child_indicator = get_indicator(name)
 
-        if CONFIG.DEBUG:
-            self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
-            self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
-        job = tasks.enqueue_ml_calculate(df_current, name, self.idx, self.current_date, df_final=self.df_final, **kw)
+        self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
+        self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
-        self.result, self.df_results, self.df_final, self.signals_buy, self.signals_sell = job.result
+        job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
+
+        self.result, self.df_results, self.df_final, self._signals_buy, self._signals_sell = job.result
 
 
     def analyze(self, namespace, name, data_freq, extra_results):
@@ -65,50 +77,11 @@ class XGBOOST(MLIndicator):
         super(XGBOOST, self).__init__("XGBOOST", **kw)
 
 
-    @property
-    def signals_buy(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result > 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 1:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 1:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
-
-    @property
-    def signals_sell(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result <= 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 2:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
-
     def calculate(self, df, **kw):
         super(XGBOOST, self).calculate(df, "XGBOOST", **kw)
 
     def analyze(self, namespace, extra_results):
         super(XGBOOST, self).analyze(namespace, "XGBOOST", extra_results)
-
-    def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
-        # Train
-        model = xgboost_train(X_train, y_train, hyper_params, num_boost_rounds)
-        # Predict
-        result = xgboost_test(model, X_test)
-        return result
 
 
 class LIGHTGBM(MLIndicator):
@@ -117,47 +90,9 @@ class LIGHTGBM(MLIndicator):
         self.num_boost_rounds = None
         super(LIGHTGBM, self).__init__("LIGHTGBM", **kw)
 
-    @property
-    def signals_buy(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result > 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 1:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 1:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
-
-    @property
-    def signals_sell(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result <= 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 2:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
 
     def calculate(self, df, **kw):
         super(LIGHTGBM, self).calculate(df, "LIGHTGBM", **kw)
 
     def analyze(self, namespace, extra_results):
         super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", extra_results)
-
-    def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
-        # Train
-        model = lightgbm_train(X_train, y_train, hyper_params, num_boost_rounds)
-        # Predict
-        result = lightgbm_test(model, X_test)
-        return result
