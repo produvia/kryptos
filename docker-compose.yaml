@@ -62,7 +62,23 @@ services:
       - REDIS_PASSWORD=password
 
     # entrypoint: ['python', 'worker.py']
-    entrypoint: ['honcho', 'start', 'worker', 'ingest', '--no-prefix']
+    entrypoint: ['honcho', 'start', 'worker', '--no-prefix']
+    depends_on:
+    - redis
+
+  ml:
+    image: kryptos-local-ml
+    container_name: ml
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    volumes:
+      - ./ml:/ml
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=password
+
     depends_on:
     - redis
 

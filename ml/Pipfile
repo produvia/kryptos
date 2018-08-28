@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "*"
+scipy = "*"
+ta-lib = "*"
+ta = "*"
+numpy = "*"
+rq = "*"
+logbook = "*"
+raven = "*"
+lightgbm = "*"
+matplotlib = "*"
+xgboost = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"
