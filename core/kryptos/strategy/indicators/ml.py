@@ -63,8 +63,8 @@ class MLIndicator(AbstractIndicator):
         self.result, self.df_results, self.df_final, self._signals_buy, self._signals_sell = job.result
 
 
-    def analyze(self, namespace, name, data_freq, extra_results):
-        job = tasks.enqueue_ml_analyze(namespace, name, self.df_final, data_freq, extra_results)
+    def analyze(self, namespace, data_freq, extra_results):
+        job = tasks.enqueue_ml_analyze(namespace, self.name, self.df_final, data_freq, extra_results)
 
 
 
