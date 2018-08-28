@@ -71,7 +71,7 @@ def _optimize_hyper_params(df, idx):
 
 def _set_feature_selection(name, X_train, y_train, X_test, idx, hyper_params, num_boost_rounds):
     # Feature Selection
-    feature_select_columns = []
+    feature_selected_columns = []
     if CONFIG.FEATURE_SELECTION['enabled'] and (idx % CONFIG.FEATURE_SELECTION['n_iterations']) == 0:
         method = CONFIG.FEATURE_SELECTION['method']
         if method == 'embedded':
@@ -210,7 +210,7 @@ def calculate(df_current_json, name, idx, current_datetime, df_final_json, **kw)
     if idx == 0:
         df_final = df_current
     else:
-        df_final.loc[df.index[-1]] = df.iloc[-1]
+        df_final.loc[df_current.index[-1]] = df_current.iloc[-1]
 
     log.info(f'Result: {model_result}')
 
