@@ -25,10 +25,10 @@ def get_indicator(name, **kw):
     return MLIndicator(name, **kw)
 
 
-class MLIndicator(AbstractIndicator):
+
+class MLIndicator():
 
     def __init__(self, name, **kw):
-        super().__init__(name, **kw)
         """Factory for creating an indicator using the machine learning models
 
         The costructor is passed the name of the indicator.
@@ -42,15 +42,64 @@ class MLIndicator(AbstractIndicator):
 
         self.first_iteration = True
         self.current_date = None
+        self.log = logbook.Logger(name)
+
 
     def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
         raise NotImplementedError
 
+    def _optimize_hyper_params(self, df):
+        # Optimize Hyper Params for Xgboost model
+        if CONFIG.OPTIMIZE_PARAMS['enabled'] and (self.idx % CONFIG.OPTIMIZE_PARAMS['iterations']) == 0:
+            # Prepare data to machine learning problem
+            if CONFIG.CLASSIFICATION_TYPE == 1:
+                X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
+            elif CONFIG.CLASSIFICATION_TYPE == 2:
+                X_train_optimize, y_train_optimize, X_test_optimize = labeling_binary_data(df, to_optimize=True)
+            elif CONFIG.CLASSIFICATION_TYPE == 3:
+                X_train_optimize, y_train_optimize, X_test_optimize = labeling_multiclass_data(df, to_optimize=True)
+            else:
+                raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+
+            y_test_optimize = df['target'].tail(CONFIG.OPTIMIZE_PARAMS['size']).values
+            params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
+            self.num_boost_rounds = int(params['num_boost_rounds'])
+            self.hyper_params = clean_params(params)
+
+    def _prepare_data(self, df):
+        if CONFIG.CLASSIFICATION_TYPE == 1:
+            X_train, y_train, X_test = labeling_regression_data(df)
+        elif CONFIG.CLASSIFICATION_TYPE == 2:
+            X_train, y_train, X_test = labeling_binary_data(df)
+        elif CONFIG.CLASSIFICATION_TYPE == 3:
+            X_train, y_train, X_test = labeling_multiclass_data(df)
+        else:
+            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+        return X_train, y_train, X_test
+
+    def _set_feature_selection(self, X_train, y_train, X_test):
+        # Feature Selection
+        if CONFIG.FEATURE_SELECTION['enabled'] and (self.idx % CONFIG.FEATURE_SELECTION['n_iterations']) == 0:
+            method = CONFIG.FEATURE_SELECTION['method']
+            if method == 'embedded':
+                if name == 'XGBOOST':
+                    model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
+                    self.feature_selected_columns = xgb_embedded_feature_selection(model, 'all', 0.8)
+                elif name == 'LIGHTGBM':
+                    self.feature_selected_columns = lgb_embedded_feature_selection(X_train, y_train)
+                else:
+                    raise NotImplementedError
+            elif method == 'filter':
+                self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
+            elif method == 'wrapper':
+                self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
+            else:
+                raise ValueError('Internal Error: Value of CONFIG.FEATURE_SELECTION["method"] should be "embedded", "filter" or "wrapper"')
+
+
     def calculate(self, df, name, **kw):
         self.idx += 1
         self.current_date = get_datetime()
-
-
 
         if CONFIG.DEBUG:
             self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
@@ -59,50 +108,11 @@ class MLIndicator(AbstractIndicator):
         # Dataframe size is enough to apply Machine Learning
         if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
-            # Optimize Hyper Params for Xgboost model
-            if CONFIG.OPTIMIZE_PARAMS['enabled'] and (self.idx % CONFIG.OPTIMIZE_PARAMS['iterations']) == 0:
-                # Prepare data to machine learning problem
-                if CONFIG.CLASSIFICATION_TYPE == 1:
-                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
-                elif CONFIG.CLASSIFICATION_TYPE == 2:
-                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_binary_data(df, to_optimize=True)
-                elif CONFIG.CLASSIFICATION_TYPE == 3:
-                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_multiclass_data(df, to_optimize=True)
-                else:
-                    raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+            self._optimize_hyper_params(df, name, **kw)
 
-                y_test_optimize = df['target'].tail(CONFIG.OPTIMIZE_PARAMS['size']).values
-                params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-                self.num_boost_rounds = int(params['num_boost_rounds'])
-                self.hyper_params = clean_params(params)
+            X_train, y_train, X_test = self._prepare_data(df)
 
-            # Prepare data to machine learning problem
-            if CONFIG.CLASSIFICATION_TYPE == 1:
-                X_train, y_train, X_test = labeling_regression_data(df)
-            elif CONFIG.CLASSIFICATION_TYPE == 2:
-                X_train, y_train, X_test = labeling_binary_data(df)
-            elif CONFIG.CLASSIFICATION_TYPE == 3:
-                X_train, y_train, X_test = labeling_multiclass_data(df)
-            else:
-                raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-
-            # Feature Selection
-            if CONFIG.FEATURE_SELECTION['enabled'] and (self.idx % CONFIG.FEATURE_SELECTION['n_iterations']) == 0:
-                method = CONFIG.FEATURE_SELECTION['method']
-                if method == 'embedded':
-                    if name == 'XGBOOST':
-                        model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-                        self.feature_selected_columns = xgb_embedded_feature_selection(model, 'all', 0.8)
-                    elif name == 'LIGHTGBM':
-                        self.feature_selected_columns = lgb_embedded_feature_selection(X_train, y_train)
-                    else:
-                        raise NotImplementedError
-                elif method == 'filter':
-                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
-                elif method == 'wrapper':
-                    self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
-                else:
-                    raise ValueError('Internal Error: Value of CONFIG.FEATURE_SELECTION["method"] should be "embedded", "filter" or "wrapper"')
+            self._set_feature_selection(X_train, y_train, X_test)
 
             if self.feature_selected_columns:
                 X_train = X_train[self.feature_selected_columns]
