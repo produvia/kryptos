@@ -104,7 +104,7 @@ def get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rou
 
     return model_result
 
-def write_results_to_df(model_result):
+def write_results_to_df(model_result, current_datetime):
     # Results
     df_results = pd.DataFrame(columns=['pred'])
     if CONFIG.CLASSIFICATION_TYPE == 1:
@@ -187,7 +187,7 @@ def calculate(df_current, name, idx, current_datetime, df_final=None, **kw):
         if CONFIG.NORMALIZATION['enabled']:
             model_result = inverse_normalize_data(model_result, scaler_y, CONFIG.NORMALIZATION['method'])
 
-        df_results = write_df_results(model_result)
+        df_results = write_results_to_df(model_result, current_datetime)
 
     else:
         model_result = 0
