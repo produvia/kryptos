@@ -1,7 +1,12 @@
 import os
+import multiprocessing
+import time
+import sys
+
 import redis
-from rq import Connection, Worker
+from rq import Connection, Worker, Queue
 import logbook
+
 
 from raven import Client
 from raven.transport.http import HTTPTransport
@@ -22,6 +27,8 @@ from ml.utils.metric import classification_metrics
 from ml.settings import MLConfig as CONFIG
 
 log = logbook.Logger('ML_INDICATOR')
+handler = logbook.StreamHandler(sys.stdout, level="INFO", bubble=True)
+handler.push_application()
 
 
 SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
@@ -260,13 +267,38 @@ def analyze(namespace, name, df_final_json, data_freq, extra_results):
 
 
 
-def start_worker():
+def manage_workers():
+    # import before starting worker to loading during worker process
+    # from kryptos.strategy import Strategy
+    # from app.extensions import jsonrpc
+    # from kryptos.utils.outputs import in_docker
+
+    #start main worker
     with Connection(CONN):
-        worker = Worker(['ml'])
-        register_sentry(client, worker)
-        worker.work()
+        log.info('Starting initial ML worker')
+
+        backtest_worker = Worker(['ml'])
+        register_sentry(client, backtest_worker)
+        multiprocessing.Process(target=backtest_worker.work, kwargs={'logging_level': 'ERROR'}).start()
+
+
+
+
+        while True:
+            q = Queue('ml', connection=CONN)
+            required = len(q)
+            log.info(f"{required} workers required for {q.name}")
+            for i in range(required):
+                log.info(f"Creating {q} worker")
+                worker = Worker([q.name])
+                register_sentry(client, worker)
+                multiprocessing.Process(target=worker.work, kwargs={'burst': True, 'logging_level': 'ERROR'}).start()
+
+            time.sleep(5)
+
+
 
 
 
 if __name__ == '__main__':
-    start_worker()
+    manage_workers()
