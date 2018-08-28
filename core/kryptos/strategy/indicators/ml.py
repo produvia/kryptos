@@ -62,7 +62,7 @@ class MLIndicator(AbstractIndicator):
         self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
         self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
-        self.log.info('Queuing ML calculation')
+        self.log.info(f'Queuing {self.name} ML calculation')
         job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
         self.current_job_id = job.id
 
