@@ -15,7 +15,6 @@ from kryptos.ml.preprocessing import labeling_multiclass_data, labeling_binary_d
 from kryptos.ml.metric import classification_metrics
 from kryptos.settings import MLConfig as CONFIG
 from kryptos.settings import DEFAULT_CONFIG
-from kryptos.utils import merge_two_dicts
 
 
 def get_indicator(name, **kw):

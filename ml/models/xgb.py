@@ -2,9 +2,9 @@ import xgboost as xgb
 from sklearn.metrics import cohen_kappa_score
 import numpy as np
 
-from kryptos.ml.preprocessing import clean_params
-from kryptos.utils import merge_two_dicts
-from kryptos.settings import MLConfig as CONFIG
+from ml.preprocessing import clean_params
+from ml.utils import merge_two_dicts
+from ml.settings import MLConfig as CONFIG
 
 
 XGBOOST_SEED = 17
