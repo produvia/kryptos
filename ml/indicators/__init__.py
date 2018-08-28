@@ -2,6 +2,7 @@ from catalyst.api import record, get_datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 from kryptos.utils import viz
 from kryptos.strategy.indicators import AbstractIndicator
 from kryptos.strategy.signals import utils
@@ -144,41 +145,41 @@ def calculate(df_current, name, idx, current_datetime, df_final=None, **kw):
     return results_model, df_results, df_final
 
 
-    def analyze(self, namespace, name, extra_results):
+def analyze(namespace, name, df_final, data_freq, extra_results):
 
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            # Post processing of target column
-            self.df_final['target'] = 0 # 'KEEP - DOWN'
-            self.df_final.loc[self.df_final.price < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            # Post processing of target column
-            self.df_final['target'] = 0 # 'KEEP - DOWN'
-            self.df_final.loc[self.df_final.price < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            # Post processing of target column
-            self.df_final['target'] = 0 # 'KEEP'
-            self.df_final.loc[self.df_final.price + (self.df_final.price * CONFIG.PERCENT_UP) < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-            self.df_final.loc[self.df_final.price - (self.df_final.price * CONFIG.PERCENT_DOWN) >= self.df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+    if CONFIG.CLASSIFICATION_TYPE == 1:
+        # Post processing of target column
+        df_final['target'] = 0 # 'KEEP - DOWN'
+        df_final.loc[df_final.price < df_final.price.shift(-1), 'target'] = 1 # 'UP'
+    elif CONFIG.CLASSIFICATION_TYPE == 2:
+        # Post processing of target column
+        df_final['target'] = 0 # 'KEEP - DOWN'
+        df_final.loc[df_final.price < df_final.price.shift(-1), 'target'] = 1 # 'UP'
+    elif CONFIG.CLASSIFICATION_TYPE == 3:
+        # Post processing of target column
+        df_final['target'] = 0 # 'KEEP'
+        df_final.loc[df_final.price + (df_final.price * CONFIG.PERCENT_UP) < df_final.price.shift(-1), 'target'] = 1 # 'UP'
+        df_final.loc[df_final.price - (df_final.price * CONFIG.PERCENT_DOWN) >= df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
-        if DEFAULT_CONFIG['DATA_FREQ'] == 'daily':
-            self.results_pred = self.df_results.pred.astype('int').values
-            self.results_real = self.df_final.loc[pd.to_datetime(self.df_results.index.date, utc=True)].target.values
-        else:
-            self.results_pred = self.df_results.pred.astype('int').values
-            self.results_real = self.df_final.loc[self.df_results.index].target.values
+    if data_freq == 'daily':
+        results_pred = df_results.pred.astype('int').values
+        results_real = df_final.loc[pd.to_datetime(df_results.index.date, utc=True)].target.values
+    else:
+        results_pred = df_results.pred.astype('int').values
+        results_real = df_final.loc[df_results.index].target.values
 
-        # Delete last item because of last results_real is not real.
-        self.results_pred = self.results_pred[:-1]
-        self.results_real = self.results_real[:-1]
+    # Delete last item because of last results_real is not real.
+    results_pred = results_pred[:-1]
+    results_real = results_real[:-1]
 
-        if name == 'XGBOOST':
-            classification_metrics(namespace, 'xgboost_confussion_matrix.txt',
-                                    self.results_real, self.results_pred, extra_results)
-        elif name == 'LIGHTGBM':
-            classification_metrics(namespace, 'lightgbm_confussion_matrix.txt',
-                                    self.results_real, self.results_pred, extra_results)
+    if name == 'XGBOOST':
+        classification_metrics(namespace, 'xgboost_confussion_matrix.txt',
+                                results_real, results_pred, extra_results)
+    elif name == 'LIGHTGBM':
+        classification_metrics(namespace, 'lightgbm_confussion_matrix.txt',
+                                results_real, results_pred, extra_results)
 
     @property
     def signals_buy(self):
