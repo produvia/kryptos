@@ -19,3 +19,19 @@ def queue_notification(msg, telegram_id):
             telegram_id=telegram_id
         )
 
+def enqueue_ml_calculate(df_current, name, idx, current_datetime, df_final, **kw):
+    with Connection(CONN):
+        q = Queue('ml')
+        return q.enqueue(
+            'ml.worker.tasks.calculate',
+            args=[df_current, name, idx, current_datetime, df_final],
+            kwargs=kw
+        )
+
+def enqueue_ml_analyze(namespace, name, df_final, data_freq, extra_results):
+    with Connection(CONN):
+        q = Queue('ml')
+        return q.enqueue(
+            'ml.worker.tasks.analyze',
+            args=[namespace, name, df_final, data_freq, extra_results]
+        )
