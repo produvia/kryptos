@@ -43,13 +43,13 @@ class MLIndicator(AbstractIndicator):
         self._signals_buy = False
         self._signals_sell = False
 
-        @property
-        def signals_buy(self):
-            return self._signals_buy
+    @property
+    def signals_buy(self):
+        return self._signals_buy
 
-        @property
-        def signals_sell(self):
-            return self._signals_buy
+    @property
+    def signals_sell(self):
+        return self._signals_buy
 
     def calculate(self, df, name, **kw):
         self._signals_buy = False
