@@ -1,8 +1,11 @@
-from catalyst.api import get_datetime
+from catalyst.api import get_datetime, record
 import pandas as pd
+from rq import Queue
+import time
 
 from kryptos.utils import tasks
 from kryptos.strategy.indicators import AbstractIndicator
+
 
 
 
@@ -32,6 +35,7 @@ class MLIndicator(AbstractIndicator):
 
         self.first_iteration = True
         self.current_date = None
+        self.current_job_id = None
 
         # buy/sell are set as attributes rather than calculated properties for ML
         # because the results are returned from the worker processes
@@ -58,9 +62,30 @@ class MLIndicator(AbstractIndicator):
         self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
         self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
+        self.log.info('Queuing ML calculation')
         job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
+        self.current_job_id = job.id
 
-        self.result, self.df_results, self.df_final, self._signals_buy, self._signals_sell = job.result
+
+
+    def record(self):
+        q = Queue('ml', connection=tasks.CONN)
+        job = q.fetch_job(self.current_job_id)
+        while not job.is_finished:
+            self.log.info('Waiting for ML job')
+            time.sleep(3)
+        self.log.info('Job complete')
+
+        self.log.info(job.result.__dict__)
+        self.result, df_results_dict, df_final_dict, self._signals_buy, self._signals_sell = job.result
+
+        self.df_results = pd.DataFrame.from_dict(df_results_dict)
+        self.df_final = pd.DataFrame.from_dict(df_final_dict)
+
+
+        model_name = self.name
+        payload = {self.name: self.result}
+        record(**payload)
 
 
     def analyze(self, namespace, data_freq, extra_results):
