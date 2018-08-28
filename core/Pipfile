@@ -28,9 +28,8 @@ google-cloud = "*"
 honcho = "*"
 google-cloud-datastore = "*"
 gunicorn = "*"
-ta = "==0.1.11"
 lightgbm = "*"
-ta = "*"
+ta = "==0.1.12"
 raven = "*"
 
 [dev-packages]
