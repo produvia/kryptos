@@ -1,4 +1,3 @@
-from catalyst.api import record, get_datetime
 import matplotlib.pyplot as plt
 import pandas as pd
 import logbbok
@@ -108,9 +107,9 @@ def write_results_to_df(model_result, current_datetime):
     # Results
     df_results = pd.DataFrame(columns=['pred'])
     if CONFIG.CLASSIFICATION_TYPE == 1:
-        df_results.loc[get_datetime()] = 1 if model_result > 0 else 0
+        df_results.loc[current_datetime] = 1 if model_result > 0 else 0
     elif CONFIG.CLASSIFICATION_TYPE == 2 or CONFIG.CLASSIFICATION_TYPE == 3:
-        df_results.loc[get_datetime()] = model_result
+        df_results.loc[current_datetime] = model_result
     else:
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
@@ -148,7 +147,6 @@ def signals_sell(model_result):
     return signal
 
 def calculate(df_current, name, idx, current_datetime, df_final=None, **kw):
-    current_datetime = get_datetime()
 
     if df_final is None:
         df_final = pd.DataFrame()
