@@ -43,10 +43,14 @@ class MLIndicator(AbstractIndicator):
         self.first_iteration = True
         self.current_date = None
 
+    def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
+        raise NotImplementedError
+
     def calculate(self, df, name, **kw):
         self.idx += 1
         self.current_date = get_datetime()
-        child_indicator = get_indicator(name)
+
+
 
         if CONFIG.DEBUG:
             self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
@@ -114,7 +118,7 @@ class MLIndicator(AbstractIndicator):
                 X_train, y_train, X_test, scaler_y = normalize_data(X_train, y_train, X_test, name, method=CONFIG.NORMALIZATION['method'])
 
             # Train and test indicator
-            self.result = child_indicator.train_test(X_train, y_train, X_test, self.hyper_params, self.num_boost_rounds)
+            self.result = self.train_test(X_train, y_train, X_test, self.hyper_params, self.num_boost_rounds)
 
             # Revert normalization
             if CONFIG.NORMALIZATION['enabled']:
