@@ -90,8 +90,11 @@ def write_results_to_df():
 
     return df_results
 
-def calculate(df, name, idx, current_datetime, **kw):
+def calculate(df_current, name, idx, current_datetime, df_final=None, **kw):
     current_datetime = get_datetime()
+
+    if df_final is None:
+        df_final = pd.DataFrame()
 
 
     if CONFIG.DEBUG:
@@ -101,9 +104,9 @@ def calculate(df, name, idx, current_datetime, **kw):
     # Dataframe size is enough to apply Machine Learning
     if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
-        num_boost_rounds, hyper_params = _optimize_hyper_params(df, name, **kw)
+        num_boost_rounds, hyper_params = _optimize_hyper_params(df_current, name, **kw)
 
-        X_train, y_train, X_test = _prepare_data(df)
+        X_train, y_train, X_test = _prepare_data(df_current)
 
         feature_selected_columns = _set_feature_selection(X_train, y_train, X_test)
 
@@ -134,19 +137,11 @@ def calculate(df, name, idx, current_datetime, **kw):
 
     # Fill df to analyze at end
     if idx == 0:
-        self.df_final = df
-        self.first_iteration = False
+        df_final = df_current
     else:
-        self.df_final.loc[df.index[-1]] = df.iloc[-1]
+        df_final.loc[df.index[-1]] = df.iloc[-1]
 
-    if CONFIG.DEBUG:
-        # TODO: to log more details
-        if self.signals_buy:
-            self.log.info("buy signal")
-        elif self.signals_sell:
-            self.log.info("sell signal")
-        else:
-            self.log.info("keep signal")
+    return results_model, df_results, df_final
 
 
     def analyze(self, namespace, name, extra_results):
