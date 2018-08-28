@@ -76,11 +76,11 @@ class MLIndicator(AbstractIndicator):
             time.sleep(3)
         self.log.info('Job complete')
 
-        self.log.info(job.result.__dict__)
-        self.result, df_results_dict, df_final_dict, self._signals_buy, self._signals_sell = job.result
 
-        self.df_results = pd.DataFrame.from_dict(df_results_dict)
-        self.df_final = pd.DataFrame.from_dict(df_final_dict)
+        self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell = job.result
+
+        self.df_results = pd.read_json(df_results_json)
+        self.df_final = pd.read_json(df_final_json)
 
 
         model_name = self.name

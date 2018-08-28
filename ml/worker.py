@@ -157,9 +157,9 @@ def signals_sell(model_result):
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
     return signal
 
-def calculate(df_current_dict, name, idx, current_datetime, df_final_dict, **kw):
-    df_current = pd.DataFrame.from_dict(df_current_dict)
-    df_final = pd.DataFrame.from_dict(df_final_dict)
+def calculate(df_current_json, name, idx, current_datetime, df_final_json, **kw):
+    df_current = pd.read_json(df_current_json)
+    df_final = pd.read_json(df_final_json)
 
     if df_final is None:
         df_final = pd.DataFrame()
@@ -212,11 +212,17 @@ def calculate(df_current_dict, name, idx, current_datetime, df_final_dict, **kw)
     else:
         df_final.loc[df.index[-1]] = df.iloc[-1]
 
-    return results_model, df_results, df_final, buy, sell
+    log.info(f'Result: {model_result}')
+
+    import logging
+
+    logging.info(model_result, df_results.to_json(), df_final.to_json(), buy, sell)
+
+    return model_result, df_results.to_json(), df_final.to_json(), buy, sell
 
 
-def analyze(namespace, name, df_final_dict, data_freq, extra_results):
-    df_final = pd.DataFrame.from_dict(df_final_dict)
+def analyze(namespace, name, df_final_json, data_freq, extra_results):
+    df_final = pd.read_json(df_final_json)
 
     if CONFIG.CLASSIFICATION_TYPE == 1:
         # Post processing of target column
