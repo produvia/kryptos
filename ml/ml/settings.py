@@ -1,4 +1,4 @@
-## Machine Learning Settings
+import os
 
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
@@ -7,6 +7,9 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
+
+
+## Machine Learning Settings
 
 class MLConfig(object):
 
@@ -96,7 +99,7 @@ class MLConfig(object):
     # assert OPTIMIZE_PARAMS['size'] < MIN_ROWS_TO_ML # TODO: check
 
     # Check if min rows is less than dataframe size.
-    assert MIN_ROWS_TO_ML <= DEFAULT_CONFIG['BARS']
+    # assert MIN_ROWS_TO_ML <= DEFAULT_CONFIG['BARS'] # TODO restore check
 
     if CLASSIFICATION_TYPE == 2:
         # Check if threshold is in range [0,1]
