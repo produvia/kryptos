@@ -23,8 +23,7 @@ from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
-from kryptos.settings import DEFAULT_CONFIG
-from kryptos.settings import MLConfig as CONFIG
+from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS
 from kryptos.analysis import quant
 
 from redo import retry
@@ -780,10 +779,10 @@ class Strategy(object):
             position = context.portfolio.positions.get(context.asset)
             # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
-            if context.price >= position.cost_basis * (1 + CONFIG.TAKE_PROFIT): # Take Profit
+            if context.price >= position.cost_basis * (1 + TAKE_PROFIT): # Take Profit
                 self._take_profit_sell(context, position)
 
-            if context.price < position.cost_basis * (1 - CONFIG.STOP_LOSS): # Stop Loss
+            if context.price < position.cost_basis * (1 - STOP_LOSS): # Stop Loss
                 self._stop_loss_sell(context, position)
 
     def _take_profit_sell(self, context, position):

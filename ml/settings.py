@@ -35,9 +35,7 @@ class MLConfig(object):
         'method': 'diff' # 'max', 'diff' or 'std'
     }
 
-    ## TAKE-PROFIT / STOP-LOSS STRATEGY
-    TAKE_PROFIT = 0.04 # Take-Profit
-    STOP_LOSS = 0.02 # Stop-Loss
+
 
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     OPTIMIZE_PARAMS = {

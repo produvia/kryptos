@@ -9,6 +9,11 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
 
+# TODO move into strategy config.json
+## TAKE-PROFIT / STOP-LOSS STRATEGY
+TAKE_PROFIT = 0.04 # Take-Profit
+STOP_LOSS = 0.02 # Stop-Loss
+
 QUEUE_NAMES = ['paper', 'live', 'backtest']
 
 with open(DEFAULT_CONFIG_FILE, "r") as f:
