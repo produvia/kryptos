@@ -3,7 +3,7 @@ from sklearn.preprocessing import StandardScaler, MaxAbsScaler, MinMaxScaler
 pd.options.mode.chained_assignment = None # Disable chained assignments
 
 from ml.settings import MLConfig as CONFIG
-from ml.feature_engineering import add_ta_features, add_ta_features2, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
+from ml.utils.feature_engineering import add_ta_features, add_ta_features2, add_dates_features, add_utils_features, add_tsfresh_features, add_fbprophet_features
 from ml.utils import merge_two_dicts
 from ml.models import xgb
 
