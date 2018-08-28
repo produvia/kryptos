@@ -546,7 +546,7 @@ class Strategy(object):
         extra_results = self.get_extra_results(context, results)
 
         for i in self._ml_models:
-            i.analyze(self.name, extra_results)
+            i.analyze(self.name, conext.DATA_FREQ, extra_results)
 
     def get_extra_results(self, context, results):
         extra_results = {
