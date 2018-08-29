@@ -15,6 +15,7 @@ raven = "*"
 lightgbm = "*"
 matplotlib = "*"
 xgboost = "*"
+google-cloud-datastore = "*"
 
 [dev-packages]
 

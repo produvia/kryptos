@@ -26,6 +26,8 @@ from ml.utils.preprocessing import labeling_multiclass_data, labeling_binary_dat
 from ml.utils.metric import classification_metrics
 from ml.settings import MLConfig as CONFIG
 
+from google.cloud import datastore
+
 log = logbook.Logger('ML_INDICATOR')
 handler = logbook.StreamHandler(sys.stdout, level="INFO", bubble=True)
 handler.push_application()
@@ -36,10 +38,19 @@ client = Client(SENTRY_DSN, transport=HTTPTransport)
 
 REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
 REDIS_PORT = os.getenv('REDIS_PORT', 6379)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
+
+def get_from_datastore(config_key, env):
+    ds = datastore.Client()
+    print('Fetching {}'.format(config_key))
+
+    product_key = ds.key('Settings', env)
+    entity = ds.get(product_key)
+
+    return entity[config_key]
 
 
 def _prepare_data(df):
@@ -289,7 +300,7 @@ def manage_workers():
             required = len(q)
             log.info(f"{required} workers required for {q.name}")
             for i in range(required):
-                log.info(f"Creating {q} worker")
+                log.info(f"Creating {q.name} worker")
                 worker = Worker([q.name])
                 register_sentry(client, worker)
                 multiprocessing.Process(target=worker.work, kwargs={'burst': True, 'logging_level': 'ERROR'}).start()
