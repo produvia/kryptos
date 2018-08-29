@@ -16,15 +16,15 @@ from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.utils import tasks
-from kryptos.settings import QUEUE_NAMES
+from kryptos.settings import QUEUE_NAMES, get_from_datastore
 
 
 SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
 
-REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
-REDIS_PORT = os.getenv('REDIS_PORT', 6379)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
+REDIS_PORT = os.getenv('REDIS_PORT', 19779)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 

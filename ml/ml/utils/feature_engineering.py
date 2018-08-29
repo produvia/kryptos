@@ -5,7 +5,6 @@ import talib as ta
 from datetime import datetime
 from ta import add_all_ta_features
 
-from kryptos.settings import DEFAULT_CONFIG_FILE
 
 
 def add_utils_features(df):

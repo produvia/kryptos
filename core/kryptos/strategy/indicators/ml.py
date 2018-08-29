@@ -1,21 +1,13 @@
-from catalyst.api import record, get_datetime
-import matplotlib.pyplot as plt
+from catalyst.api import get_datetime, record
 import pandas as pd
+from rq import Queue
+import time
 
-from kryptos.utils import viz
+from kryptos.utils import tasks
 from kryptos.strategy.indicators import AbstractIndicator
-from kryptos.strategy.signals import utils
-from kryptos.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
-from kryptos.ml.models.lgb import lightgbm_train, lightgbm_test
-from kryptos.ml.feature_selection.xgb import xgb_embedded_feature_selection
-from kryptos.ml.feature_selection.lgb import lgb_embedded_feature_selection
-from kryptos.ml.feature_selection.filter import filter_feature_selection
-from kryptos.ml.feature_selection.wrapper import wrapper_feature_selection
-from kryptos.ml.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params, normalize_data, inverse_normalize_data
-from kryptos.ml.metric import classification_metrics
-from kryptos.settings import MLConfig as CONFIG
-from kryptos.settings import DEFAULT_CONFIG
-from kryptos.utils import merge_two_dicts
+
+
+
 
 
 def get_indicator(name, **kw):
@@ -43,154 +35,64 @@ class MLIndicator(AbstractIndicator):
 
         self.first_iteration = True
         self.current_date = None
+        self.current_job_id = None
+
+        # buy/sell are set as attributes rather than calculated properties for ML
+        # because the results are returned from the worker processes
+        # in which the MLIndicator instance is not available
+        self._signals_buy = False
+        self._signals_sell = False
+
+    @property
+    def signals_buy(self):
+        return self._signals_buy
+
+    @property
+    def signals_sell(self):
+        return self._signals_buy
 
     def calculate(self, df, name, **kw):
+        self._signals_buy = False
+        self._signals_sell = False
         self.idx += 1
         self.current_date = get_datetime()
         child_indicator = get_indicator(name)
 
-        if CONFIG.DEBUG:
-            self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
-            self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
-        # Dataframe size is enough to apply Machine Learning
-        if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
+        self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
+        self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
 
-            # Optimize Hyper Params for Xgboost model
-            if CONFIG.OPTIMIZE_PARAMS['enabled'] and (self.idx % CONFIG.OPTIMIZE_PARAMS['iterations']) == 0:
-                # Prepare data to machine learning problem
-                if CONFIG.CLASSIFICATION_TYPE == 1:
-                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
-                elif CONFIG.CLASSIFICATION_TYPE == 2:
-                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_binary_data(df, to_optimize=True)
-                elif CONFIG.CLASSIFICATION_TYPE == 3:
-                    X_train_optimize, y_train_optimize, X_test_optimize = labeling_multiclass_data(df, to_optimize=True)
-                else:
-                    raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
+        self.log.info(f'Queuing {self.name} ML calculation')
+        job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
+        self.current_job_id = job.id
 
-                y_test_optimize = df['target'].tail(CONFIG.OPTIMIZE_PARAMS['size']).values
-                params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-                self.num_boost_rounds = int(params['num_boost_rounds'])
-                self.hyper_params = clean_params(params)
 
-            # Prepare data to machine learning problem
-            if CONFIG.CLASSIFICATION_TYPE == 1:
-                X_train, y_train, X_test = labeling_regression_data(df)
-            elif CONFIG.CLASSIFICATION_TYPE == 2:
-                X_train, y_train, X_test = labeling_binary_data(df)
-            elif CONFIG.CLASSIFICATION_TYPE == 3:
-                X_train, y_train, X_test = labeling_multiclass_data(df)
-            else:
-                raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
-            # Feature Selection
-            if CONFIG.FEATURE_SELECTION['enabled'] and (self.idx % CONFIG.FEATURE_SELECTION['n_iterations']) == 0:
-                method = CONFIG.FEATURE_SELECTION['method']
-                if method == 'embedded':
-                    if name == 'XGBOOST':
-                        model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-                        self.feature_selected_columns = xgb_embedded_feature_selection(model, 'all', 0.8)
-                    elif name == 'LIGHTGBM':
-                        self.feature_selected_columns = lgb_embedded_feature_selection(X_train, y_train)
-                    else:
-                        raise NotImplementedError
-                elif method == 'filter':
-                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
-                elif method == 'wrapper':
-                    self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
-                else:
-                    raise ValueError('Internal Error: Value of CONFIG.FEATURE_SELECTION["method"] should be "embedded", "filter" or "wrapper"')
+    def record(self):
+        q = Queue('ml', connection=tasks.CONN)
+        job = q.fetch_job(self.current_job_id)
+        while not job.is_finished:
+            self.log.info('Waiting for ML job')
+            time.sleep(3)
+        self.log.info('Job complete')
 
-            if self.feature_selected_columns:
-                X_train = X_train[self.feature_selected_columns]
-                X_test = X_test[self.feature_selected_columns]
 
-            if CONFIG.DEBUG:
-                X_train_shape = X_train.shape
-                self.log.info('X_train number of rows: {rows} number of columns {columns}'.format(
-                                    rows=X_train_shape[0], columns=X_train_shape[1]))
+        self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell = job.result
+        self.current_job_id = None
 
-            # Normalize data
-            if CONFIG.NORMALIZATION['enabled']:
-                X_train, y_train, X_test, scaler_y = normalize_data(X_train, y_train, X_test, name, method=CONFIG.NORMALIZATION['method'])
+        self.df_results = pd.read_json(df_results_json)
+        self.df_final = pd.read_json(df_final_json)
 
-            # Train and test indicator
-            self.result = child_indicator.train_test(X_train, y_train, X_test, self.hyper_params, self.num_boost_rounds)
 
-            # Revert normalization
-            if CONFIG.NORMALIZATION['enabled']:
-                self.result = inverse_normalize_data(self.result, scaler_y, CONFIG.NORMALIZATION['method'])
+        model_name = self.name
+        payload = {self.name: self.result}
+        record(**payload)
 
-            # Results
-            if CONFIG.CLASSIFICATION_TYPE == 1:
-                self.df_results.loc[get_datetime()] = 1 if self.result > 0 else 0
-            elif CONFIG.CLASSIFICATION_TYPE == 2 or CONFIG.CLASSIFICATION_TYPE == 3:
-                self.df_results.loc[get_datetime()] = self.result
-            else:
-                raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
-        else:
-            self.result = 0
+    def analyze(self, namespace, data_freq, extra_results):
+        job = tasks.enqueue_ml_analyze(namespace, self.name, self.df_final, data_freq, extra_results)
 
-        # Fill df to analyze at end
-        if self.first_iteration:
-            self.df_final = df
-            self.first_iteration = False
-        else:
-            self.df_final.loc[df.index[-1]] = df.iloc[-1]
 
-        if CONFIG.DEBUG:
-            # TODO: to log more details
-            if self.signals_buy:
-                self.log.info("buy signal")
-            elif self.signals_sell:
-                self.log.info("sell signal")
-            else:
-                self.log.info("keep signal")
-
-    def analyze(self, namespace, name, extra_results):
-
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            # Post processing of target column
-            self.df_final['target'] = 0 # 'KEEP - DOWN'
-            self.df_final.loc[self.df_final.price < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            # Post processing of target column
-            self.df_final['target'] = 0 # 'KEEP - DOWN'
-            self.df_final.loc[self.df_final.price < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            # Post processing of target column
-            self.df_final['target'] = 0 # 'KEEP'
-            self.df_final.loc[self.df_final.price + (self.df_final.price * CONFIG.PERCENT_UP) < self.df_final.price.shift(-1), 'target'] = 1 # 'UP'
-            self.df_final.loc[self.df_final.price - (self.df_final.price * CONFIG.PERCENT_DOWN) >= self.df_final.price.shift(-1), 'target'] = 2 # 'DOWN'
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-
-        if DEFAULT_CONFIG['DATA_FREQ'] == 'daily':
-            self.results_pred = self.df_results.pred.astype('int').values
-            self.results_real = self.df_final.loc[pd.to_datetime(self.df_results.index.date, utc=True)].target.values
-        else:
-            self.results_pred = self.df_results.pred.astype('int').values
-            self.results_real = self.df_final.loc[self.df_results.index].target.values
-
-        # Delete last item because of last results_real is not real.
-        self.results_pred = self.results_pred[:-1]
-        self.results_real = self.results_real[:-1]
-
-        if name == 'XGBOOST':
-            classification_metrics(namespace, 'xgboost_confussion_matrix.txt',
-                                    self.results_real, self.results_pred, extra_results)
-        elif name == 'LIGHTGBM':
-            classification_metrics(namespace, 'lightgbm_confussion_matrix.txt',
-                                    self.results_real, self.results_pred, extra_results)
-
-    @property
-    def signals_buy(self):
-        pass
-
-    @property
-    def signals_sell(self):
-        pass
 
 
 class XGBOOST(MLIndicator):
@@ -200,50 +102,12 @@ class XGBOOST(MLIndicator):
         self.num_boost_rounds = None
         super(XGBOOST, self).__init__("XGBOOST", **kw)
 
-    @property
-    def signals_buy(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result > 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 1:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 1:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
-
-    @property
-    def signals_sell(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result <= 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 2:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
 
     def calculate(self, df, **kw):
         super(XGBOOST, self).calculate(df, "XGBOOST", **kw)
 
     def analyze(self, namespace, extra_results):
         super(XGBOOST, self).analyze(namespace, "XGBOOST", extra_results)
-
-    def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
-        # Train
-        model = xgboost_train(X_train, y_train, hyper_params, num_boost_rounds)
-        # Predict
-        result = xgboost_test(model, X_test)
-        return result
 
 
 class LIGHTGBM(MLIndicator):
@@ -252,47 +116,9 @@ class LIGHTGBM(MLIndicator):
         self.num_boost_rounds = None
         super(LIGHTGBM, self).__init__("LIGHTGBM", **kw)
 
-    @property
-    def signals_buy(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result > 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 1:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 1:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
-
-    @property
-    def signals_sell(self):
-        signal = False
-        if CONFIG.CLASSIFICATION_TYPE == 1:
-            if self.result <= 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 2:
-            if self.result == 0:
-                signal = True
-        elif CONFIG.CLASSIFICATION_TYPE == 3:
-            if self.result == 2:
-                signal = True
-        else:
-            raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
-        return signal
 
     def calculate(self, df, **kw):
         super(LIGHTGBM, self).calculate(df, "LIGHTGBM", **kw)
 
     def analyze(self, namespace, extra_results):
         super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", extra_results)
-
-    def train_test(self, X_train, y_train, X_test, hyper_params, num_boost_rounds):
-        # Train
-        model = lightgbm_train(X_train, y_train, hyper_params, num_boost_rounds)
-        # Predict
-        result = lightgbm_test(model, X_test)
-        return result

@@ -2,9 +2,9 @@ import lightgbm as lgb
 import numpy as np
 import multiprocessing
 
-from kryptos.ml.preprocessing import clean_params
-from kryptos.utils import merge_two_dicts
-from kryptos.settings import MLConfig as CONFIG
+from ml.utils.preprocessing import clean_params
+from ml.utils import merge_two_dicts
+from ml.settings import MLConfig as CONFIG
 
 
 LIGHTGBM_SEED = 17
