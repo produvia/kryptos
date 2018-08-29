@@ -98,22 +98,32 @@ To connect to the production database instead of the docker container, install t
 If this is the first time deploying, begin by pushing the images to GCR
 
 ```bash
-# first build and push the base and worker images
+# worker
 cd /core
-gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-base -f Dockerfile-base --timeout 1200 .
 gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-worker --timeout 1200 .
 
 # then the app image
 cd /app
 gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-app . --timeout 1200
+
+# then the ml image
+cd /ml
+gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-ml . --timeout 1200
 ```
+
+Then deploy the app and ml services to Google App engine using the pushed images
 
 ```bash
 # we could drop the image_url, but this way is quicker
+
+# in app/
 gcloud app deploy app.yaml --image-url=gcr.io/kryptos-205115/kryptos-app
+
+# in /ml/
+gcloud app deploy app.yaml --image-url=gcr.io/kryptos-205115/kryptos-ml
 ```
 
-### Set up the worker Compute Instance Template
+### Set up the worker Compute Engine Instance Template
 
 In the Google Cloud console, create a new Instance Template
 
@@ -122,8 +132,9 @@ In the Google Cloud console, create a new Instance Template
 - Add the following command arguments (to enable logs)
     - `--log-driver=gcplogs`
     - `--log-opt gcp-log-cmd=true`
-- Set the `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` env variables
--Create a host directory mount
+- Set the `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, and `SENTRY_DSN` env variables
+
+- Create a host directory mount
     - Mount path: `/root/.catalyst`
     - Host path: `catalyst-dir`
     - Read/Write
