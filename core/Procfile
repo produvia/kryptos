@@ -1,3 +1,2 @@
 worker: python worker.py
 ingest: python ingester.py
-monitor: gunicorn monitor:app --bind 0.0.0:8080
