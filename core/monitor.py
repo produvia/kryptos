@@ -3,6 +3,7 @@ import os
 
 from flask import Flask
 import redis
+from kryptos.settings import get_from_datastore
 
 app = Flask(__name__)
 
