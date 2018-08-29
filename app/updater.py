@@ -1,7 +1,8 @@
 import os
 import json
 import redis
-from rq import Connection, Worker
+from rq import Connection
+from rq.worker import HerokuWorker as Worker
 import logbook
 
 from telegram import Bot

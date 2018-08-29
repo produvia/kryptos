@@ -1,7 +1,8 @@
 import os
 import json
 import redis
-from rq import Queue, Connection, Worker, get_failed_queue
+from rq import Queue, Connection, get_failed_queue
+from rq.worker import HerokuWorker as Worker
 import click
 import multiprocessing
 import time

@@ -4,7 +4,8 @@ import time
 import sys
 
 import redis
-from rq import Connection, Worker, Queue
+from rq import Connection, Queue
+from rq.worker import HerokuWorker as Worker
 import logbook
 
 
@@ -289,7 +290,7 @@ def manage_workers():
         while True:
             q = Queue('ml', connection=CONN)
             required = len(q)
-            log.info(f"{required} workers required for {q.name}")
+            # log.info(f"{required} workers required for {q.name}")
             for i in range(required):
                 log.info(f"Creating {q.name} worker")
                 worker = Worker([q.name])
