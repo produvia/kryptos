@@ -793,8 +793,12 @@ class Strategy(object):
         )
 
         profit = (context.price * position.amount) - (position.cost_basis * position.amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
-                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
+
+        msg = "Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
+
+        self.log.notice(msg)
+        self.notify(dedent(msg))
 
     def _stop_loss_sell(self, context, position):
         order(
@@ -804,11 +808,9 @@ class Strategy(object):
         )
 
         profit = (context.price * position.amount) - (position.cost_basis * position.amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
-                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-                amount=amount, price=context.price, profit=profit, date=get_datetime())
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
 
         self.log.notice(msg)
         self.notify(dedent(msg))
