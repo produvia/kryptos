@@ -1,6 +1,7 @@
 import os
 from rq import Connection, Queue
 import redis
+from kryptos.settings import DEFAULT_CONFIG
 
 
 REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
@@ -27,7 +28,8 @@ def enqueue_ml_calculate(df_current, name, idx, current_datetime, df_final, **kw
         return q.enqueue(
             'worker.calculate',
             args=[df_current_json, name, idx, current_datetime, df_final_json],
-            kwargs=kw
+            kwargs=kw,
+            timeout=str(DEFAULT_CONFIG['MINUTE_FREQ']) + 'm'  # allow job to run for full iteration
         )
 
 def enqueue_ml_analyze(namespace, name, df_final, data_freq, extra_results):
