@@ -16,3 +16,6 @@ network:
 
 readiness_check:
     app_start_timeout_sec: 3600
+
+manual_scaling:
+  instances: 1
