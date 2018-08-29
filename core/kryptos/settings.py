@@ -19,6 +19,15 @@ QUEUE_NAMES = ['paper', 'live', 'backtest']
 with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = json.load(f)
 
+def get_from_datastore(config_key, env):
+    ds = datastore.Client()
+    print('Fetching {}'.format(config_key))
+
+    product_key = ds.key('Settings', env)
+    entity = ds.get(product_key)
+
+    return entity[config_key]
+
 # Optionally set metrics here instead of with the metrics "-m" option
 METRICS = [
     # 'algo_volatility',
