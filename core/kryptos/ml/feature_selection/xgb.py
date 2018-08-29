@@ -2,7 +2,7 @@ import operator
 import random
 
 
-def embedded_feature_selection(model, importance_type='all', percentage=0.9):
+def xgb_embedded_feature_selection(model, importance_type='all', percentage=0.9):
     """Perform feature selection using XGBoost embedded method.
 
     Args:

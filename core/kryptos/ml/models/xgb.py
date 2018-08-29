@@ -6,7 +6,9 @@ from kryptos.ml.preprocessing import clean_params
 from kryptos.utils import merge_two_dicts
 from kryptos.settings import MLConfig as CONFIG
 
+
 XGBOOST_SEED = 17
+
 
 if CONFIG.CLASSIFICATION_TYPE == 1:
     FIXED_PARAMS_DEFAULT = {
@@ -21,7 +23,7 @@ if CONFIG.CLASSIFICATION_TYPE == 1:
 elif CONFIG.CLASSIFICATION_TYPE == 2:
     FIXED_PARAMS_DEFAULT = {
         'objective': 'binary:logistic',
-        'eval_metric': 'auc', # 'error@0.9', auc
+        'eval_metric': 'error', # 'error@0.9', auc
         'tree_method': 'exact', # TODO: gpu_exact
         'seed': XGBOOST_SEED
     }
@@ -38,21 +40,25 @@ elif CONFIG.CLASSIFICATION_TYPE == 3:
 else:
     raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
+
 FIXED_PARAMS = {
     'silent': 1,
     'seed': XGBOOST_SEED
 }
 
+
 OPTIMIZABLE_PARAMS = {
     'n_trees': 800,
-    'eta': 0.03, # 0.0045 0.05
+    'eta': 0.04, # 0.0045 0.05
     'max_depth': 30,
     'subsample': 1,
     'colsample_bytree': 1,
     'colsample_bylevel': 1
 }
 
+
 DEFAULT_PARAMS = merge_two_dicts(OPTIMIZABLE_PARAMS, FIXED_PARAMS)
+
 
 def optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize):
     # IMPLEMENTED ON https://github.com/produvia/kryptos/tree/ml-tsfresh
@@ -63,7 +69,6 @@ def optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize,
 
 
 def xgboost_train(X_train, y_train, xgb_params=None, num_boost_rounds=None):
-
     if not xgb_params:
         xgb_params = merge_two_dicts(DEFAULT_PARAMS, FIXED_PARAMS_DEFAULT)
 

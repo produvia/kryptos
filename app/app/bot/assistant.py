@@ -141,7 +141,7 @@ def display_momentum_indicators():
 @assist.action('new-strategy-select')
 def select_strategy(existing_strategy):
     # TODO determine exchange
-    backtest_dict = {'trading': {'EXCHANGE': 'bitfinex'}, 'indicators': [{"name": existing_strategy}]}
+    backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
     backtest_dict['name'] = f"{existing_strategy} Backtest"
 
     # Can't use today as the end date bc data bundles are updated daily,

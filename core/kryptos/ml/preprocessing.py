@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.preprocessing import StandardScaler, MaxAbsScaler, MinMaxScaler
 pd.options.mode.chained_assignment = None # Disable chained assignments
 
 from kryptos.settings import MLConfig as CONFIG
@@ -80,6 +81,47 @@ def labeling_multiclass_data(df, to_optimize=False):
     return X_train, y_train.astype('int'), X_test
 
 
+def normalize_data(X_train, y_train, X_test, name, method='diff'):
+    """Normalize dataset. Please note that it doesn't modify the original
+    dataset, it just returns a new dataset that you can use to modify
+    the original dataset or create a new one.
+    """
+    if CONFIG.NORMALIZATION['method'] == 'max':
+        scaler = MaxAbsScaler()
+        scaler_y = MaxAbsScaler()
+    elif CONFIG.NORMALIZATION['method'] == 'diff':
+        scaler = MinMaxScaler()
+        scaler_y = MinMaxScaler()
+    elif CONFIG.NORMALIZATION['method'] == 'std':
+        scaler = StandardScaler()
+        scaler_y = StandardScaler()
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.NORMALIZATION["method"] should be "max", "diff", "std".')
+
+    try:
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+        y_train = scaler_y.fit_transform(y_train.values.reshape(-1, 1))
+    except:
+        # TODO: fix ta library: https://github.com/bukosabino/ta
+        raise(ValueError('fix ta library (inf values): https://github.com/bukosabino/ta'))
+
+    if name == 'LIGHTGBM':
+        y_train = [i[0] for i in y_train] # TODO: more efficient
+
+    return X_train, y_train, X_test, scaler_y
+
+
+def inverse_normalize_data(result, scaler, method):
+    if method == 'std':
+        result = scaler.inverse_transform([float(result)])[0]
+    elif method == 'max' or method == 'diff':
+        result = scaler.inverse_transform(result)[0][0]
+    else:
+        raise ValueError('Internal Error: Value of CONFIG.NORMALIZATION["method"] should be "max", "diff", "std".')
+    return result
+
+
 def _preprocessing_feature_engineering(X, y, to_optimize):
     if not to_optimize:
 
@@ -152,7 +194,7 @@ def _prepare_ml_data(X, y, to_optimize=False):
         X(pandas.DataFrame): X dataset.
         y(pandas.DataFrame): target.
         optimize(bool): if False, size of test equals 1; if True equals
-        CONFIG.SIZE_TEST_TO_OPTIMIZE.
+        CONFIG.OPTIMIZE_PARAMS['size'].
 
     Returns:
         X_train(pandas.DataFrame): X_train.
@@ -161,7 +203,7 @@ def _prepare_ml_data(X, y, to_optimize=False):
     """
     size_test = 1
     if to_optimize:
-        size_test = CONFIG.SIZE_TEST_TO_OPTIMIZE
+        size_test = CONFIG.OPTIMIZE_PARAMS['size']
     X_train = X.iloc[:-size_test]
     y_train = y.iloc[:-size_test]
     X_test = X.iloc[-size_test:]

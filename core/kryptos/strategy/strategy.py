@@ -9,6 +9,7 @@ from textwrap import dedent
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from rq import get_current_job
 
 from catalyst import run_algorithm
@@ -115,6 +116,9 @@ class Strategy(object):
         logger_group.add_logger(self.log)
 
         self.current_date = None
+        self.last_date = None
+        self.filter_dates = None
+        self.date_init_reference = None
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -294,8 +298,12 @@ class Strategy(object):
             if "__" not in k:
                 setattr(context, k, v)
 
-        for dataset, manager in self._datasets.items():
-            manager.fetch_data()
+        if self._datasets.items():
+            if context.DATA_FREQ == 'daily':
+                for dataset, manager in self._datasets.items():
+                    manager.fetch_data()
+            else:
+                raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
@@ -308,15 +316,23 @@ class Strategy(object):
         if context.DATA_FREQ == 'minute':
             context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
 
+        self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(context.MINUTE_TO_OPERATE))
+
+        # Set commissions
+        context.set_commission(maker=context.MAKER_COMMISSION, taker=context.TAKER_COMMISSION)
+
     def _check_configuration(self, context):
         """Checking config.json valid values"""
-        # Checks
         if context.DATA_FREQ != 'minute' and context.DATA_FREQ != 'daily':
             raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" or "daily"')
-        if context.DATA_FREQ == 'minute' and context.HISTORY_FREQ != "1T":
-            raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "1T"')
-        elif context.DATA_FREQ == 'daily' and context.HISTORY_FREQ != "1d":
-            raise ValueError('Internal Error: When context.DATA_FREQ=="daily" the value of context.HISTORY_FREQ shoud be "1d"')
+        if context.DATA_FREQ == 'minute':
+            if context.HISTORY_FREQ[-1] != "T":
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"')
+            if int(context.MINUTE_FREQ) % int(context.HISTORY_FREQ[:-1]) != 0:
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" context.HISTORY_FREQ shoud be divisible by context.MINUTE_FREQ')
+        elif context.DATA_FREQ == 'daily':
+            if context.HISTORY_FREQ[-1] != "d":
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
 
     def _fetch_history(self, context, data):
         # Get price, open, high, low, close
@@ -362,13 +378,22 @@ class Strategy(object):
         # To check to apply stop-loss, take-profit or keep position
         self.check_open_positions(context)
 
-        # Filter minute frequency
-        if context.DATA_FREQ == 'minute' and (context.i - 1) % int(context.MINUTE_FREQ) != int(context.MINUTE_TO_OPERATE):
-            self.log.debug('Skipping due to minute frequency')
-            return
-
         # set date first for logging purposes
         self.current_date = get_datetime()
+
+        # Filter minute frequency
+        if context.DATA_FREQ == 'minute':
+            # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
+            if self.last_date is None:
+                last_date = self._get_last_date(context, data)
+            else:
+                last_date = self.last_date
+            base_minutes = (self.current_date - last_date) / np.timedelta64(1, 'm')
+            if base_minutes != int(context.MINUTE_FREQ):
+                return
+
+            if self.last_date is None:
+                self.last_date = last_date
 
         if self.in_job:
             job = get_current_job()
@@ -401,20 +426,27 @@ class Strategy(object):
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         if context.DATA_FREQ == 'minute':
-            filter_dates = pd.date_range(start=context.prices.iloc[0].name,
-                                end=context.prices.iloc[-1].name,
-                                freq=str(context.MINUTE_FREQ)+"min")
+            filter_dates = pd.date_range(start=self.date_init_reference,
+                                        end=context.prices.iloc[-1].name,
+                                        freq=str(context.MINUTE_FREQ)+"min")
             context.prices = context.prices.loc[filter_dates]
 
+            if self.filter_dates is not None:
+                self.filter_dates = self.filter_dates.append(self.filter_dates.symmetric_difference(filter_dates))
+            else:
+                self.filter_dates = filter_dates
+
             # Add current values to historic
-            context.prices.loc[get_datetime()] = context.current
+            self.last_date = get_datetime()
+            context.prices.loc[self.last_date] = context.current
 
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
             for i in self._ml_models:
-                for dataset, manager in self._datasets.items():
-                    context.prices.index.tz = None
-                    context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
+                if context.DATA_FREQ == 'daily':
+                    for dataset, manager in self._datasets.items():
+                        context.prices.index.tz = None
+                        context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
                 i.calculate(context.prices)
 
         else:
@@ -445,6 +477,26 @@ class Strategy(object):
             dataset_inds += len(m._indicators)
 
         return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
+
+    def _get_last_date(self, context, data):
+        """Get last date filtered to work in the train dataset.
+        """
+        if self.last_date is None:
+            # Get historic prices
+            retry(self._fetch_history,
+                  sleeptime=5,
+                  retry_exceptions=(ccxt_errors.RequestTimeout),
+                  args=(context, data),
+                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+
+            # Filter selected dates
+            filter_dates = pd.date_range(start=self.date_init_reference,
+                                        end=context.prices.iloc[-1].name,
+                                        freq=str(context.MINUTE_FREQ)+"min")
+
+            context.prices = context.prices.loc[filter_dates]
+
+            return context.prices.iloc[-1].name
 
     def _make_plots(self, context, results):
         # strat_plots = len(self._market_indicators) + len(self._datasets)
@@ -492,8 +544,40 @@ class Strategy(object):
 
         self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
+        extra_results = self.get_extra_results(context, results)
+
         for i in self._ml_models:
-            i.analyze(self.name)
+            i.analyze(self.name, extra_results)
+
+    def get_extra_results(self, context, results):
+        extra_results = {
+            'start': context.START,
+            'end': context.END,
+            'minute_freq': context.MINUTE_FREQ,
+            'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
+            'sharpe_ratio' : '',
+            'sharpe_ratio_benchmark': '',
+            'sortino_ratio': '',
+            'sortino_ratio_benchmark': ''
+        }
+
+        if context.DATA_FREQ == 'minute':
+            try:
+                self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
+                if results.algorithm_period_return.loc[self.filter_dates].dropna().std() != 0.0:
+                    extra_results['sharpe_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / results.algorithm_period_return.loc[self.filter_dates].dropna().std()
+                if (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std() != 0.0:
+                    extra_results['sharpe_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std()
+                if self.filter_dates in results.algorithm_period_return.loc[results.algorithm_period_return < 0].index:
+                    extra_results['sortino_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
+                    extra_results['sortino_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
+            except:
+                pass
+        else:
+            extra_results['sharpe_ratio'] = results.sharpe[30:].mean()
+            extra_results['sortino_ratio'] = results.sortino[30:].mean()
+
+        return extra_results
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
@@ -694,37 +778,35 @@ class Strategy(object):
         """
         if context.asset in context.portfolio.positions:
             position = context.portfolio.positions.get(context.asset)
-            # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis} at {date} with price: {price}'.format(amount=position.amount, cost_basis=position.cost_basis, date=get_datetime(), price=context.price))
+            # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
             if context.price >= position.cost_basis * (1 + CONFIG.TAKE_PROFIT): # Take Profit
-                self._take_profit_sell(context, position.amount)
+                self._take_profit_sell(context, position)
 
             if context.price < position.cost_basis * (1 - CONFIG.STOP_LOSS): # Stop Loss
-                self._stop_loss_sell(context, position.amount)
+                self._stop_loss_sell(context, position)
 
-    def _take_profit_sell(self, context, amount):
+    def _take_profit_sell(self, context, position):
         order(
             asset=context.asset,
-            amount=-amount,
+            amount=-position.amount,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
 
-        position = context.portfolio.positions.get(context.asset)
-        profit = (context.price * amount) - (position.cost_basis * amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal at {date}".format(
-                amount=amount, price=context.price, profit=profit, date=get_datetime()))
+        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
 
-    def _stop_loss_sell(self, context, amount):
+    def _stop_loss_sell(self, context, position):
         order(
             asset=context.asset,
-            amount=-amount,
+            amount=-position.amount,
             # limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
 
-        position = context.portfolio.positions.get(context.asset)
-        profit = (context.price * amount) - (position.cost_basis * amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-                amount=amount, price=context.price, profit=profit, date=get_datetime()))
+        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
                 amount=amount, price=context.price, profit=profit, date=get_datetime())
