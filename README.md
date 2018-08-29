@@ -25,12 +25,62 @@ docker-compose build
 ## Running locally
 
 ```bash
-docker-compose up -d
+docker-compose up
 ```
 
-This will spin up a web, worker, postgres, and redis container.
+This will spin up a web, worker, ml, postgres, and redis container.
 
 The web app will be accessible at http://0.0.0.0:8080
+
+You can also view the RQ dashboard at http://0.0.0.0:8080/rq
+
+
+## Local Development
+
+ To run the entire platform and use the web app and telegram bot:
+
+```bash
+docker-compose up
+```
+
+ To only view the logs of a desired service:
+```bash
+docker-compose up -d
+docker-compose logs -f <web|worker|ml>
+```
+
+ To simply run strategies from CLI:
+```bash
+docker-compose up -d
+docker exec -it worker /bin/bash
+```
+
+This will provide a command prompt inside the worker container from which you can run the `strat` command
+
+
+
+For example, to work on the ML service:
+```bash
+# start all containers w/o logging
+docker-compose up -d
+
+# enter the worker shell
+docker exec -it worker /bin/bash
+```
+
+Then to stream ML logs in a seperate terminal
+```bash
+docker-compose logs -f ml
+```
+
+
+
+
+
+
+
+
+
 
 
 
