@@ -23,8 +23,7 @@ from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
-from kryptos.settings import DEFAULT_CONFIG
-from kryptos.settings import MLConfig as CONFIG
+from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS
 from kryptos.analysis import quant
 
 from redo import retry
@@ -547,7 +546,7 @@ class Strategy(object):
         extra_results = self.get_extra_results(context, results)
 
         for i in self._ml_models:
-            i.analyze(self.name, extra_results)
+            i.analyze(self.name, conext.DATA_FREQ, extra_results)
 
     def get_extra_results(self, context, results):
         extra_results = {
@@ -780,10 +779,10 @@ class Strategy(object):
             position = context.portfolio.positions.get(context.asset)
             # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
-            if context.price >= position.cost_basis * (1 + CONFIG.TAKE_PROFIT): # Take Profit
+            if context.price >= position.cost_basis * (1 + TAKE_PROFIT): # Take Profit
                 self._take_profit_sell(context, position)
 
-            if context.price < position.cost_basis * (1 - CONFIG.STOP_LOSS): # Stop Loss
+            if context.price < position.cost_basis * (1 - STOP_LOSS): # Stop Loss
                 self._stop_loss_sell(context, position)
 
     def _take_profit_sell(self, context, position):
@@ -794,8 +793,12 @@ class Strategy(object):
         )
 
         profit = (context.price * position.amount) - (position.cost_basis * position.amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
-                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
+
+        msg = "Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
+
+        self.log.notice(msg)
+        self.notify(dedent(msg))
 
     def _stop_loss_sell(self, context, position):
         order(
@@ -805,11 +808,9 @@ class Strategy(object):
         )
 
         profit = (context.price * position.amount) - (position.cost_basis * position.amount)
-        self.log.info("Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal".format(
-                amount=position.amount, price=context.price, profit=profit, date=get_datetime()))
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-                amount=amount, price=context.price, profit=profit, date=get_datetime())
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
 
         self.log.notice(msg)
         self.notify(dedent(msg))

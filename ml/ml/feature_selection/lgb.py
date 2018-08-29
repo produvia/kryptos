@@ -1,7 +1,7 @@
 import pandas as pd
 import itertools
 
-from kryptos.ml.utils.feature_selector import FeatureSelector
+from ml.feature_selection.feature_selector import FeatureSelector
 
 
 def lgb_embedded_feature_selection(X_train, y_train):

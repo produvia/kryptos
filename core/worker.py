@@ -16,15 +16,15 @@ from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils.outputs import in_docker
 from kryptos.utils import tasks
-from kryptos.settings import QUEUE_NAMES
+from kryptos.settings import QUEUE_NAMES, get_from_datastore
 
 
 SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
 
-REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
-REDIS_PORT = os.getenv('REDIS_PORT', 6379)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
+REDIS_PORT = os.getenv('REDIS_PORT', 19779)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
@@ -53,6 +53,19 @@ def workers_required(queue_name):
     return len(q)
 
 
+def remove_zombie_workers():
+    log.warn('Removing zombie workers')
+    workers = Worker.all(connection=CONN)
+    for worker in workers:
+        if len(worker.queues) < 1:
+            log.warn("f")
+            log.warn(f"{worker} is a zombie, killing...")
+            job = worker.get_current_job()
+            if job is not None:
+                job.ended_at = datetime.datetime.utcnow()
+                worker.failed_queue.quarantine(job, exc_info=("Dead worker", "Moving job to failed queue"))
+            worker.register_death()
+
 
 @click.command()
 def manage_workers():
@@ -61,6 +74,7 @@ def manage_workers():
     # from app.extensions import jsonrpc
     # from kryptos.utils.outputs import in_docker
 
+    remove_zombie_workers()
     #start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
@@ -84,7 +98,6 @@ def manage_workers():
         while True:
             for q in QUEUE_NAMES:
                 required = workers_required(q)
-                log.debug(f"{required} workers required for {q}")
                 for i in range(required):
                     log.info(f"Creating {q} worker")
                     worker = Worker([q], exception_handlers=[retry_handler])

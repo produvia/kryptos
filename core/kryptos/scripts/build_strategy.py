@@ -6,7 +6,7 @@ from flask.helpers import get_debug_flag
 
 import click
 import logbook
-from flask_jsonrpc.proxy import ServiceProxy
+# from flask_jsonrpc.proxy import ServiceProxy
 import pandas as pd
 
 from kryptos.strategy import Strategy
@@ -49,6 +49,10 @@ LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/a
 @click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
 def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, rpc, hosted):
 
+    if rpc:
+        click.secho('RPC is currently diasabled')
+        return
+
     strat = Strategy()
 
     if python_script is not None:
@@ -80,8 +84,9 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
         API_URL = LOCAL_API_URL
 
     if rpc:
-        strat_id, queue_name = run_rpc(strat, API_URL, live=paper, simulate_orders=True)
-        poll_status(strat_id, queue_name, API_URL)
+        raise NotImplementedError
+        # strat_id, queue_name = run_rpc(strat, API_URL, live=paper, simulate_orders=True)
+        # poll_status(strat_id, queue_name, API_URL)
 
     else:
         viz = not in_docker()
@@ -100,45 +105,46 @@ def display_summary(result_json):
 
 
 def run_rpc(strat, api_url, live=False, simulate_orders=True):
-    click.secho(
-        """
-        *************
-        Running strategy on JSONRPC server at {}
-        Visualization will not be shown.
-        *************
-        """.format(
-            api_url
-        ),
-        fg="yellow",
-    )
+    raise NotImplementedError
+    # click.secho(
+    #     """
+    #     *************
+    #     Running strategy on JSONRPC server at {}
+    #     Visualization will not be shown.
+    #     *************
+    #     """.format(
+    #         api_url
+    #     ),
+    #     fg="yellow",
+    # )
     rpc_service = ServiceProxy(api_url)
-    strat_json = strat.serialize()
-    res = rpc_service.Strat.run(strat_json, live, simulate_orders)
-    log.info(res)
+    # strat_json = strat.serialize()
+    # res = rpc_service.Strat.run(strat_json, live, simulate_orders)
+    # log.info(res)
+    #
+    # if res.get("error"):
+    #     raise Exception(res["error"])
+    #
+    # result = res["result"]
+    # strat_id = result["data"]["strat_id"]
+    # queue_name = result["data"]['queue']
+    # status = result["status"]
+    # click.secho("Job Started. Strategy job ID: {}".format(strat_id))
+    # click.secho("status: {}".format(status), fg="magenta")
+    # return strat_id, queue_name
 
-    if res.get("error"):
-        raise Exception(res["error"])
 
-    result = res["result"]
-    strat_id = result["data"]["strat_id"]
-    queue_name = result["data"]['queue']
-    status = result["status"]
-    click.secho("Job Started. Strategy job ID: {}".format(strat_id))
-    click.secho("status: {}".format(status), fg="magenta")
-    return strat_id, queue_name
-
-
-def poll_status(strat_id, queue_name, api_url):
+# def poll_status(strat_id, queue_name, api_url):
     rpc_service = ServiceProxy(api_url)
-    status = None
-    colors = {"started": "green", "failed": "red", "finished": "blue"}
-    while status not in ["finished", "failed"]:
-        res = rpc_service.Strat.status(strat_id, queue_name)
-        status = res["result"]["status"]
-        meta = res["result"]["data"]['meta']
-
-        click.secho(json.dumps(meta, indent=2))
-        time.sleep(2)
-
-    result_json = res["result"].get("strat_results")
-    display_summary(result_json)
+#     status = None
+#     colors = {"started": "green", "failed": "red", "finished": "blue"}
+#     while status not in ["finished", "failed"]:
+#         res = rpc_service.Strat.status(strat_id, queue_name)
+#         status = res["result"]["status"]
+#         meta = res["result"]["data"]['meta']
+#
+#         click.secho(json.dumps(meta, indent=2))
+#         time.sleep(2)
+#
+#     result_json = res["result"].get("strat_results")
+#     display_summary(result_json)

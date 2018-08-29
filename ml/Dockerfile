@@ -1,5 +1,9 @@
 FROM python:3.6 as base
 
+# install xgboost library
+RUN git clone --recursive https://github.com/dmlc/xgboost \
+    && cd xgboost; make -j4
+
 # install TA_LIB library and other dependencies
 RUN apt-get -y update \
     && apt-get -y install libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran \
@@ -26,22 +30,14 @@ RUN pip install -r /requirements.txt
 FROM builder
 
 COPY --from=builder /root/.cache /root/.cache
-COPY --from=builder /requirements.txt /core/requirements.txt
-RUN pip install -r /core/requirements.txt && rm -rf /root/.cache
+COPY --from=builder /requirements.txt /ml/requirements.txt
+RUN pip install -r /ml/requirements.txt && rm -rf /root/.cache
 
 
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
-COPY . /core
+COPY . /ml
 
-# Install kryptos package
-# COPY setup.py /core/setup.py
-# COPY README.md /core/README.md
-
-WORKDIR /core
-RUN pip install -e .
-
-EXPOSE 8080
-WORKDIR /core
-ENTRYPOINT honcho start worker monitor ingest
+WORKDIR /ml
+ENTRYPOINT python worker.py
