@@ -1,5 +1,6 @@
 import os
 import json
+from google.cloud import datastore
 
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
@@ -18,6 +19,7 @@ QUEUE_NAMES = ['paper', 'live', 'backtest']
 
 with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = json.load(f)
+
 
 def get_from_datastore(config_key, env):
     ds = datastore.Client()

@@ -1,4 +1,5 @@
 import os
+from google.cloud import datastore
 
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
@@ -8,6 +9,12 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
 
+def get_from_datastore(config_key, env):
+    ds = datastore.Client()
+    product_key = ds.key('Settings', env)
+    entity = ds.get(product_key)
+
+    return entity[config_key]
 
 ## Machine Learning Settings
 

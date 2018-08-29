@@ -24,7 +24,7 @@ from ml.feature_selection.filter import filter_feature_selection
 from ml.feature_selection.wrapper import wrapper_feature_selection
 from ml.utils.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params, normalize_data, inverse_normalize_data
 from ml.utils.metric import classification_metrics
-from ml.settings import MLConfig as CONFIG
+from ml.settings import MLConfig as CONFIG, get_from_datastore
 
 from google.cloud import datastore
 
@@ -36,21 +36,12 @@ handler.push_application()
 SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
 
-REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
-REDIS_PORT = os.getenv('REDIS_PORT', 6379)
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
+REDIS_PORT = os.getenv('REDIS_PORT', 19779)
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
-
-def get_from_datastore(config_key, env):
-    ds = datastore.Client()
-    print('Fetching {}'.format(config_key))
-
-    product_key = ds.key('Settings', env)
-    entity = ds.get(product_key)
-
-    return entity[config_key]
 
 
 def _prepare_data(df):
