@@ -78,6 +78,7 @@ class MLIndicator(AbstractIndicator):
 
 
         self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell = job.result
+        self.current_job_id = None
 
         self.df_results = pd.read_json(df_results_json)
         self.df_final = pd.read_json(df_final_json)
