@@ -60,6 +60,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=password
+      - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
 
     # entrypoint: ['python', 'worker.py']
     entrypoint: ['honcho', 'start', 'worker', '--no-prefix']
@@ -78,6 +79,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=password
+      - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
 
     depends_on:
     - redis
