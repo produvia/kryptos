@@ -1,9 +1,5 @@
 FROM python:3.6 as base
 
-# install xgboost library
-RUN git clone --recursive https://github.com/dmlc/xgboost \
-    && cd xgboost; make -j4
-
 # install TA_LIB library and other dependencies
 RUN apt-get -y update \
     && apt-get -y install libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran \
