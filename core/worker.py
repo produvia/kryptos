@@ -67,6 +67,10 @@ def remove_zombie_workers():
                 worker.failed_queue.quarantine(job, exc_info=("Dead worker", "Moving job to failed queue"))
             worker.register_death()
 
+#TODO remove old workers that weren't removed during SIGKILL
+# these workers stay in redis memory and have a queue (not zombie)
+# but they have actually been killed, and won't restart
+
 
 @click.command()
 def manage_workers():
@@ -127,7 +131,7 @@ def retry_handler(job, exc_type, exc_value, traceback):
     log.warn('job %s: failed %d times - retrying' % (job.id, job.meta['failures']))
 
     fq = get_failed_queue()
-    fq.quarantine(job, Exception('Some fake error'))
+    fq.quarantine(job, Exception(exc_value))
     # assert fq.count == 1
 
     job.meta['failures'] += 1
