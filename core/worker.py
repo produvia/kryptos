@@ -91,7 +91,7 @@ def manage_workers():
     # from kryptos.utils.outputs import in_docker
 
     remove_zombie_workers()
-    remove_stale_workers()
+    # remove_stale_workers()
     #start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
