@@ -68,8 +68,18 @@ def remove_zombie_workers():
             worker.register_death()
 
 #TODO remove old workers that weren't removed during SIGKILL
-# these workers stay in redis memory and have a queue (not zombie)
+# these workers stay in redis memory and have a queue (not zombie) but no job
 # but they have actually been killed, and won't restart
+def remove_stale_workers():
+    log.warn('Removing stale workers')
+    workers = Worker.all(connection=CONN)
+    for worker in workers:
+        for q in ['paper', 'live', 'backtest']:
+            if q in worker.queue_names() and worker.get_current_job() is None:
+                log.warn('Removing stale worker {}'.format(worker))
+                worker.clean_registries()
+                worker.register_death()
+
 
 
 @click.command()
@@ -80,6 +90,7 @@ def manage_workers():
     # from kryptos.utils.outputs import in_docker
 
     remove_zombie_workers()
+    remove_stale_workers()
     #start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
