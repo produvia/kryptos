@@ -3,6 +3,7 @@ import json
 import redis
 from rq import Queue, Connection, get_failed_queue
 from rq.worker import HerokuWorker as Worker
+from rq.handlers import move_to_failed_queue
 import click
 import multiprocessing
 import time
@@ -101,12 +102,12 @@ def manage_workers():
         multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info('Starting worker for PAPER queues')
-        paper_worker = Worker(['paper'], exception_handlers=[retry_handler])
+        paper_worker = Worker(['paper'], exception_handlers=[retry_handler, move_to_failed_queue])
         register_sentry(client, paper_worker)
         multiprocessing.Process(target=paper_worker.work).start()
 
         log.info('Starting worker for LIVE queues')
-        live_worker = Worker(['live'], exception_handlers=[retry_handler])
+        live_worker = Worker(['live'], exception_handlers=[retry_handler, move_to_failed_queue])
         register_sentry(client, live_worker)
         multiprocessing.Process(target=live_worker.work).start()
 
@@ -116,7 +117,7 @@ def manage_workers():
                 required = workers_required(q)
                 for i in range(required):
                     log.info(f"Creating {q} worker")
-                    worker = Worker([q], exception_handlers=[retry_handler])
+                    worker = Worker([q], exception_handlers=[retry_handler, move_to_failed_queue])
                     register_sentry(client, live_worker)
                     multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
 
