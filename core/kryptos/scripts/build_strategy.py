@@ -5,19 +5,17 @@ import requests
 from flask.helpers import get_debug_flag
 
 import click
-import logbook
 # from flask_jsonrpc.proxy import ServiceProxy
 import pandas as pd
+from rq import Queue
 
 from kryptos.strategy import Strategy
 from kryptos.data.manager import AVAILABLE_DATASETS
 from kryptos import setup_logging
 from kryptos.utils.outputs import in_docker
 from kryptos.utils.load import get_strat
+from kryptos.utils import tasks
 
-
-log = logbook.Logger("Platform")
-setup_logging()
 
 REMOTE_API_URL = 'http://kryptos.produvia.com/api'
 LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/api'
@@ -46,8 +44,9 @@ LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/a
 @click.option("--python-script", "-p")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
+@click.option("--rq", is_flag=True, help="Run the strategy inside an RQ worker")
 @click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
-def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, rpc, hosted):
+def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, rpc, rq, hosted):
 
     if rpc:
         click.secho('RPC is currently diasabled')
@@ -88,6 +87,9 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
         # strat_id, queue_name = run_rpc(strat, API_URL, live=paper, simulate_orders=True)
         # poll_status(strat_id, queue_name, API_URL)
 
+    if rq:
+        run_in_worker(strat, paper)
+
     else:
         viz = not in_docker()
         strat.run(live=paper, viz=viz)
@@ -103,6 +105,42 @@ def display_summary(result_json):
         metric, val = k, v["Backtest"]
         click.secho("{}: {}".format(metric, val), fg="green")
 
+def run_in_worker(strat, paper):
+    if paper:
+        q_name = 'paper'
+    else:
+        q_name = 'backtest'
+    q = Queue(q_name, connection=tasks.CONN)
+    click.secho(f'Enqueuing strat on {q_name} queue', fg='cyan')
+    #
+    # # note that the strat.id will look different from app-created strategies
+    job = q.enqueue(
+        'worker.run_strat',
+        job_id=strat.id,
+        kwargs={
+            'strat_json': json.dumps(strat.to_dict()),
+            'strat_id': strat.id,
+            'telegram_id': None,
+            'live': paper,
+            'simulate_orders': True
+        },
+        timeout=-1
+    )
+
+    click.secho(f'View the strat at http://0.0.0.0:8080/strategy/backtest/strategy/{strat.id}', fg='blue')
+
+    while not job.is_finished:
+        if job.is_failed:
+            click.secho('job failed', fg='red')
+            return
+        click.secho(f'Status: {job.get_status()}')
+        if job.meta:
+            print(job.meta)
+        time.sleep(3)
+
+    display_summary(job.result)
+
+
 
 def run_rpc(strat, api_url, live=False, simulate_orders=True):
     raise NotImplementedError
@@ -117,7 +155,7 @@ def run_rpc(strat, api_url, live=False, simulate_orders=True):
     #     ),
     #     fg="yellow",
     # )
-    rpc_service = ServiceProxy(api_url)
+    # rpc_service = ServiceProxy(api_url)
     # strat_json = strat.serialize()
     # res = rpc_service.Strat.run(strat_json, live, simulate_orders)
     # log.info(res)
@@ -135,7 +173,7 @@ def run_rpc(strat, api_url, live=False, simulate_orders=True):
 
 
 # def poll_status(strat_id, queue_name, api_url):
-    rpc_service = ServiceProxy(api_url)
+    # rpc_service = ServiceProxy(api_url)
 #     status = None
 #     colors = {"started": "green", "failed": "red", "finished": "blue"}
 #     while status not in ["finished", "failed"]:
