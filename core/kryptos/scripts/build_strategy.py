@@ -56,7 +56,7 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
     if api or hosted:
         run_from_api(strat, paper, hosted)
 
-    if worker:
+    elif worker:
         run_in_worker(strat, paper)
 
     else:
