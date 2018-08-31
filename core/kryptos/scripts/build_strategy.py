@@ -133,9 +133,10 @@ def run_from_api(strat, paper, api_url):
         endpoint = os.path.join(api_url, 'monitor')
         resp = requests.get(endpoint, params={'strat_id': strat_id})
         data = resp.json()['strat_info']
-        status, result, meta = data.get('status', ''), data.get('result', ''), data.get('meta', '')
+        status, result, meta = data.get('status', ''), data.get('result', ''), data.get('meta', None)
         click.secho(status)
-        click.secho(dedent(meta.get('output'))
+        if meta:
+            click.secho(dedent(meta.get('output', '')))
 
         if result:
             click.secho(result)
