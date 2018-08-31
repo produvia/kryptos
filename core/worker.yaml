@@ -17,5 +17,10 @@ network:
 readiness_check:
     app_start_timeout_sec: 3600
 
-manual_scaling:
-  instances: 1
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 3
+  cool_down_period_sec: 240
+  cpu_utilization:
+    target_utilization: 0.6
+
