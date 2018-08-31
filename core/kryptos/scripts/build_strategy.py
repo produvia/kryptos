@@ -13,9 +13,8 @@ from kryptos.utils.outputs import in_docker
 from kryptos.utils.load import get_strat
 from kryptos.utils import tasks
 
-
-REMOTE_API_URL = 'http://kryptos-205115.appspot.com/api'
-LOCAL_API_URL = "http://web:8080/api"
+REMOTE_BASE_URL = 'https://kryptos-205115.appspot.com'
+LOCAL_BASE_URL = "https://web:8080"
 
 
 @click.command()
@@ -75,11 +74,7 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
     click.secho(strat.serialize(), fg="white")
 
     if api or hosted:
-        API_URL = LOCAL_API_URL
-        if hosted:
-            API_URL = REMOTE_API_URL
-
-        run_from_api(strat, paper, API_URL)
+        run_from_api(strat, paper, hosted)
 
     if worker:
         run_in_worker(strat, paper)
@@ -100,7 +95,14 @@ def display_summary(result_json):
         click.secho("{}: {}".format(metric, val), fg="green")
 
 
-def run_from_api(strat, paper, api_url):
+def run_from_api(strat, paper, hosted=False):
+    if hosted:
+        base_url = REMOTE_BASE_URL
+    else:
+        base_url = LOCAL_BASE_URL
+
+    api_url = os.path.join(base_url, 'api')
+
     if paper:
         q_name = 'paper'
     else:
@@ -121,7 +123,8 @@ def run_from_api(strat, paper, api_url):
     strat_id = data['strat_id']
     status = None
     click.echo(f'Strategy enqueued to job {strat_id}')
-    click.secho(f'View the strat at http://0.0.0.0:8080/strategy/backtest/strategy/{strat_id}', fg='blue')
+    strat_url = os.path.join(base_url, 'strategy/backtest/strategy', strat_id)
+    click.secho(f'View the strat at {strat_url}', fg='blue')
 
     while status not in ["finished", "failed"]:
         endpoint = os.path.join(api_url, 'monitor')
