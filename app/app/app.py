@@ -10,7 +10,7 @@ import rq_dashboard
 
 from app import api, bot, models
 from app.web import account, strategy, public
-from app.extensions import cors, db, migrate
+from app.extensions import cors, db, migrate, sentry
 from app.settings import DockerDevConfig, ProdConfig
 
 
@@ -69,6 +69,7 @@ def register_extensions(app):
     If the entire flask app consists of only the Assistant, uncomment the code below.
     """
 
+    sentry.init_app(app)
     cors.init_app(app, resources={r"*": {"origins": "*"}})
     db.init_app(app)
     migrate.init_app(app, db, directory=app.config['MIGRATIONS_DIR'])
