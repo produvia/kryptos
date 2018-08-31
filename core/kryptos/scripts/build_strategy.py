@@ -1,6 +1,9 @@
 import json
 import time
 import requests
+import os
+from textwrap import dedent
+
 
 from flask.helpers import get_debug_flag
 
@@ -17,8 +20,8 @@ from kryptos.utils.load import get_strat
 from kryptos.utils import tasks
 
 
-REMOTE_API_URL = 'http://kryptos.produvia.com/api'
-LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/api'
+REMOTE_API_URL = 'http://kryptos-205115.appspot.com/api'
+LOCAL_API_URL = "http://web:8080/api"
 
 
 
@@ -43,14 +46,17 @@ LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/a
 @click.option("--json-file", "-f")
 @click.option("--python-script", "-p")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
-@click.option("--rpc", is_flag=True, help="Run the strategy via JSONRPC")
-@click.option("--rq", is_flag=True, help="Run the strategy inside an RQ worker")
-@click.option("--hosted", "-h", is_flag=True, help="Run via rpc using remote server")
-def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, rpc, rq, hosted):
+@click.option("--api", "-a", is_flag=True, help="Run the strategy via API")
+@click.option("--worker", "-w", is_flag=True, help="Run the strategy inside an RQ worker")
+@click.option("--hosted", "-h", is_flag=True, help="Run on a GCP instance via the API")
+def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, api, worker, hosted):
 
-    if rpc:
-        click.secho('RPC is currently diasabled')
-        return
+    if api and worker:
+        if not hosted:
+            click.secho('Providing the `--worker` flag is not required when using the api', fg='yellow')
+        else:
+            click.echo('')
+
 
     strat = Strategy()
 
@@ -76,18 +82,14 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
 
     click.secho(strat.serialize(), fg="white")
 
-    if hosted:
-        API_URL = REMOTE_API_URL
-
-    else:
+    if api or hosted:
         API_URL = LOCAL_API_URL
+        if hosted:
+            API_URL = REMOTE_API_URL
 
-    if rpc:
-        raise NotImplementedError
-        # strat_id, queue_name = run_rpc(strat, API_URL, live=paper, simulate_orders=True)
-        # poll_status(strat_id, queue_name, API_URL)
+        run_from_api(strat, paper, API_URL)
 
-    if rq:
+    if worker:
         run_in_worker(strat, paper)
 
     else:
@@ -104,6 +106,42 @@ def display_summary(result_json):
         # nested dict with trading type as key
         metric, val = k, v["Backtest"]
         click.secho("{}: {}".format(metric, val), fg="green")
+
+def run_from_api(strat, paper, api_url):
+    if paper:
+        q_name = 'paper'
+    else:
+        q_name = 'backtest'
+
+    data = {
+        'strat_json': json.dumps(strat.to_dict()),
+        'queue_name': q_name
+    }
+
+    endpoint = os.path.join(api_url, 'strat')
+    click.echo(f'Enqueuing strategy at {endpoint}')
+    resp = requests.get(endpoint, json=data)
+    click.echo(resp)
+    resp.raise_for_status()
+    data = resp.json()
+    strat_id = data['strat_id']
+    status = None
+    click.echo(f'Strategy enqueued to job {strat_id}')
+    click.secho(f'View the strat at http://0.0.0.0:8080/strategy/backtest/strategy/{strat_id}', fg='blue')
+
+    while status not in ["finished", "failed"]:
+        endpoint = os.path.join(api_url, 'monitor')
+        resp = requests.get(endpoint, params={'strat_id': strat_id})
+        data = resp.json()['strat_info']
+        status, result, meta = data.get('status', ''), data.get('result', ''), data.get('meta', '')
+        click.secho(status)
+        click.secho(dedent(meta.get('output'))
+
+        if result:
+            click.secho(result)
+            break
+        time.sleep(3)
+
 
 def run_in_worker(strat, paper):
     if paper:
@@ -139,50 +177,3 @@ def run_in_worker(strat, paper):
         time.sleep(3)
 
     display_summary(job.result)
-
-
-
-def run_rpc(strat, api_url, live=False, simulate_orders=True):
-    raise NotImplementedError
-    # click.secho(
-    #     """
-    #     *************
-    #     Running strategy on JSONRPC server at {}
-    #     Visualization will not be shown.
-    #     *************
-    #     """.format(
-    #         api_url
-    #     ),
-    #     fg="yellow",
-    # )
-    # rpc_service = ServiceProxy(api_url)
-    # strat_json = strat.serialize()
-    # res = rpc_service.Strat.run(strat_json, live, simulate_orders)
-    # log.info(res)
-    #
-    # if res.get("error"):
-    #     raise Exception(res["error"])
-    #
-    # result = res["result"]
-    # strat_id = result["data"]["strat_id"]
-    # queue_name = result["data"]['queue']
-    # status = result["status"]
-    # click.secho("Job Started. Strategy job ID: {}".format(strat_id))
-    # click.secho("status: {}".format(status), fg="magenta")
-    # return strat_id, queue_name
-
-
-# def poll_status(strat_id, queue_name, api_url):
-    # rpc_service = ServiceProxy(api_url)
-#     status = None
-#     colors = {"started": "green", "failed": "red", "finished": "blue"}
-#     while status not in ["finished", "failed"]:
-#         res = rpc_service.Strat.status(strat_id, queue_name)
-#         status = res["result"]["status"]
-#         meta = res["result"]["data"]['meta']
-#
-#         click.secho(json.dumps(meta, indent=2))
-#         time.sleep(2)
-#
-#     result_json = res["result"].get("strat_results")
-#     display_summary(result_json)
