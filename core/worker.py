@@ -8,7 +8,8 @@ import click
 import multiprocessing
 import time
 import logbook
-from catalyst.exchange.exchange_bundle import ExchangeBundle
+
+import datetime
 
 from raven import Client
 from raven.transport.http import HTTPTransport
@@ -16,12 +17,11 @@ from rq.contrib.sentry import register_sentry
 
 from kryptos import logger_group
 from kryptos.strategy import Strategy
-from kryptos.utils.outputs import in_docker
 from kryptos.utils import tasks
 from kryptos.settings import QUEUE_NAMES, get_from_datastore
 
 
-SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
+SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
