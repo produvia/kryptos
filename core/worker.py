@@ -102,13 +102,13 @@ def manage_workers():
         multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info('Starting worker for PAPER queues')
-        paper_worker = Worker(['paper'], exception_handlers=[retry_handler, move_to_failed_queue])
         register_sentry(client, paper_worker)
+        paper_worker = Worker(['paper'], exception_handlers=[retry_handler])
         multiprocessing.Process(target=paper_worker.work).start()
 
         log.info('Starting worker for LIVE queues')
-        live_worker = Worker(['live'], exception_handlers=[retry_handler, move_to_failed_queue])
         register_sentry(client, live_worker)
+        live_worker = Worker(['live'], exception_handlers=[retry_handler])
         multiprocessing.Process(target=live_worker.work).start()
 
         # create paper/live queues when needed
@@ -117,7 +117,7 @@ def manage_workers():
                 required = workers_required(q)
                 for i in range(required):
                     log.info(f"Creating {q} worker")
-                    worker = Worker([q], exception_handlers=[retry_handler, move_to_failed_queue])
+                    worker = Worker([q], exception_handlers=[retry_handler])
                     register_sentry(client, live_worker)
                     multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
 
