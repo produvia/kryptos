@@ -143,7 +143,7 @@ def retry_handler(job, exc_type, exc_value, traceback):
     log.warn('job %s: failed %d times - retrying' % (job.id, job.meta['failures']))
 
     fq = get_failed_queue()
-    fq.quarantine(job, Exception(exc_value))
+    fq.quarantine(job, exc_type(exc_value))
     # assert fq.count == 1
 
     job.meta['failures'] += 1
