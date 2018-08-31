@@ -40,6 +40,7 @@ def get_queue(queue_name):
 
 
 def run_strat(strat_json, strat_id, telegram_id=None, live=False, simulate_orders=True):
+    log.info(f'Worker received job for strat {strat_id}')
     strat_dict = json.loads(strat_json)
     strat = Strategy.from_dict(strat_dict)
     strat.id = strat_id
@@ -102,13 +103,13 @@ def manage_workers():
         multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info('Starting worker for PAPER queues')
-        register_sentry(client, paper_worker)
         paper_worker = Worker(['paper'], exception_handlers=[retry_handler])
+        register_sentry(client, paper_worker)
         multiprocessing.Process(target=paper_worker.work).start()
 
         log.info('Starting worker for LIVE queues')
-        register_sentry(client, live_worker)
         live_worker = Worker(['live'], exception_handlers=[retry_handler])
+        register_sentry(client, live_worker)
         multiprocessing.Process(target=live_worker.work).start()
 
         # create paper/live queues when needed

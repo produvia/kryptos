@@ -34,7 +34,7 @@ def run_strat():
     if queue_name == 'live':
         simulate_orders = False
 
-    current_app.logger(f'Enqueuing strat to {queue_name} queue')
+    current_app.logger.info(f'Enqueuing strat to {queue_name} queue')
     job_id, _ = task.queue_strat(strat_dict, user_id=None, live=False, simulate_orders=True)
     current_app.logger.info(f"Strat running in job {job_id}")
     return jsonify(strat_id=job_id)
