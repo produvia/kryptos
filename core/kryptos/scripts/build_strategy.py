@@ -55,9 +55,11 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
 
     if api or hosted:
         run_from_api(strat, paper, hosted)
+        return
 
     elif worker:
         run_in_worker(strat, paper)
+        return
 
     else:
         click.secho('Running locally w/o worker (ML still requires a worker process)', fg='cyan')
@@ -137,8 +139,9 @@ def run_from_api(strat, paper, hosted=False):
     data = resp.json()
     strat_id = data['strat_id']
     status = None
+
+    strat_url = get_strat_url(strat_id, base_url, paper)
     click.echo(f'Strategy enqueued to job {strat_id}')
-    strat_url = os.path.join(base_url, 'strategy/backtest/strategy', strat_id)
     click.secho(f'View the strat at {strat_url}', fg='blue')
 
     while status not in ["finished", "failed"]:
@@ -155,6 +158,11 @@ def run_from_api(strat, paper, hosted=False):
             break
         time.sleep(3)
 
+
+def get_strat_url(strat_id, base_url, paper):
+    if paper:
+        return os.path.join(base_url, 'strategy/strategy', strat_id)
+    return os.path.join(base_url, 'strategy/backtest/strategy', strat_id)
 
 def run_in_worker(strat, paper):
     click.secho('Running local strategy using worker', fg='cyan')
@@ -179,6 +187,7 @@ def run_in_worker(strat, paper):
         timeout=-1
     )
 
+    strat_url = get_strat_url(strat.id, base_url, paper)
     click.secho(f'View the strat at http://0.0.0.0:8080/strategy/backtest/strategy/{strat.id}', fg='blue')
 
     while not job.is_finished:
