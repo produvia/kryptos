@@ -10,7 +10,7 @@ steps:
         ]
 
 - name: "gcr.io/cloud-builders/gcloud"
-  args: ["beta", "app", "deploy", 'app/app.yaml', '--image-url=gcr.io/$PROJECT_ID/kryptos-app', '--stop-previous-version']
+  args: ["app", "deploy", 'app/app.yaml', '--image-url=gcr.io/$PROJECT_ID/kryptos-app', '--stop-previous-version']
 
 images: ['gcr.io/$PROJECT_ID/kryptos-app']
 timeout: '1200s'
