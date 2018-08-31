@@ -4,17 +4,11 @@ import requests
 import os
 from textwrap import dedent
 
-
-from flask.helpers import get_debug_flag
-
 import click
-# from flask_jsonrpc.proxy import ServiceProxy
-import pandas as pd
 from rq import Queue
 
 from kryptos.strategy import Strategy
 from kryptos.data.manager import AVAILABLE_DATASETS
-from kryptos import setup_logging
 from kryptos.utils.outputs import in_docker
 from kryptos.utils.load import get_strat
 from kryptos.utils import tasks
@@ -22,7 +16,6 @@ from kryptos.utils import tasks
 
 REMOTE_API_URL = 'http://kryptos-205115.appspot.com/api'
 LOCAL_API_URL = "http://web:8080/api"
-
 
 
 @click.command()
@@ -56,7 +49,6 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
             click.secho('Providing the `--worker` flag is not required when using the api', fg='yellow')
         else:
             click.echo('')
-
 
     strat = Strategy()
 
@@ -106,6 +98,7 @@ def display_summary(result_json):
         # nested dict with trading type as key
         metric, val = k, v["Backtest"]
         click.secho("{}: {}".format(metric, val), fg="green")
+
 
 def run_from_api(strat, paper, api_url):
     if paper:

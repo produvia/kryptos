@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 flask = "*"
-flask-jsonrpc = "*"
 rq = "*"
 rq-dashboard = "*"
 flask-cors = "*"

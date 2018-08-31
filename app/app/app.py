@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """The flask app module, containing the app factory function."""
 import os
-from flask import Flask, current_app
+from flask import Flask
 from flask.helpers import get_debug_flag
 import logging
 
@@ -10,12 +10,12 @@ import rq_dashboard
 
 from app import api, bot, models
 from app.web import account, strategy, public
-from app.extensions import jsonrpc, cors, db, migrate
-from app.settings import DevConfig, DockerDevConfig, ProdConfig
-
+from app.extensions import cors, db, migrate
+from app.settings import DockerDevConfig, ProdConfig
 
 
 logging.getLogger('flask_assistant').setLevel(logging.INFO)
+
 
 def in_docker():
     if not os.path.exists('/proc/self/cgroup'):
@@ -41,6 +41,7 @@ def get_config():
         config = ProdConfig
 
     return config
+
 
 def create_app(config_object=None):
     """An application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
@@ -68,14 +69,12 @@ def register_extensions(app):
     If the entire flask app consists of only the Assistant, uncomment the code below.
     """
 
-    jsonrpc.init_app(app)
-    jsonrpc._register_browse(app)
     cors.init_app(app, resources={r"*": {"origins": "*"}})
     db.init_app(app)
     migrate.init_app(app, db, directory=app.config['MIGRATIONS_DIR'])
 
-     # Setup Flask-User and specify the User data-model
-    user_manager = UserManager(app, db, models.User)
+    # Setup Flask-User and specify the User data-model
+    UserManager(app, db, models.User)
 
     return None
 
