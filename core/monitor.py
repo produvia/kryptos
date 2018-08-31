@@ -21,7 +21,7 @@ redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDI
 def index():
     logging.warn('Testing redis connection {}:{}'.format)
     value = redis_client.incr('counter', 1)
-    return 'Visitor number: {}'.format(value)
+    return 'Visitor number: {}'.format(value), 200
 
 
 @app.errorhandler(500)
