@@ -1,4 +1,3 @@
-import os
 import time
 from logbook import Logger
 import multiprocessing
@@ -8,11 +7,8 @@ import pandas as pd
 import redis
 
 from kryptos import logger_group
-from kryptos.settings import get_from_datastore
+from kryptos.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
-REDIS_PORT = os.getenv('REDIS_PORT', 19779)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
@@ -57,11 +53,8 @@ def ingest_exchange(exchange, symbol=None, start=None, end=None):
     log.info('Ingest completed')
 
 
-
 def ingest_from_trade_config(config):
-    """
-    Ingest exchange bundle data for a given strategy time frame
-    """
+    "Ingest exchange bundle data for a given strategy time frame"
 
     if config.get("EXCHANGE") is None:
         log.error("must specify an exchange name")
@@ -85,15 +78,15 @@ def ingest_from_trade_config(config):
         csv=None,
     )
 
-def queue_ingest(exchange, symbol=None, start=None, end=None):
-    if symbol is None:
-        log.warn(f'Queuing ingest {exchange} for all symbols')
-    else:
-        log.warn(f'Queuing ingest {exchange} for {symbol}')
 
-    q = Queue('ingest', connection=CONN)
-    return q.enqueue(load.ingest_exchange, args=(exchange, symbol, start, end))
+# def queue_ingest(exchange, symbol=None, start=None, end=None):
+#     if symbol is None:
+#         log.warn(f'Queuing ingest {exchange} for all symbols')
+#     else:
+#         log.warn(f'Queuing ingest {exchange} for {symbol}')
 
+#     q = Queue('ingest', connection=CONN)
+#     return q.enqueue(load.ingest_exchange, args=(exchange, symbol, start, end))
 
 
 if __name__ == '__main__':

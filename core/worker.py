@@ -3,7 +3,7 @@ import json
 import redis
 from rq import Queue, Connection, get_failed_queue
 from rq.worker import HerokuWorker as Worker
-from rq.handlers import move_to_failed_queue
+from rq.exceptions import ShutDownImminentException
 import click
 import multiprocessing
 import time
@@ -18,15 +18,10 @@ from rq.contrib.sentry import register_sentry
 from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils import tasks
-from kryptos.settings import QUEUE_NAMES, get_from_datastore
+from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, SENTRY_DSN
 
 
-SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
-
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
-REDIS_PORT = os.getenv('REDIS_PORT', 19779)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
@@ -34,6 +29,7 @@ CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 log = logbook.Logger('WorkerManager')
 logger_group.add_logger(log)
 log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
+
 
 def get_queue(queue_name):
     return Queue(queue_name, connection=CONN)
@@ -50,6 +46,7 @@ def run_strat(strat_json, strat_id, telegram_id=None, live=False, simulate_order
     result_df = strat.quant_results
 
     return result_df.to_json()
+
 
 def workers_required(queue_name):
     q = get_queue(queue_name)
@@ -69,7 +66,7 @@ def remove_zombie_workers():
                 worker.failed_queue.quarantine(job, exc_info=("Dead worker", "Moving job to failed queue"))
             worker.register_death()
 
-#TODO remove old workers that weren't removed during SIGKILL
+# TODO remove old workers that weren't removed during SIGKILL
 # these workers stay in redis memory and have a queue (not zombie) but no job
 # but they have actually been killed, and won't restart
 def remove_stale_workers():
@@ -83,7 +80,6 @@ def remove_stale_workers():
                 worker.register_death()
 
 
-
 @click.command()
 def manage_workers():
     # import before starting worker to loading during worker process
@@ -93,7 +89,7 @@ def manage_workers():
 
     remove_zombie_workers()
     # remove_stale_workers()
-    #start main worker
+    # start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
 
@@ -122,16 +118,25 @@ def manage_workers():
                     register_sentry(client, live_worker)
                     multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
 
-
             time.sleep(5)
-
-
 
 
 def retry_handler(job, exc_type, exc_value, traceback):
     MAX_FAILURES = 3
     job.meta.setdefault('failures', 0)
     job.meta['failures'] += 1
+    #
+    # if exc_type == ShutDownImminentException:
+    #     fq = get_failed_queue()
+    #     fq.quarantine(job, Exception('Some fake error'))
+    #     # assert fq.count == 1
+    #
+    #     job.meta['failures'] += 1
+    #     job.save()
+    #     fq.requeue(job.id)
+    #
+    #     # skip retry
+    # return True
 
     # Too many failures
     if job.meta['failures'] >= MAX_FAILURES:
