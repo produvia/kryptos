@@ -20,7 +20,7 @@ def strat_status():
 
     return jsonify(strat_info=data)
 
-@api.route('/strat', methods=['POST', "GET"])
+@api.route('/strat', methods=['POST'])
 def run_strat():
     data = request.json
     current_app.logger.error(data)

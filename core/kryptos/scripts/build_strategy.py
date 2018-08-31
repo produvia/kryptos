@@ -113,7 +113,8 @@ def run_from_api(strat, paper, api_url):
 
     endpoint = os.path.join(api_url, 'strat')
     click.echo(f'Enqueuing strategy at {endpoint}')
-    resp = requests.get(endpoint, json=data)
+
+    resp = requests.post(endpoint, json=data)
     click.echo(resp)
     resp.raise_for_status()
     data = resp.json()
