@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
 from flask import Blueprint, request, jsonify, current_app
-import redis
-from rq import Queue, Connection
 
 from app import task
 
@@ -20,12 +17,13 @@ def strat_status():
 
     return jsonify(strat_info=data)
 
+
 @api.route('/strat', methods=['POST'])
 def run_strat():
     data = request.json
-    current_app.logger.error(data)
     strat_dict = data.get('strat_json')
     queue_name = data.get('queue_name')
+    user_id = data.get('user_id')
 
     live, simulate_orders = False, True
     if queue_name in ['paper', 'live']:
@@ -35,6 +33,6 @@ def run_strat():
         simulate_orders = False
 
     current_app.logger.info(f'Enqueuing strat to {queue_name} queue')
-    job_id, _ = task.queue_strat(strat_dict, user_id=None, live=False, simulate_orders=True)
+    job_id, _ = task.queue_strat(strat_dict, user_id=user_id, live=live, simulate_orders=simulate_orders)
     current_app.logger.info(f"Strat running in job {job_id}")
     return jsonify(strat_id=job_id)
