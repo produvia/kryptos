@@ -187,8 +187,8 @@ def run_in_worker(strat, paper):
         timeout=-1
     )
 
-    strat_url = get_strat_url(strat.id, base_url, paper)
-    click.secho(f'View the strat at http://0.0.0.0:8080/strategy/backtest/strategy/{strat.id}', fg='blue')
+    strat_url = get_strat_url(strat.id, LOCAL_BASE_URL, paper)
+    click.secho(f'View the strat at {strat_url}', fg='blue')
 
     while not job.is_finished:
         if job.is_failed:
