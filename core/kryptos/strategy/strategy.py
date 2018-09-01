@@ -228,7 +228,7 @@ class Strategy(object):
         models = strat_dict.get("models", {})
         for m in models:
             model = ml.get_indicator(**m)
-            self.add_ml_models(m)
+            self.add_ml_models(model)
 
     def _load_datasets(self, strat_dict):
         datasets = strat_dict.get("datasets", {})
