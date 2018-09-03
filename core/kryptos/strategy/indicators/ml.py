@@ -7,9 +7,6 @@ from kryptos.utils import tasks
 from kryptos.strategy.indicators import AbstractIndicator
 
 
-
-
-
 def get_indicator(name, **kw):
     subclass = globals().get(name.upper())
     if subclass is not None:
@@ -32,11 +29,9 @@ class MLIndicator(AbstractIndicator):
         the signals_buy and signals_sell methods.
         """
         self.hyper_params = None
-
         self.first_iteration = True
         self.current_date = None
         self.current_job_id = None
-
         # buy/sell are set as attributes rather than calculated properties for ML
         # because the results are returned from the worker processes
         # in which the MLIndicator instance is not available
@@ -57,16 +52,11 @@ class MLIndicator(AbstractIndicator):
         self.idx += 1
         self.current_date = get_datetime()
         child_indicator = get_indicator(name)
-
-
         self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
         self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
-
         self.log.info(f'Queuing {self.name} ML calculation')
         job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
         self.current_job_id = job.id
-
-
 
     def record(self):
         q = Queue('ml', connection=tasks.CONN)
@@ -75,24 +65,17 @@ class MLIndicator(AbstractIndicator):
             self.log.info('Waiting for ML job')
             time.sleep(3)
         self.log.info('Job complete')
-
-
         self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell = job.result
         self.current_job_id = None
-
-        self.df_results = pd.read_json(df_results_json)
+        df_results = pd.read_json(df_results_json)
+        self.df_results = self.df_results.append(df_results)
         self.df_final = pd.read_json(df_final_json)
-
-
         model_name = self.name
         payload = {self.name: self.result}
         record(**payload)
 
-
-    def analyze(self, namespace, data_freq, extra_results):
-        job = tasks.enqueue_ml_analyze(namespace, self.name, self.df_final, data_freq, extra_results)
-
-
+    def analyze(self, namespace, name, data_freq, extra_results):
+        job = tasks.enqueue_ml_analyze(namespace, name, self.df_final, self.df_results, data_freq, extra_results)
 
 
 class XGBOOST(MLIndicator):
@@ -102,12 +85,11 @@ class XGBOOST(MLIndicator):
         self.num_boost_rounds = None
         super(XGBOOST, self).__init__("XGBOOST", **kw)
 
-
     def calculate(self, df, **kw):
         super(XGBOOST, self).calculate(df, "XGBOOST", **kw)
 
-    def analyze(self, namespace, extra_results):
-        super(XGBOOST, self).analyze(namespace, "XGBOOST", extra_results)
+    def analyze(self, namespace, data_freq, extra_results):
+        super(XGBOOST, self).analyze(namespace, "XGBOOST", data_freq, extra_results)
 
 
 class LIGHTGBM(MLIndicator):
@@ -116,9 +98,8 @@ class LIGHTGBM(MLIndicator):
         self.num_boost_rounds = None
         super(LIGHTGBM, self).__init__("LIGHTGBM", **kw)
 
-
     def calculate(self, df, **kw):
         super(LIGHTGBM, self).calculate(df, "LIGHTGBM", **kw)
 
-    def analyze(self, namespace, extra_results):
-        super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", extra_results)
+    def analyze(self, namespace, data_freq, extra_results):
+        super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", data_freq, extra_results)

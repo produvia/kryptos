@@ -2,7 +2,7 @@ import os
 import multiprocessing
 import time
 import sys
-
+import logging
 import redis
 from rq import Connection, Worker, Queue
 import logbook
@@ -43,7 +43,6 @@ REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 
-
 def _prepare_data(df):
     if CONFIG.CLASSIFICATION_TYPE == 1:
         X_train, y_train, X_test = labeling_regression_data(df)
@@ -78,6 +77,7 @@ def _optimize_hyper_params(df, idx):
         return num_boost_rounds, hyper_params
     return None, None
 
+
 def _set_feature_selection(name, X_train, y_train, X_test, idx, hyper_params, num_boost_rounds):
     # Feature Selection
     feature_selected_columns = []
@@ -100,6 +100,7 @@ def _set_feature_selection(name, X_train, y_train, X_test, idx, hyper_params, nu
 
     return feature_selected_columns
 
+
 def lgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds):
     # Train
     model = lightgbm_train(X_train, y_train, hyper_params, num_boost_rounds)
@@ -107,12 +108,14 @@ def lgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds):
     result = lightgbm_test(model, X_test)
     return result
 
+
 def xgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds):
     # Train
     model = xgboost_train(X_train, y_train, hyper_params, num_boost_rounds)
     # Predict
     result = xgboost_test(model, X_test)
     return result
+
 
 def get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rounds):
     # Train and test indicator
@@ -122,6 +125,7 @@ def get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rou
         model_result = lgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds)
 
     return model_result
+
 
 def write_results_to_df(model_result, current_datetime):
     # Results
@@ -134,6 +138,7 @@ def write_results_to_df(model_result, current_datetime):
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
     return df_results
+
 
 def signals_buy(model_result):
     signal = False
@@ -166,17 +171,14 @@ def signals_sell(model_result):
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
     return signal
 
+
 def calculate(df_current_json, name, idx, current_datetime, df_final_json, **kw):
     df_current = pd.read_json(df_current_json)
     df_final = pd.read_json(df_final_json)
 
-    if df_final is None:
-        df_final = pd.DataFrame()
-
-
     if CONFIG.DEBUG:
         log.info(str(idx) + ' - ' + str(current_datetime) + ' - ' + str(df_current.iloc[-1].price))
-        log.info(str(df_current.iloc[0].name) + ' - ' + str(df_current.iloc[-1].name))
+        log.info('from ' + str(df_current.iloc[0].name) + ' - to ' + str(df_current.iloc[-1].name))
 
     # Dataframe size is enough to apply Machine Learning
     if df_current.shape[0] > CONFIG.MIN_ROWS_TO_ML:
@@ -222,16 +224,13 @@ def calculate(df_current_json, name, idx, current_datetime, df_final_json, **kw)
         df_final.loc[df_current.index[-1]] = df_current.iloc[-1]
 
     log.info(f'Result: {model_result}')
-
-    import logging
-
     logging.info(model_result, df_results.to_json(), df_final.to_json(), buy, sell)
-
     return model_result, df_results.to_json(), df_final.to_json(), buy, sell
 
 
-def analyze(namespace, name, df_final_json, data_freq, extra_results):
+def analyze(namespace, name, df_final_json, df_results_json, data_freq, extra_results):
     df_final = pd.read_json(df_final_json)
+    df_results = pd.read_json(df_results_json)
 
     if CONFIG.CLASSIFICATION_TYPE == 1:
         # Post processing of target column
@@ -268,7 +267,6 @@ def analyze(namespace, name, df_final_json, data_freq, extra_results):
                                 results_real, results_pred, extra_results)
 
 
-
 def manage_workers():
     # import before starting worker to loading during worker process
     # from kryptos.strategy import Strategy
@@ -283,9 +281,6 @@ def manage_workers():
         register_sentry(client, backtest_worker)
         multiprocessing.Process(target=backtest_worker.work, kwargs={'logging_level': 'ERROR'}).start()
 
-
-
-
         while True:
             q = Queue('ml', connection=CONN)
             required = len(q)
@@ -297,9 +292,6 @@ def manage_workers():
                 multiprocessing.Process(target=worker.work, kwargs={'burst': True, 'logging_level': 'ERROR'}).start()
 
             time.sleep(5)
-
-
-
 
 
 if __name__ == '__main__':

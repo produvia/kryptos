@@ -50,7 +50,7 @@ OPTIMIZABLE_PARAMS = {
     'bagging_fraction': 1, # 1
     'feature_fraction': 1, # 1
     'bagging_freq': 5,
-    'max_depth': 20,
+    'max_depth': -1,
     'min_data_in_leaf': 350 # default=20
 }
 

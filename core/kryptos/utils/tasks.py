@@ -20,6 +20,7 @@ def queue_notification(msg, telegram_id):
             telegram_id=telegram_id
         )
 
+
 def enqueue_ml_calculate(df_current, name, idx, current_datetime, df_final, **kw):
     df_current_json = df_current.to_json()
     df_final_json = df_final.to_json()
@@ -32,11 +33,14 @@ def enqueue_ml_calculate(df_current, name, idx, current_datetime, df_final, **kw
             timeout=str(DEFAULT_CONFIG['MINUTE_FREQ']) + 'm'  # allow job to run for full iteration
         )
 
-def enqueue_ml_analyze(namespace, name, df_final, data_freq, extra_results):
+
+def enqueue_ml_analyze(namespace, name, df_final, df_results, data_freq, extra_results):
     df_final_json = df_final.to_json()
+    df_results_json = df_results.to_json()
     with Connection(CONN):
         q = Queue('ml')
         return q.enqueue(
             'worker.analyze',
-            args=[namespace, name, df_final_json, data_freq, extra_results]
+            args=[namespace, name, df_final_json, df_results_json, data_freq, extra_results],
+            timeout=str(DEFAULT_CONFIG['MINUTE_FREQ']) + 'm'  # allow job to run for full iteration
         )
