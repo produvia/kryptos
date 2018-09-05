@@ -39,7 +39,7 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
 
-        if self.strat.in_job and record.level_name == 'NOTICE':
+        if self.strat.in_job: # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
             if not job.meta.get('output'):
                 job.meta['output'] = record.msg
@@ -129,6 +129,7 @@ class Strategy(object):
             "trading": self.trading_info,
             "datasets": self.dataset_info,
             "indicators": self.indicator_info,
+            "models": self.model_info,
             "signals": self._dump_signals(),
         }
         return d
@@ -139,6 +140,13 @@ class Strategy(object):
         for i in self._market_indicators:
             inds.append(i.serialize())
         return inds
+
+    @property
+    def model_info(self):
+        models = []
+        for m in self._ml_models:
+            models.append(m.serialize())
+        return models
 
     def indicator(self, label):
         for i in self._market_indicators:
@@ -216,6 +224,12 @@ class Strategy(object):
                 if ind not in self._market_indicators:
                     self.add_market_indicator(ind)
 
+    def _load_ml_models(self, strat_dict):
+        models = strat_dict.get("models", {})
+        for m in models:
+            model = ml.get_indicator(**m)
+            self.add_ml_models(model)
+
     def _load_datasets(self, strat_dict):
         datasets = strat_dict.get("datasets", {})
         for ds in datasets:
@@ -262,6 +276,7 @@ class Strategy(object):
         self._load_indicators(strat_dict)
         self._load_datasets(strat_dict)
         self._load_signals(strat_dict)
+        self._load_ml_models(strat_dict)
 
 
     def load_json_file(self, json_file):
@@ -402,7 +417,7 @@ class Strategy(object):
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
             msg = "Canceling unfilled open order {}".format(i)
-            self.log.debug(msg)
+            self.log.info(msg)
             self.notify(msg)
             cancel_order(i)
 

@@ -37,12 +37,6 @@ You can also view the RQ dashboard at http://0.0.0.0:8080/rq
 
 ## Local Development
 
- To run the entire platform and use the web app and telegram bot:
-
-```bash
-docker-compose up
-```
-
  To only view the logs of a desired service:
 ```bash
 docker-compose up -d
@@ -56,7 +50,6 @@ docker exec -it worker /bin/bash
 ```
 
 This will provide a command prompt inside the worker container from which you can run the `strat` command
-
 
 
 For example, to work on the ML service:
@@ -73,24 +66,19 @@ Then to stream ML logs in a seperate terminal
 docker-compose logs -f ml
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-## Connecting to the CloudSQL database locally
-
-To connect to the production database instead of the docker container, install the google cloud local cloud-sql-proxy
+Note the following `strat` options to set where a strategy is run
 ```bash
-./cloud_sql_proxy -instances=kryptos-205115:us-west1:kryptos-db=tcp:5432
-```
+Usage: strat [OPTIONS]
 
+Options:
+
+  ...
+
+  --paper                         Run the strategy in Paper trading mode
+  -a, --api                       Run the strategy via API
+  -w, --worker                    Run the strategy inside an RQ worker
+  -h, --hosted                    Run on a GCP instance via the API
+```
 
 ## Deployment
 
@@ -146,6 +134,24 @@ In the case of changes to the app directory, the new image is also deployed from
 
 Always check to see if there were any errors or if the build was not triggered.
 
+### Getting production info
+To view GAE instance logs
+```bash
+$ gcloud app logs read -s <default|worker|ml|>
+```
+To view worker statuses, run the following inside the *core/* dir
+```bash
+$ rq info -c kryptos.settings
+```
+or for the web dashboard
+```bash
+$ rq-dashboard -c kryptos.settings
+```
+
+To connect to the production database, install the google cloud local cloud-sql-proxy
+```bash
+./cloud_sql_proxy -instances=kryptos-205115:us-west1:kryptos-db=tcp:5432
+```
 
 ## Project Components
 

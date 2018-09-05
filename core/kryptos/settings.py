@@ -2,25 +2,6 @@ import os
 import json
 from google.cloud import datastore
 
-PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
-BASE_DIR = os.path.dirname(PLATFORM_DIR)
-PERF_DIR = os.path.join(BASE_DIR, "performance_results")
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-
-STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
-DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
-
-# TODO move into strategy config.json
-## TAKE-PROFIT / STOP-LOSS STRATEGY
-TAKE_PROFIT = 0.04 # Take-Profit
-STOP_LOSS = 0.02 # Stop-Loss
-
-QUEUE_NAMES = ['paper', 'live', 'backtest']
-
-with open(DEFAULT_CONFIG_FILE, "r") as f:
-    DEFAULT_CONFIG = json.load(f)
-
-
 def get_from_datastore(config_key, env):
     ds = datastore.Client()
     print('Fetching {}'.format(config_key))
@@ -29,6 +10,33 @@ def get_from_datastore(config_key, env):
     entity = ds.get(product_key)
 
     return entity[config_key]
+
+PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(PLATFORM_DIR)
+PERF_DIR = os.path.join(BASE_DIR, "performance_results")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
+REDIS_PORT = os.getenv('REDIS_PORT', 19779)
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
+
+SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+
+
+STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
+DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
+
+# TODO move into strategy config.json
+# TAKE-PROFIT / STOP-LOSS STRATEGY
+TAKE_PROFIT = 0.04  # Take-Profit
+STOP_LOSS = 0.02  # Stop-Loss
+
+QUEUE_NAMES = ['paper', 'live', 'backtest']
+
+with open(DEFAULT_CONFIG_FILE, "r") as f:
+    DEFAULT_CONFIG = json.load(f)
+
+
 
 # Optionally set metrics here instead of with the metrics "-m" option
 METRICS = [

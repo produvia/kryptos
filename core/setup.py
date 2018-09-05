@@ -43,16 +43,12 @@ setup(
     install_requires=requires,
     entry_points='''
         [console_scripts]
-        benchmark=kryptos.scripts.run_benchmark:benchmark
-        compare_all_strategies=kryptos.scripts.run_strategies:run
-        metrics=kryptos.scripts.run_metrics:run
-        compare=kryptos.scripts.compare:run
-        ta=kryptos.scripts.run_ta:run
         bchain=kryptos.scripts.bchain_activity:run
         trends=kryptos.scripts.trends:run
         strat=kryptos.scripts.build_strategy:run
         compare_all_ta=kryptos.scripts.run_all_ta:run
         workers=kryptos.worker.worker:manage_workers
+        stress=kryptos.scripts.stress_worker:run
     ''',
     zip_safe=False,
 )

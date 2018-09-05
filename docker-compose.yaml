@@ -21,6 +21,7 @@ services:
       - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
       - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
       - CONFIG_ENV=dev
+      - PYTHONUNBUFFERED=1
     depends_on:
       - redis
       - db
@@ -34,6 +35,9 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
+    ports:
+     - "9181:9181" # for rq-dashboard
+
     volumes:
      - ./app:/app
     environment:
@@ -61,6 +65,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=password
       - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
+      - PYTHONUNBUFFERED=1
 
     # entrypoint: ['python', 'worker.py']
     entrypoint: ['honcho', 'start', 'worker', '--no-prefix']
