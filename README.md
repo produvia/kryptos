@@ -25,22 +25,60 @@ docker-compose build
 ## Running locally
 
 ```bash
-docker-compose up -d
+docker-compose up
 ```
 
-This will spin up a web, worker, postgres, and redis container.
+This will spin up a web, worker, ml, postgres, and redis container.
 
 The web app will be accessible at http://0.0.0.0:8080
 
+You can also view the RQ dashboard at http://0.0.0.0:8080/rq
 
 
-## Connecting to the CloudSQL database locally
+## Local Development
 
-To connect to the production database instead of the docker container, install the google cloud local cloud-sql-proxy
+ To only view the logs of a desired service:
 ```bash
-./cloud_sql_proxy -instances=kryptos-205115:us-west1:kryptos-db=tcp:5432
+docker-compose up -d
+docker-compose logs -f <web|worker|ml>
 ```
 
+ To simply run strategies from CLI:
+```bash
+docker-compose up -d
+docker exec -it worker /bin/bash
+```
+
+This will provide a command prompt inside the worker container from which you can run the `strat` command
+
+
+For example, to work on the ML service:
+```bash
+# start all containers w/o logging
+docker-compose up -d
+
+# enter the worker shell
+docker exec -it worker /bin/bash
+```
+
+Then to stream ML logs in a seperate terminal
+```bash
+docker-compose logs -f ml
+```
+
+Note the following `strat` options to set where a strategy is run
+```bash
+Usage: strat [OPTIONS]
+
+Options:
+
+  ...
+
+  --paper                         Run the strategy in Paper trading mode
+  -a, --api                       Run the strategy via API
+  -w, --worker                    Run the strategy inside an RQ worker
+  -h, --hosted                    Run on a GCP instance via the API
+```
 
 ## Deployment
 
@@ -48,46 +86,42 @@ To connect to the production database instead of the docker container, install t
 If this is the first time deploying, begin by pushing the images to GCR
 
 ```bash
-# first build and push the base and worker images
+# worker
 cd /core
-gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-base -f Dockerfile-base --timeout 1200 .
 gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-worker --timeout 1200 .
 
 # then the app image
 cd /app
 gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-app . --timeout 1200
+
+# then the ml image
+cd /ml
+gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-ml . --timeout 1200
 ```
+
+Then deploy the app and ml services to Google App engine using the pushed images
 
 ```bash
 # we could drop the image_url, but this way is quicker
+
+# in app/
 gcloud app deploy app.yaml --image-url=gcr.io/kryptos-205115/kryptos-app
+
+# in /ml/
+gcloud app deploy ml.yaml --image-url=gcr.io/kryptos-205115/kryptos-ml
+
+# in /core
+gcloud app deploy worker.yaml --image-url=gcr.io/kryptos-205115/kryptos-worker
 ```
-
-### Set up the worker Compute Instance Template
-
-In the Google Cloud console, create a new Instance Template
-
-- select `Deploy a container image to this VM instance`
-- Allocate a buffer for STDIN and psuedo-TTY
-- Add the following command arguments (to enable logs)
-    - `--log-driver=gcplogs`
-    - `--log-opt gcp-log-cmd=true`
-- Set the `REDIS_HOST`, `REDIS_PORT`, and `REDIS_PASSWORD` env variables
--Create a host directory mount
-    - Mount path: `/root/.catalyst`
-    - Host path: `catalyst-dir`
-    - Read/Write
-
-Once the template is setup you can create new VMs from it which will pull and start the latest worker image
 
 
 
 ### Triggered deployments
 There are three build triggers in place to help automate the deployments
 
-1. The first rebuilds the base Dockerfile if a commit is pushed that changes Dockerfile-base
-2. The second rebuilds the worker image if a pushed commit changes any files in the /core directory
-3. The third rebuilds and deploys the app/default service if changes are made to the /app directory
+1. The first rebuilds and deploys the worker image if a pushed commit changes any files in the /core directory
+2. The third rebuilds and deploys the ml service if changes are made to the /ml directory
+2. The third rebuilds and deploys the app/default service if changes are made to the /app directory
 
 You can view the cloudbuild.yaml file in the /core and /app directories to see the steps
 
@@ -100,6 +134,24 @@ In the case of changes to the app directory, the new image is also deployed from
 
 Always check to see if there were any errors or if the build was not triggered.
 
+### Getting production info
+To view GAE instance logs
+```bash
+$ gcloud app logs read -s <default|worker|ml|>
+```
+To view worker statuses, run the following inside the *core/* dir
+```bash
+$ rq info -c kryptos.settings
+```
+or for the web dashboard
+```bash
+$ rq-dashboard -c kryptos.settings
+```
+
+To connect to the production database, install the google cloud local cloud-sql-proxy
+```bash
+./cloud_sql_proxy -instances=kryptos-205115:us-west1:kryptos-db=tcp:5432
+```
 
 ## Project Components
 

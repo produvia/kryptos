@@ -44,25 +44,27 @@ Strategies are composed of a number of different inputs:
   - Trading Environment
   - Indicators
   - Datasets
-  - ~Signals~
+  - Signals
   - ~Order Behavior~
 
 These options can be defined via the CLI, JSON objects, the python API or a combination of the three interfaces.
 
 ### Running Strategies from the CLI
 ```bash
-Usage: strat [OPTIONS]
-
-Options:
-  -ta, --market-indicators TEXT  Market Indicators listed in order of priority
-  -d, --dataset [google|quandl]  Include asset in keyword list
-  -c, --columns TEXT             Target columns for specified dataset
-  -i, --data-indicators TEXT     Dataset indicators
+  -ta, --market-indicators TEXT   Market Indicators listed in order of
+                                  priority
+  -ml, --machine-learning-models TEXT
+                                  Machine Learning Models
+  -d, --dataset [google|quandl]   Include asset in keyword list
+  -c, --columns TEXT              Target columns for specified dataset
+  -i, --data-indicators TEXT      Dataset indicators
   -f, --json-file TEXT
-  --paper                        Run the strategy in Paper trading mode
-  --rpc                          Run the strategy via JSONRPC
-  -h, --hosted                   Run via rpc using remote server
-  --help                         Show this message and exit.
+  -p, --python-script TEXT
+  --paper                         Run the strategy in Paper trading mode
+  -a, --api                       Run the strategy via API
+  -w, --worker                    Run the strategy inside an RQ worker
+  -h, --hosted                    Run on a GCP instance via the API
+  --help
 ```
 
 To create a strategy using TA indicators:
@@ -92,45 +94,56 @@ $ strat -d google -c 'btc usd' -i 'relchange'
 To create a strategy using ML models:
 ```bash
 $ strat -ml xgboost
+$ strat -ml lightgbm
+$ strat -ml lightgbm -ml xgboost # You buy if both models get buy signal and vice-versa.
 ```
 
 By default, Machine Learning models use:
   * MIN_ROWS_TO_ML -> Minimum number of rows in the dataset to apply Machine Learning
-  * LABELLING -> [UP, KEEP, DOWN]
+
+  * CLASSIFICATION_TYPE -> Labeling type:
+      1. Regression
+      2. Binary Classification (DOWN / UP)
+      3. Multiclass Classification (DOWN / KEEP / UP)
+
+  * STOP_LOSS -> Percentage to Stop-Loss
+  * TAKE_PROFIT -> Percentage to Take-Profit
+  * NORMALIZATION -> True to set up data normalizated; False don't set up. Also, you can select the method to use ('max', 'diff' or 'std').
+
 
 #### Feature Engineering techniques
 
 Using dates features, tsfresh, fbprophet and technical analysis (ta-lib) libraries.
 
 You need to set the next setting variables:
-FE_DATES = -> True to add dates features; False don't add any feature.
-FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
-FE_TA -> True to add ta features; False don't add any feature.
-FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
-FE_UTILS -> True to add utils features; False don't add any feature.
+  * FE_DATES -> True to add dates features; False don't add any feature.
+  * FE_TSFRESH -> True to add tsfresh features; False don't add any feature.
+  * FE_TA -> True to add ta features; False don't add any feature.
+  * FE_FBPROPHET -> True to add fbprophet features; False don't add any feature.
+  * FE_UTILS -> True to add utils features; False don't add any feature.
 
 
 #### Hyper parameters optimization
 
 Using Hyperopt library.
 
-You need to set the next setting variables:
-  * SIZE_TEST_TO_OPTIMIZE -> Test dataframe size to optimize model params
-  * N_HYPEROPT_EVALS -> Number of evaluations to hyperopt
-  * OPTIMIZE_PARAMS -> True to optimize; False don't optimize
-  * ITERATIONS_PARAMS_OPTIMIZE -> Number of iterations to optimize model params
-
+You need to set the OPTIMIZE_PARAMS setting variable:
+  * 'enabled' -> True to apply hyper model params optimization; False don't apply.
+  * 'iterations' -> Test dataframe size to optimize model params
+  * 'n_evals' -> Number of evaluations to hyperopt
+  * 'size' -> Test dataframe size to optimize model params
 
 #### Feature Selection techniques
 
 Using embedded, filter and wrapper methods: https://machinelearningmastery.com/an-introduction-to-feature-selection/
 
-You need to set the next setting variables:
-  * PERFORM_FEATURE_SELECTION -> True to apply feature selection; False to don't apply feature selection.
-  * ITERATIONS_FEATURE_SELECTION -> Number of iterations to perform feature selection.
-  * TYPE_FEATURE_SELECTION -> {'embedded', 'filter', 'wrapper'}
+You need to set the FEATURE SELECTION setting variable:
 
-Also, you can add external datasets as features too:
+  * 'enabled' -> Apply feature selection
+  * 'n_iterations' -> Number of iterations to perform feature selection
+  * 'method' -> https://machinelearningmastery.com/an-introduction-to-feature-selection/ -> embedded | filter | wrapper
+
+Also, you can add external datasets as features too (to work with daily frequency only):
 
 Google Trends
 ```bash
@@ -153,15 +166,22 @@ For example:
 ```json
 {
    "trading": {
-      "EXCHANGE": "bitfinex",
-      "ASSET": "btc_usd",
-      "DATA_FREQ": "daily",
-      "HISTORY_FREQ": "1d",
-      "CAPITAL_BASE": 5000,
-      "BASE_CURRENCY": "usd",
-      "START": "2017-10-10",
-      "END": "2018-3-28"
-   },
+     "EXCHANGE": "binance",
+     "ASSET": "btc_usdt",
+     "DATA_FREQ": "minute",
+     "HISTORY_FREQ": "1T",
+     "MINUTE_FREQ": "5",
+     "MINUTE_TO_OPERATE": "1",
+     "CAPITAL_BASE": 20000,
+     "BASE_CURRENCY": "usd",
+     "START": "2018-8-10",
+     "END": "2018-8-15",
+     "BARS": 2000,
+     "ORDER_SIZE": 0.5,
+     "SLIPPAGE_ALLOWED": 0.02,
+     "MAKER_COMMISSION": 0.0,
+     "TAKER_COMMISSION": 0.0
+  },
    "datasets": [
       {
          "name": "google",
@@ -292,132 +312,3 @@ def signal_buy(context, data):
 """Defines condition to signal buy"""
     return utils.cross_above(sma_fast.outputs.SMA_FAST, sma_slow.outputs.SMA_SLOW)
   ```
-
-## JSONRPC Server
-
-A simple JSONRPC server is accessible to enable running strategies remotely. Simply add the `--rpc` flag to the `strat` command
-
-### Remote Server
-To use the hosted server on Google Cloud Platform, add the `-h` (hosted) flag
-
-```bash
-$ strat -ta macdfix --rpc -h
-```
-
-
-### Using the local server
-
-#### Inside Docker
-If you are using docker, there is no setup needed. Simply add the `--rpc` flag.
-
-```bash
-$ strat -ta macdfix --rpc
-```
-
-#### Outside Docker
-
-If running outside of Docker, first set up the flask app environment
-```bash
-$ export FLASK_APP=autoapp.py
-$ export FLASK_DEBUG=1
-$ export FLASK_ENV=development
-```
-
-Then start the server
-```bash
-$ flask run
-```
-
-Then use the `strat` command in a seperate terminal
-```bash
-$ strat -ta macdfix --rpc
-```
-
-Note that vizualization will not be shown when using `--rpc`
-
-
-## Using Docker
-
-### Local development
-
-Install [Docker](https://docs.docker.com/compose/install/#prerequisites)(and Docker Compose)
-
-Build the containers
-
-`$ bash docker_scripts/dev-build.sh`
-
-Run and connect to the containers
-
-`$ bash docker_scripts/dev-start.sh`
-
-To stop everything
-```bash
-$ docker-compose stop
-```
-
-### Deploy to Google Cloud Platform
-
-Connect to the Google Cloud Compute instance
-
-```
-gcloud compute --project "kryptos-204204" ssh --zone "us-west1-a" "kryptos-compose"
-```
-
-#### Initial instance setup
-Ensure firewall allows http on port 80
-
-Because the app runs on a containerized OS, we need to use the docker-compose *image* inside docker instead of installing
-
-```bash
-$ docker run docker/compose:1.13.0 version
-```
-
-then make an alias
-
-```bash
-$ echo alias docker-compose="'"'docker run \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$PWD:/rootfs/$PWD" \
-    -w="/rootfs/$PWD" \
-    docker/compose:1.13.0'"'" >> ~/.bashrc
-```
-
-docker-compose should now be accessible
-
-Next, configure docker to pull from GCR
-
-```bash
-docker-credential-gcr configure-docker
-```
-
-#### Run for production
-
-Pull the latest changes from github or use gcloud to scp the repo
-
-```bash
-gcloud compute scp . kryptos-compose:~/kryptos --recurse
-```
-
-build the images
-
-```bash
-$ bash docker_scripts/prod-build.#!/bin/sh
-```
-
-Start the containers with docker-compose
-
-```bash
-$ docker-compose up -d
-```
-
-Download exchange data
-
-```bash
-$ bash docker_scripts/ingest.sh
-```
-
-Test deployment using rpc from local machine
-
-```
-$ strat -ta macd --rpc -h
-```

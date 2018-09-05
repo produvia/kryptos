@@ -5,22 +5,25 @@ import os
 import inspect
 import datetime
 import copy
+from textwrap import dedent
 import logbook
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from rq import get_current_job
 
 from catalyst import run_algorithm
-from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError
+from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
+from catalyst.exchange.utils import stats_utils
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField
 from ccxt.base import errors as ccxt_errors
 
-from kryptos.utils import load, viz, outputs
+from kryptos.utils import load, viz, outputs, tasks
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
-from kryptos.settings import DEFAULT_CONFIG
+from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS
 from kryptos.analysis import quant
 
 from redo import retry
@@ -36,9 +39,12 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
 
-        if self.strat.in_job:
+        if self.strat.in_job: # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
-            job.meta['output'] = record.msg
+            if not job.meta.get('output'):
+                job.meta['output'] = record.msg
+            else:
+                job.meta['output'] += record.msg + '\n'
             job.save_meta()
 
 
@@ -87,6 +93,9 @@ class Strategy(object):
         self.quant_results = None
         self.in_job = False
 
+        self.telegram_id = None
+
+
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
 
@@ -106,6 +115,9 @@ class Strategy(object):
         logger_group.add_logger(self.log)
 
         self.current_date = None
+        self.last_date = None
+        self.filter_dates = None
+        self.date_init_reference = None
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -117,6 +129,7 @@ class Strategy(object):
             "trading": self.trading_info,
             "datasets": self.dataset_info,
             "indicators": self.indicator_info,
+            "models": self.model_info,
             "signals": self._dump_signals(),
         }
         return d
@@ -127,6 +140,13 @@ class Strategy(object):
         for i in self._market_indicators:
             inds.append(i.serialize())
         return inds
+
+    @property
+    def model_info(self):
+        models = []
+        for m in self._ml_models:
+            models.append(m.serialize())
+        return models
 
     def indicator(self, label):
         for i in self._market_indicators:
@@ -204,6 +224,12 @@ class Strategy(object):
                 if ind not in self._market_indicators:
                     self.add_market_indicator(ind)
 
+    def _load_ml_models(self, strat_dict):
+        models = strat_dict.get("models", {})
+        for m in models:
+            model = ml.get_indicator(**m)
+            self.add_ml_models(model)
+
     def _load_datasets(self, strat_dict):
         datasets = strat_dict.get("datasets", {})
         for ds in datasets:
@@ -244,13 +270,13 @@ class Strategy(object):
         if self.trading_info["EXCHANGE"] == "poloniex":
             self.trading_info["TICK_SIZE"] = 1000.0
 
-
     def load_dict(self, strat_dict):
         self.name = strat_dict.get('name')
         self._load_trading(strat_dict)
         self._load_indicators(strat_dict)
         self._load_datasets(strat_dict)
         self._load_signals(strat_dict)
+        self._load_ml_models(strat_dict)
 
 
     def load_json_file(self, json_file):
@@ -270,6 +296,10 @@ class Strategy(object):
         instance.load_json_file(json_file)
         return instance
 
+    def notify(self, msg):
+        if self.telegram_id:
+            tasks.queue_notification(msg, self.telegram_id)
+
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
@@ -282,11 +312,41 @@ class Strategy(object):
             if "__" not in k:
                 setattr(context, k, v)
 
-        for dataset, manager in self._datasets.items():
-            manager.fetch_data()
+        if self._datasets.items():
+            if context.DATA_FREQ == 'daily':
+                for dataset, manager in self._datasets.items():
+                    manager.fetch_data()
+            else:
+                raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
 
         self._extra_init(context)
         self.log.info("Initilized Strategy")
+        self.notify('Your strategy has started!')
+
+
+        self._check_configuration(context)
+
+        # Set context.BARS size to work with custom minute frequency
+        if context.DATA_FREQ == 'minute':
+            context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
+
+        self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(context.MINUTE_TO_OPERATE))
+
+        # Set commissions
+        context.set_commission(maker=context.MAKER_COMMISSION, taker=context.TAKER_COMMISSION)
+
+    def _check_configuration(self, context):
+        """Checking config.json valid values"""
+        if context.DATA_FREQ != 'minute' and context.DATA_FREQ != 'daily':
+            raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" or "daily"')
+        if context.DATA_FREQ == 'minute':
+            if context.HISTORY_FREQ[-1] != "T":
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"')
+            if int(context.MINUTE_FREQ) % int(context.HISTORY_FREQ[:-1]) != 0:
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" context.HISTORY_FREQ shoud be divisible by context.MINUTE_FREQ')
+        elif context.DATA_FREQ == 'daily':
+            if context.HISTORY_FREQ[-1] != "d":
+                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
 
     def _fetch_history(self, context, data):
         # Get price, open, high, low, close
@@ -312,26 +372,54 @@ class Strategy(object):
             data {pandas.Datframe} -- Catalyst data object
         """
         context.i += 1
+
+        try:
+            # In live mode, "volume", "close" and "price" are the only available fields.
+            # In live mode, "volume" returns the last 24 hour trading volume.
+
+            # Update actual context.price
+            context.current = data.current(assets=context.asset,
+                        fields=["volume", "close", "price"])
+            context.price = context.current.price
+            record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+
+
+        except NoValueForField as e:
+            self.log.warn(e)
+            self.log.warn(f'Skipping trade period: {e}')
+            return
+
+        # To check to apply stop-loss, take-profit or keep position
+        self.check_open_positions(context)
+
         # set date first for logging purposes
-        self.current_date = context.blotter.current_dt.date()
+        self.current_date = get_datetime()
+
+        # Filter minute frequency
+        if context.DATA_FREQ == 'minute':
+            # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
+            if self.last_date is None:
+                last_date = self._get_last_date(context, data)
+            else:
+                last_date = self.last_date
+            base_minutes = (self.current_date - last_date) / np.timedelta64(1, 'm')
+            if base_minutes != int(context.MINUTE_FREQ):
+                return
+
+            if self.last_date is None:
+                self.last_date = last_date
 
         if self.in_job:
             job = get_current_job()
-            job.meta['date'] = self.current_date
+            job.meta['date'] = str(self.current_date)
             job.save_meta()
 
         self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
-            self.log.debug("Canceling unfilled open order {}".format(i))
+            msg = "Canceling unfilled open order {}".format(i)
+            self.log.info(msg)
+            self.notify(msg)
             cancel_order(i)
-
-        price = data.current(context.asset, "price")
-        volume = data.current(context.asset, "volume")
-        cash = context.portfolio.cash
-        record(price=price, cash=cash, volume=volume)
-
-        context.price = price
-
 
         try:
             retry(self._fetch_history,
@@ -348,13 +436,34 @@ class Strategy(object):
             self.log.error('Hit Rate limit, skipping trade step')
             return
 
+        # Filter historic data according to minute frequency
+        # for the freq alias:
+        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+        if context.DATA_FREQ == 'minute':
+            filter_dates = pd.date_range(start=self.date_init_reference,
+                                        end=context.prices.iloc[-1].name,
+                                        freq=str(context.MINUTE_FREQ)+"min")
+            context.prices = context.prices.loc[filter_dates]
+
+            if self.filter_dates is not None:
+                self.filter_dates = self.filter_dates.append(self.filter_dates.symmetric_difference(filter_dates))
+            else:
+                self.filter_dates = filter_dates
+
+            # Add current values to historic
+            self.last_date = get_datetime()
+            context.prices.loc[self.last_date] = context.current
+
         if self._ml_models:
             # Add external datasets (Google Search Volume and Blockchain Info) as features
             for i in self._ml_models:
-                for dataset, manager in self._datasets.items():
-                    context.prices.index.tz = None
-                    context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
+                if context.DATA_FREQ == 'daily':
+                    for dataset, manager in self._datasets.items():
+                        context.prices.index.tz = None
+                        context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
                 i.calculate(context.prices)
+                i.record()
+
         else:
             for dataset, manager in self._datasets.items():
                 manager.calculate(context)
@@ -371,6 +480,11 @@ class Strategy(object):
         self._extra_handle(context, data)
         self._count_signals(context, data)
 
+        if context.frame_stats:
+            pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
+            self.log.notice(pretty_output)
+
+
     @property
     def total_plots(self):
         dataset_inds = 0
@@ -378,6 +492,26 @@ class Strategy(object):
             dataset_inds += len(m._indicators)
 
         return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
+
+    def _get_last_date(self, context, data):
+        """Get last date filtered to work in the train dataset.
+        """
+        if self.last_date is None:
+            # Get historic prices
+            retry(self._fetch_history,
+                  sleeptime=5,
+                  retry_exceptions=(ccxt_errors.RequestTimeout),
+                  args=(context, data),
+                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+
+            # Filter selected dates
+            filter_dates = pd.date_range(start=self.date_init_reference,
+                                        end=context.prices.iloc[-1].name,
+                                        freq=str(context.MINUTE_FREQ)+"min")
+
+            context.prices = context.prices.loc[filter_dates]
+
+            return context.prices.iloc[-1].name
 
     def _make_plots(self, context, results):
         # strat_plots = len(self._market_indicators) + len(self._datasets)
@@ -414,6 +548,8 @@ class Strategy(object):
         ending_cash = results.cash[-1]
         self.log.notice('Ending cash: ${}'.format(ending_cash))
         self.log.notice('Completed for {} trading periods'.format(context.i))
+        self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
+
         try:
             if self.viz:
                 self._make_plots(context, results)
@@ -423,8 +559,40 @@ class Strategy(object):
 
         self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
+        extra_results = self.get_extra_results(context, results)
+
         for i in self._ml_models:
-            i.analyze(self.name)
+            i.analyze(self.name, conext.DATA_FREQ, extra_results)
+
+    def get_extra_results(self, context, results):
+        extra_results = {
+            'start': context.START,
+            'end': context.END,
+            'minute_freq': context.MINUTE_FREQ,
+            'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
+            'sharpe_ratio' : '',
+            'sharpe_ratio_benchmark': '',
+            'sortino_ratio': '',
+            'sortino_ratio_benchmark': ''
+        }
+
+        if context.DATA_FREQ == 'minute':
+            try:
+                self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
+                if results.algorithm_period_return.loc[self.filter_dates].dropna().std() != 0.0:
+                    extra_results['sharpe_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / results.algorithm_period_return.loc[self.filter_dates].dropna().std()
+                if (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std() != 0.0:
+                    extra_results['sharpe_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std()
+                if self.filter_dates in results.algorithm_period_return.loc[results.algorithm_period_return < 0].index:
+                    extra_results['sortino_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
+                    extra_results['sortino_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
+            except:
+                pass
+        else:
+            extra_results['sharpe_ratio'] = results.sharpe[30:].mean()
+            extra_results['sortino_ratio'] = results.sortino[30:].mean()
+
+        return extra_results
 
     def add_market_indicator(self, indicator, priority=0, **params):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
@@ -573,10 +741,15 @@ class Strategy(object):
             "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
         )
         if buys > sells:
-            self.log.notice("Signaling to buy")
+            msg = "Signaling to buy"
+            self.log.notice(msg)
+            self.notify(msg)
             self.make_buy(context)
+
         elif sells > buys:
-            self.log.notice("Signaling to sell")
+            msg = "Signaling to sell"
+            self.log.notice(msg)
+            self.notify(msg)
             self.make_sell(context)
 
     def make_buy(self, context):
@@ -586,6 +759,12 @@ class Strategy(object):
                     context.portfolio.cash, (context.price * context.ORDER_SIZE)
                 )
             )
+
+            msg = """
+            A signaled buy order was cancelled, because you don't have enough cash for the order.\n
+            Consider adding more cash to your account or adjusting your order size
+            """
+            self.notify(dedent(msg))
             return
 
         self.log.notice("Making Buy Order")
@@ -597,6 +776,10 @@ class Strategy(object):
     def make_sell(self, context):
         if context.asset not in context.portfolio.positions:
             self.log.warn("Skipping signaled sell due b/c no position")
+            msg = """\
+            A signaled sell order was cancelled, because you currently have no posiiton.\n
+            """
+            self.notify(dedent(msg))
             return
 
         self.log.notice("Making Sell Order")
@@ -605,17 +788,66 @@ class Strategy(object):
 
         self._sell_func(context)
 
+    def check_open_positions(self, context):
+        """Check open positions to sell to take profit or to stop loss.
+        """
+        if context.asset in context.portfolio.positions:
+            position = context.portfolio.positions.get(context.asset)
+            # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
+
+            if context.price >= position.cost_basis * (1 + TAKE_PROFIT): # Take Profit
+                self._take_profit_sell(context, position)
+
+            if context.price < position.cost_basis * (1 - STOP_LOSS): # Stop Loss
+                self._stop_loss_sell(context, position)
+
+    def _take_profit_sell(self, context, position):
+        order(
+            asset=context.asset,
+            amount=-position.amount,
+            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+        )
+
+        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+
+        msg = "Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
+
+        self.log.notice(msg)
+        self.notify(dedent(msg))
+
+    def _stop_loss_sell(self, context, position):
+        order(
+            asset=context.asset,
+            amount=-position.amount,
+            # limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+        )
+
+        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+
+        msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
+                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
+
+        self.log.notice(msg)
+        self.notify(dedent(msg))
+
     def _default_buy(self, context, size=None, price=None, slippage=None):
-        self.log.info('Using default buy function')
-        if context.asset not in context.portfolio.positions:
+        position = context.portfolio.positions.get(context.asset)
+        if position is None:
+            self.log.info('Using default buy function')
             order(
                 asset=context.asset,
                 amount=context.ORDER_SIZE,
-                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED),
+                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
             )
-            self.log.notice(
-                "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
-            )
+            msg = "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
+            self.log.notice(msg)
+            self.notify(msg)
+        else:
+            msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
+                            amount=position.amount, cost_basis=position.cost_basis)
+            self.log.warn(msg)
+            self.notify(msg)
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         self.log.info('Using default sell function')
@@ -638,11 +870,11 @@ class Strategy(object):
             target=0,
             limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
         )
-        self.log.notice(
-            "Sold {amount} @ {price} Profit: {profit}".format(
-                amount=position.amount, price=context.price, profit=profit
-            )
+        msg = "Sold {amount} @ {price} Profit: {profit}".format(
+            amount=position.amount, price=context.price, profit=profit
         )
+        self.log.notice(msg)
+        self.notify(msg)
 
     # Save the prices and analysis to send to analyze
 
@@ -659,6 +891,7 @@ class Strategy(object):
         if self.in_job:
             job = get_current_job()
             job.meta['config'] = self.to_dict()
+            job.meta['telegram_id'] = self.telegram_id
             job.save_meta()
 
         try:
@@ -692,8 +925,12 @@ class Strategy(object):
 
 
     def run_live(self, simulate_orders=True):
-        self.log.notice('Running live trading, suimulating orders: {}'.format(simulate_orders))
+        self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
         self.is_live = True
+        if self.trading_info['DATA_FREQ'] != 'minute':
+            self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
+            self.trading_info['DATA_FREQ'] = 'minute'
+
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
             initialize=self._init_func,

@@ -1,18 +1,13 @@
-from catalyst.api import record
-import matplotlib.pyplot as plt
+from catalyst.api import get_datetime, record
 import pandas as pd
+from rq import Queue
+import time
 
-from kryptos.utils import viz
+from kryptos.utils import tasks
 from kryptos.strategy.indicators import AbstractIndicator
-from kryptos.strategy.signals import utils
-from kryptos.ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
-from kryptos.ml.feature_selection.xgb import embedded_feature_selection
-from kryptos.ml.feature_selection.filter import filter_feature_selection
-from kryptos.ml.feature_selection.wrapper import wrapper_feature_selection
-from kryptos.ml.preprocessing import preprocessing_multiclass_data, clean_params, add_fe
-from kryptos.ml.metric import classification_metrics
-from kryptos.settings import MLConfig as CONFIG
-from kryptos.utils import merge_two_dicts
+
+
+
 
 
 def get_indicator(name, **kw):
@@ -37,95 +32,93 @@ class MLIndicator(AbstractIndicator):
         the signals_buy and signals_sell methods.
         """
         self.hyper_params = None
-        self.feature_selected_columns = []
 
-    def calculate(self, df, **kw):
-        """"""
-        pass
+        self.first_iteration = True
+        self.current_date = None
+        self.current_job_id = None
+
+        # buy/sell are set as attributes rather than calculated properties for ML
+        # because the results are returned from the worker processes
+        # in which the MLIndicator instance is not available
+        self._signals_buy = False
+        self._signals_sell = False
 
     @property
     def signals_buy(self):
-        """Used to define conditions for buy signal"""
-        pass
+        return self._signals_buy
 
     @property
     def signals_sell(self):
-        """Used to define conditions for buy signal"""
-        pass
+        return self._signals_buy
+
+    def calculate(self, df, name, **kw):
+        self._signals_buy = False
+        self._signals_sell = False
+        self.idx += 1
+        self.current_date = get_datetime()
+        child_indicator = get_indicator(name)
+
+
+        self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
+        self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
+
+        self.log.info(f'Queuing {self.name} ML calculation')
+        job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
+        self.current_job_id = job.id
+
+
+
+    def record(self):
+        q = Queue('ml', connection=tasks.CONN)
+        job = q.fetch_job(self.current_job_id)
+        while not job.is_finished:
+            self.log.info('Waiting for ML job')
+            time.sleep(3)
+        self.log.info('Job complete')
+
+
+        self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell = job.result
+        self.current_job_id = None
+
+        self.df_results = pd.read_json(df_results_json)
+        self.df_final = pd.read_json(df_final_json)
+
+
+        model_name = self.name
+        payload = {self.name: self.result}
+        record(**payload)
+
+
+    def analyze(self, namespace, data_freq, extra_results):
+        job = tasks.enqueue_ml_analyze(namespace, self.name, self.df_final, data_freq, extra_results)
+
+
 
 
 class XGBOOST(MLIndicator):
 
     def __init__(self, **kw):
-        super(XGBOOST, self).__init__("XGBOOST", **kw)
+        self.feature_selected_columns = []
         self.num_boost_rounds = None
+        super(XGBOOST, self).__init__("XGBOOST", **kw)
 
-    @property
-    def signals_buy(self):
-        if self.result == 1:
-            return True
-        else:
-            return False
-
-    @property
-    def signals_sell(self):
-        if self.result == 2:
-            return True
-        else:
-            return False
 
     def calculate(self, df, **kw):
-        self.idx += 1
+        super(XGBOOST, self).calculate(df, "XGBOOST", **kw)
 
-        # Dataframe size is enough to apply Machine Learning
-        if df.shape[0] > CONFIG.MIN_ROWS_TO_ML:
+    def analyze(self, namespace, extra_results):
+        super(XGBOOST, self).analyze(namespace, "XGBOOST", extra_results)
 
-            # Optimize Hyper Params for Xgboost model
-            if CONFIG.OPTIMIZE_PARAMS and (self.idx % CONFIG.ITERATIONS_PARAMS_OPTIMIZE) == 0:
-                X_train_optimize, y_train_optimize, X_test_optimize = preprocessing_multiclass_data(df, to_optimize=True)
-                y_test_optimize = df['target'].tail(CONFIG.SIZE_TEST_TO_OPTIMIZE).values
-                params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-                self.num_boost_rounds = int(params['num_boost_rounds'])
-                self.hyper_params = clean_params(params)
 
-            # Prepare data to machine learning problem
-            if CONFIG.CLASSIFICATION_TYPE == 3:
-                X_train, y_train, X_test = preprocessing_multiclass_data(df)
-            elif CONFIG.CLASSIFICATION_TYPE == 2:
-                X_train, y_train, X_test = preprocessing_binary_data(df)
+class LIGHTGBM(MLIndicator):
+    def __init__(self, **kw):
+        self.feature_selected_columns = []
+        self.num_boost_rounds = None
+        super(LIGHTGBM, self).__init__("LIGHTGBM", **kw)
 
-            # Feature Selection
-            if CONFIG.PERFORM_FEATURE_SELECTION and (self.idx % CONFIG.ITERATIONS_FEATURE_SELECTION) == 0:
-                if CONFIG.TYPE_FEATURE_SELECTION == 'embedded':
-                    model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-                    self.feature_selected_columns = embedded_feature_selection(model, 'all', 0.8)
-                elif CONFIG.TYPE_FEATURE_SELECTION == 'filter':
-                    self.feature_selected_columns = filter_feature_selection(X_train, y_train, 0.8)
-                elif CONFIG.TYPE_FEATURE_SELECTION == 'wrapper':
-                    self.feature_selected_columns = wrapper_feature_selection(X_train, y_train, 0.4)
 
-            if self.feature_selected_columns:
-                X_train = X_train[self.feature_selected_columns]
-                X_test = X_test[self.feature_selected_columns]
+    def calculate(self, df, **kw):
+        super(LIGHTGBM, self).calculate(df, "LIGHTGBM", **kw)
 
-            # Train XGBoost
-            model = xgboost_train(X_train, y_train, self.hyper_params, self.num_boost_rounds)
-
-            # Predict results
-            self.result = int(xgboost_test(model, X_test)[0])
-
-            # Results
-            self.results_pred.append(self.result)
-            self.results_real.append(int(df.iloc[-1].target))
-
-        else:
-            self.result = 0
-
-        if self.signals_buy:
-            self.log.debug("Signals BUY")
-        elif self.signals_sell:
-            self.log.debug("Signals SELL")
-
-    def analyze(self, namespace):
-        file_name = 'xgboost_confussion_matrix.txt'
-        classification_metrics(namespace, file_name, self.results_real, self.results_pred)
+    def analyze(self, namespace, extra_results):
+        super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", extra_results)

@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 flask = "*"
-flask-jsonrpc = "*"
 rq = "*"
 rq-dashboard = "*"
 flask-cors = "*"
@@ -19,7 +18,10 @@ numpy = "*"
 ta-lib = "*"
 gunicorn = "*"
 shortuuid = "*"
-google-cloud = "*"
+honcho = "*"
+google-cloud-datastore = "*"
+logbook = "*"
+raven = {extras = ["flask"]}
 
 [dev-packages]
 black = "==18.4a4"

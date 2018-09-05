@@ -4,19 +4,19 @@
 See https://github.com/sloria/cookiecutter-flask for configuration options with other flask-extensions
 """
 import os
-from google.auth import app_engine
 from google.cloud import datastore
 
-ds = datastore.Client()
+
+
 
 
 def get_from_datastore(config_key, env):
+    ds = datastore.Client()
     print('Fetching {}'.format(config_key))
 
     product_key = ds.key('Settings', env)
     entity = ds.get(product_key)
 
-    # print(value['SQLALCHEMY_DATABASE_URI'])
     return entity[config_key]
 
 
@@ -108,7 +108,7 @@ class DockerDevConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI') or get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
-    REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'dev')
+    REDIS_PASSWORD = os.getenv('REDIS_PASSWORD') or get_from_datastore('REDIS_PASSWORD', 'dev')
 
     USER_ENABLE_CONFIRM_EMAIL = False
     USER_SEND_REGISTERED_EMAIL = True

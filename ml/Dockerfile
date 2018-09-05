@@ -1,6 +1,9 @@
-FROM python:3.6
+FROM python:3.6 as base
 
-#TODO remove the need for ta-lib
+# install xgboost library
+RUN git clone --recursive https://github.com/dmlc/xgboost \
+    && cd xgboost; make -j4
+
 # install TA_LIB library and other dependencies
 RUN apt-get -y update \
     && apt-get -y install libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran \
@@ -12,21 +15,29 @@ RUN apt-get -y update \
     && make install \
     && rm -rf ta-lib*
 
+FROM base as builder
+
+RUN mkdir /install
+WORKDIR /install
 # copy only the requirements to prevent rebuild for any changes
-# need to have in subdir of app
-COPY requirements.txt /app/requirements.txt
-RUN pip install numpy
-RUN pip install ta-lib
-RUN pip install -r /app/requirements.txt
+COPY requirements.txt /requirements.txt
+
+# ensure numpy installed before ta-lib, matplotlib, etc
+RUN pip install 'numpy==1.14.3'
+RUN pip install -r /requirements.txt
+
+
+FROM builder
+
+COPY --from=builder /root/.cache /root/.cache
+COPY --from=builder /requirements.txt /ml/requirements.txt
+RUN pip install -r /ml/requirements.txt && rm -rf /root/.cache
 
 
 # Above lines represent the dependencies
 # below lines represent the actual app
 # Only the actual app should be rebuilt upon changes
-COPY . /app
+COPY . /ml
 
-## all app code needs to be in /app/app
-## uwsgi needs to be in /app
-
-WORKDIR /app
-ENTRYPOINT honcho start app updater
+WORKDIR /ml
+ENTRYPOINT python worker.py

@@ -7,7 +7,6 @@ from flask_user import current_user, login_required
 from app.extensions import db
 from app.forms import forms
 from app.models import User, StrategyModel
-from app.bot import bot_utils
 
 
 blueprint = Blueprint('account', __name__, url_prefix='/account')
@@ -60,7 +59,7 @@ def telegram_authorize():
 
     message = "Thanks for signing up with Kryptos!\nType /menu to have a look around."
 
-    bot_utils.send_to_user(message, user)
+    #TODO send message using updater
     return render_template('account/dashboard.html')
 
 
