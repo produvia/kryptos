@@ -378,8 +378,12 @@ class Strategy(object):
             # In live mode, "volume" returns the last 24 hour trading volume.
 
             # Update actual context.price
-            context.current = data.current(assets=context.asset,
-                        fields=["volume", "close", "price"])
+            if self.trading_info.get("LIVE", False):
+                context.current = data.current(assets=context.asset,
+                            fields=["volume", "close", "price"])
+            else:
+                context.current = data.current(assets=context.asset,
+                            fields=["open", "high", "low", "volume", "close", "price"])
             context.price = context.current.price
             record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
 
@@ -444,6 +448,7 @@ class Strategy(object):
                                         end=context.prices.iloc[-1].name,
                                         freq=str(context.MINUTE_FREQ)+"min")
             context.prices = context.prices.loc[filter_dates]
+            context.prices = context.prices.dropna()
 
             if self.filter_dates is not None:
                 self.filter_dates = self.filter_dates.append(self.filter_dates.symmetric_difference(filter_dates))
@@ -562,13 +567,14 @@ class Strategy(object):
         extra_results = self.get_extra_results(context, results)
 
         for i in self._ml_models:
-            i.analyze(self.name, conext.DATA_FREQ, extra_results)
+            i.analyze(self.name, context.DATA_FREQ, extra_results)
 
     def get_extra_results(self, context, results):
         extra_results = {
             'start': context.START,
             'end': context.END,
             'minute_freq': context.MINUTE_FREQ,
+            'data_freq': context.DATA_FREQ,
             'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
             'sharpe_ratio' : '',
             'sharpe_ratio_benchmark': '',

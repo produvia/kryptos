@@ -12,8 +12,8 @@ To get the entire project up and running locally:
 
 Clone the repo:
 ```bash
-$ git clone https://github.com/produvia/cryptocurrency-trading-platform.git
-$ cd cryptocurrency-trading-platform
+$ git clone https://github.com/produvia/kryptos.git
+$ cd kryptos
 ```
 
 Build the docker images
@@ -51,7 +51,6 @@ docker exec -it worker /bin/bash
 
 This will provide a command prompt inside the worker container from which you can run the `strat` command
 
-
 For example, to work on the ML service:
 ```bash
 # start all containers w/o logging
@@ -61,7 +60,7 @@ docker-compose up -d
 docker exec -it worker /bin/bash
 ```
 
-Then to stream ML logs in a seperate terminal
+Then to stream ML logs in a separate terminal
 ```bash
 docker-compose logs -f ml
 ```
@@ -69,6 +68,7 @@ docker-compose logs -f ml
 Note the following `strat` options to set where a strategy is run
 ```bash
 Usage: strat [OPTIONS]
+
 
 Options:
 

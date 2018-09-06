@@ -11,7 +11,7 @@
    "END": "2018-8-15",
    "BARS": 2000, "doc": "Use values > 200 if you want apply ML techniques",
    "ORDER_SIZE": 0.5,
-   "SLIPPAGE_ALLOWED": 0.02,
+   "SLIPPAGE_ALLOWED": 0.01,
    "MAKER_COMMISSION": 0.0,
    "TAKER_COMMISSION": 0.0
 }
