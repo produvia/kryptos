@@ -20,7 +20,7 @@ contextlib2==0.5.5
 cycler==0.10.0
 cyordereddict==1.0.0
 cython==0.27.3
-cytoolz==0.9.0.1; implementation_name == 'cpython'
+cytoolz==0.9.0.1
 decorator==4.3.0
 docutils==0.14
 empyrical==0.2.1
@@ -52,6 +52,7 @@ itsdangerous==0.24
 jinja2==2.10
 jmespath==0.9.3
 kiwisolver==1.0.1
+lightgbm==2.1.2
 logbook==0.12.5
 lru-dict==1.1.6
 lxml==4.2.4

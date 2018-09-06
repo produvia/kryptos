@@ -1,27 +1,20 @@
 import logging
-import os
-
 from flask import Flask
 import redis
-from kryptos.settings import get_from_datastore
+
+from kryptos.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+
 
 app = Flask(__name__)
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
-REDIS_PORT = os.getenv('REDIS_PORT', 19779)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
-
-CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-
 redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-
 
 
 @app.route('/')
 def index():
     logging.warn('Testing redis connection {}:{}'.format)
     value = redis_client.incr('counter', 1)
-    return 'Visitor number: {}'.format(value)
+    return 'Visitor number: {}'.format(value), 200
 
 
 @app.errorhandler(500)

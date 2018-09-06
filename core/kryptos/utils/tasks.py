@@ -1,17 +1,13 @@
-import os
 from rq import Connection, Queue
 import redis
-from kryptos.settings import DEFAULT_CONFIG, get_from_datastore
-
-
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
-REDIS_PORT = os.getenv('REDIS_PORT', 19779)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
+from kryptos.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, DEFAULT_CONFIG
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 
 def queue_notification(msg, telegram_id):
+    if telegram_id is None:
+        return
     with Connection(CONN):
         q = Queue('updates')
         q.enqueue(

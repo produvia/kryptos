@@ -1,12 +1,15 @@
 import os
 import json
 import redis
-from rq import Queue, Connection, Worker, get_failed_queue
+from rq import Queue, Connection, get_failed_queue
+from rq.worker import HerokuWorker as Worker
+from rq.exceptions import ShutDownImminentException
 import click
 import multiprocessing
 import time
 import logbook
-from catalyst.exchange.exchange_bundle import ExchangeBundle
+
+import datetime
 
 from raven import Client
 from raven.transport.http import HTTPTransport
@@ -14,17 +17,11 @@ from rq.contrib.sentry import register_sentry
 
 from kryptos import logger_group
 from kryptos.strategy import Strategy
-from kryptos.utils.outputs import in_docker
 from kryptos.utils import tasks
-from kryptos.settings import QUEUE_NAMES, get_from_datastore
+from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, SENTRY_DSN
 
 
-SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
-
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
-REDIS_PORT = os.getenv('REDIS_PORT', 19779)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
@@ -33,11 +30,13 @@ log = logbook.Logger('WorkerManager')
 logger_group.add_logger(log)
 log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
 
+
 def get_queue(queue_name):
     return Queue(queue_name, connection=CONN)
 
 
 def run_strat(strat_json, strat_id, telegram_id=None, live=False, simulate_orders=True):
+    log.info(f'Worker received job for strat {strat_id}')
     strat_dict = json.loads(strat_json)
     strat = Strategy.from_dict(strat_dict)
     strat.id = strat_id
@@ -48,10 +47,37 @@ def run_strat(strat_json, strat_id, telegram_id=None, live=False, simulate_order
 
     return result_df.to_json()
 
+
 def workers_required(queue_name):
     q = get_queue(queue_name)
     return len(q)
 
+
+def remove_zombie_workers():
+    log.warn('Removing zombie workers')
+    workers = Worker.all(connection=CONN)
+    for worker in workers:
+        if len(worker.queues) < 1:
+            log.warn("f")
+            log.warn(f"{worker} is a zombie, killing...")
+            job = worker.get_current_job()
+            if job is not None:
+                job.ended_at = datetime.datetime.utcnow()
+                worker.failed_queue.quarantine(job, exc_info=("Dead worker", "Moving job to failed queue"))
+            worker.register_death()
+
+# TODO remove old workers that weren't removed during SIGKILL
+# these workers stay in redis memory and have a queue (not zombie) but no job
+# but they have actually been killed, and won't restart
+def remove_stale_workers():
+    log.warn('Removing stale workers')
+    workers = Worker.all(connection=CONN)
+    for worker in workers:
+        for q in ['paper', 'live', 'backtest']:
+            if q in worker.queue_names() and worker.get_current_job() is None:
+                log.warn('Removing stale worker {}'.format(worker))
+                worker.clean_registries()
+                worker.register_death()
 
 
 @click.command()
@@ -61,7 +87,9 @@ def manage_workers():
     # from app.extensions import jsonrpc
     # from kryptos.utils.outputs import in_docker
 
-    #start main worker
+    remove_zombie_workers()
+    # remove_stale_workers()
+    # start main worker
     with Connection(CONN):
         log.info('Starting initial workers')
 
@@ -84,23 +112,31 @@ def manage_workers():
         while True:
             for q in QUEUE_NAMES:
                 required = workers_required(q)
-                log.debug(f"{required} workers required for {q}")
                 for i in range(required):
                     log.info(f"Creating {q} worker")
                     worker = Worker([q], exception_handlers=[retry_handler])
                     register_sentry(client, live_worker)
                     multiprocessing.Process(target=worker.work, kwargs={'burst': True}).start()
 
-
             time.sleep(5)
-
-
 
 
 def retry_handler(job, exc_type, exc_value, traceback):
     MAX_FAILURES = 3
     job.meta.setdefault('failures', 0)
     job.meta['failures'] += 1
+    #
+    # if exc_type == ShutDownImminentException:
+    #     fq = get_failed_queue()
+    #     fq.quarantine(job, Exception('Some fake error'))
+    #     # assert fq.count == 1
+    #
+    #     job.meta['failures'] += 1
+    #     job.save()
+    #     fq.requeue(job.id)
+    #
+    #     # skip retry
+    # return True
 
     # Too many failures
     if job.meta['failures'] >= MAX_FAILURES:
@@ -113,7 +149,7 @@ def retry_handler(job, exc_type, exc_value, traceback):
     log.warn('job %s: failed %d times - retrying' % (job.id, job.meta['failures']))
 
     fq = get_failed_queue()
-    fq.quarantine(job, Exception('Some fake error'))
+    fq.quarantine(job, exc_type(exc_value))
     # assert fq.count == 1
 
     job.meta['failures'] += 1
