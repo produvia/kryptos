@@ -23,6 +23,7 @@ google-cloud = "*"
 google-cloud-datastore = "*"
 gunicorn = "*"
 raven = "*"
+google-cloud-storage = "*"
 
 [dev-packages]
 black = "==18.4a4"
