@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from rq import get_current_job
+import arrow
 
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
@@ -109,7 +110,9 @@ class Strategy(object):
         self._sell_func = None
 
         self.trading_info.update(kw)
-        self.is_live = False
+
+        self._live = False
+        self._simulate_orders = True
 
         self.log = StratLogger(self)
         logger_group.add_logger(self.log)
@@ -118,6 +121,18 @@ class Strategy(object):
         self.last_date = None
         self.filter_dates = None
         self.date_init_reference = None
+
+    @property
+    def is_live(self):
+        return self._live and not self._simulate_orders
+
+    @property
+    def is_paper(self):
+        return self._live and self._simulate_orders
+
+    @property
+    def is_backtest(self):
+        return not self._live
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -304,7 +319,8 @@ class Strategy(object):
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
         context.asset = symbol(self.trading_info["ASSET"])
-        if not self.is_live:
+        if self.is_backtest:
+            self.log.debug('Setting benchmark')
             set_benchmark(context.asset)
         context.i = 0
         context.errors = []
