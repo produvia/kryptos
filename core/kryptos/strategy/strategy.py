@@ -901,7 +901,7 @@ class Strategy(object):
     # Save the prices and analysis to send to analyze
 
 
-    def run(self, live=False, simulate_orders=True, viz=True, as_job=False):
+    def run(self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False):
         """Executes the trade strategy as a catalyst algorithm
 
         Basic algorithm behavior is defined cia the config object, while
@@ -916,12 +916,35 @@ class Strategy(object):
             job.meta['telegram_id'] = self.telegram_id
             job.save_meta()
 
-        try:
-            if live or self.trading_info.get("LIVE", False):
-                self.run_live(simulate_orders=simulate_orders)
-            else:
-                self.run_backtest()
+        self._live = live or self.trading_info.get("LIVE", False)
+        self._simulate_orders = simulate_orders
+        self.user_id = user_id
 
+        if self.is_backtest:
+            self.run_backtest()
+
+        elif self.is_paper:
+            self.run_paper()
+
+        elif self.is_live:
+            self.run_live(user_id)
+
+
+    def run_backtest(self):
+        self.log.notice('Running in backtest mode')
+        try:
+            run_algorithm(
+                algo_namespace=self.id,
+                capital_base=self.trading_info["CAPITAL_BASE"],
+                data_frequency=self.trading_info["DATA_FREQ"],
+                initialize=self._init_func,
+                handle_data=self._process_data,
+                analyze=self._analyze,
+                exchange_name=self.trading_info["EXCHANGE"],
+                quote_currency=self.trading_info["BASE_CURRENCY"],
+                start=pd.to_datetime(self.trading_info["START"], utc=True),
+                end=pd.to_datetime(self.trading_info["END"], utc=True),
+            )
         except PricingDataNotLoadedError as e:
             self.log.critical('Failed to run stratey Requires data ingestion')
             raise e
@@ -931,27 +954,46 @@ class Strategy(object):
             # self.log.warn("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)
 
-    def run_backtest(self):
-        run_algorithm(
-            algo_namespace=self.id,
-            capital_base=self.trading_info["CAPITAL_BASE"],
-            data_frequency=self.trading_info["DATA_FREQ"],
-            initialize=self._init_func,
-            handle_data=self._process_data,
-            analyze=self._analyze,
-            exchange_name=self.trading_info["EXCHANGE"],
-            quote_currency=self.trading_info["BASE_CURRENCY"],
-            start=pd.to_datetime(self.trading_info["START"], utc=True),
-            end=pd.to_datetime(self.trading_info["END"], utc=True),
-        )
 
 
-    def run_live(self, simulate_orders=True):
+    def run_paper(self):
+        self.log.notice('Running in paper mode')
+        self._live = True
+        self._simulate_orders = True
+        self._run_real_time(simulate_orders=True)
+
+    def run_live(self):
+        self.log.notice('Running in live mode')
+        if self.user_id is None:
+            raise ValueError('user_id is required for auth when running in live mode')
+
+        self._live = True
+        self._simulate_orders = False
+        self._run_real_time(simulate_orders=False, user_id=user_id)
+
+    def _run_real_time(self, simulate_orders=True, user_id=None):
+
         self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
-        self.is_live = True
         if self.trading_info['DATA_FREQ'] != 'minute':
             self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
             self.trading_info['DATA_FREQ'] = 'minute'
+
+        start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
+        end = arrow.get(self.trading_info["END"], 'YYYY-M-D')
+
+        if start < arrow.utcnow().floor('day'):
+            self.log.error('Specified start date is in the past, will use today instead')
+            start = arrow.utcnow().shift(seconds=+30)
+            self.trading_info["START"] = start.format('YYYY-M-D')
+
+
+        if end < start or end < arrow.utcnow().floor('minute'):
+            self.log.error('Specified end date is invalid, will use 3 days from today')
+            end = arrow.utcnow().shift(days=+3)
+            self.trading_info["END"] = end.format('YYYY-M-D')
+
+        self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
+        self.log.notice(f'Stopping strategy {end.humanize()} -- {end}')
 
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
@@ -965,4 +1007,6 @@ class Strategy(object):
             live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,
+            start=pd.to_datetime(start.datetime, utc=True),
+            end=pd.to_datetime(end.datetime, utc=True),
         )
