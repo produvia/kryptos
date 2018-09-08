@@ -45,13 +45,11 @@ class MLConfig(object):
         'method': 'diff' # 'max', 'diff' or 'std'
     }
 
-
-
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     OPTIMIZE_PARAMS = {
-        'enabled': False, # Apply hyper model params optimization
+        'enabled': True, # Apply hyper model params optimization
         'iterations': 30, # Test dataframe size to optimize model params
-        'n_evals': 250, # Number of evaluations to hyperopt
+        'n_evals': 10, # Number of evaluations to hyperopt
         'size': 100 # Test dataframe size to optimize model params
     }
 
@@ -70,7 +68,7 @@ class MLConfig(object):
     # Feature Engineering: tsfresh
     FE_TSFRESH = {
         'enabled': False,
-        # 'method': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
+        # 'method': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
         'window': 30,
     }
 

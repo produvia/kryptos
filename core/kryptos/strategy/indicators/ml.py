@@ -55,7 +55,7 @@ class MLIndicator(AbstractIndicator):
         self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
         self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
         self.log.info(f'Queuing {self.name} ML calculation')
-        job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, **kw)
+        job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, self.hyper_params **kw)
         self.current_job_id = job.id
 
     def record(self):
@@ -65,7 +65,7 @@ class MLIndicator(AbstractIndicator):
             self.log.info('Waiting for ML job')
             time.sleep(3)
         self.log.info('Job complete')
-        self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell = job.result
+        self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell, self.hyper_params = job.result
         self.current_job_id = None
         df_results = pd.read_json(df_results_json)
         self.df_results = self.df_results.append(df_results)

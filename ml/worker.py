@@ -7,18 +7,15 @@ import redis
 from rq import Connection, Queue
 from rq.worker import HerokuWorker as Worker
 import logbook
-
-
 from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import logbook
 
 from ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
-from ml.models.lgb import lightgbm_train, lightgbm_test
+from ml.models.lgb import lightgbm_train, lightgbm_test, optimize_lightgbm_params
 from ml.feature_selection.xgb import xgb_embedded_feature_selection
 from ml.feature_selection.lgb import lgb_embedded_feature_selection
 from ml.feature_selection.filter import filter_feature_selection
@@ -33,50 +30,51 @@ log = logbook.Logger('ML_INDICATOR')
 handler = logbook.StreamHandler(sys.stdout, level="INFO", bubble=True)
 handler.push_application()
 
-
 SENTRY_DSN =  os.getenv('SENTRY_DSN', None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
-
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
 REDIS_PORT = os.getenv('REDIS_PORT', 19779)
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
-
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 
-def _prepare_data(df):
+def _prepare_data(df, data_freq):
     if CONFIG.CLASSIFICATION_TYPE == 1:
-        X_train, y_train, X_test = labeling_regression_data(df)
+        X_train, y_train, X_test, y_test = labeling_regression_data(df, data_freq)
     elif CONFIG.CLASSIFICATION_TYPE == 2:
-        X_train, y_train, X_test = labeling_binary_data(df)
+        X_train, y_train, X_test, y_test = labeling_binary_data(df, data_freq)
     elif CONFIG.CLASSIFICATION_TYPE == 3:
-        X_train, y_train, X_test = labeling_multiclass_data(df)
+        X_train, y_train, X_test, y_test = labeling_multiclass_data(df, data_freq)
     else:
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
     return X_train, y_train, X_test
 
 
-def _optimize_hyper_params(df, idx):
-
+def _optimize_hyper_params(df, name, data_freq, idx, hyper_params):
+    num_boost_rounds = None
     # Optimize Hyper Params for Xgboost model
-    if CONFIG.OPTIMIZE_PARAMS['enabled'] and (idx % CONFIG.OPTIMIZE_PARAMS['iterations']) == 0:
+    if CONFIG.OPTIMIZE_PARAMS['enabled'] and idx % CONFIG.OPTIMIZE_PARAMS['iterations'] == 0:
         # Prepare data to machine learning problem
         if CONFIG.CLASSIFICATION_TYPE == 1:
-            X_train_optimize, y_train_optimize, X_test_optimize = labeling_regression_data(df, to_optimize=True)
+            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_regression_data(df, data_freq, to_optimize=True)
         elif CONFIG.CLASSIFICATION_TYPE == 2:
-            X_train_optimize, y_train_optimize, X_test_optimize = labeling_binary_data(df, to_optimize=True)
+            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_binary_data(df, data_freq, to_optimize=True)
         elif CONFIG.CLASSIFICATION_TYPE == 3:
-            X_train_optimize, y_train_optimize, X_test_optimize = labeling_multiclass_data(df, to_optimize=True)
+            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_multiclass_data(df, data_freq, to_optimize=True)
         else:
             raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
-        y_test_optimize = df['target'].tail(CONFIG.OPTIMIZE_PARAMS['size']).values
-        params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize)
-        num_boost_rounds = int(params['num_boost_rounds'])
-        hyper_params = clean_params(params)
+        if name == 'XGBOOST':
+            params = optimize_xgboost_params(X_train_optimize, y_train_optimize, X_test_optimize[0:-1], y_test_optimize[0:-1])
+        elif name == 'LIGHTGBM':
+            params = optimize_lightgbm_params(X_train_optimize, y_train_optimize, X_test_optimize[0:-1], y_test_optimize[0:-1])
+        else:
+            raise NotImplementedError
 
-        return num_boost_rounds, hyper_params
-    return None, None
+        num_boost_rounds = int(params['num_boost_rounds'])
+        hyper_params = clean_params(params, name)
+
+    return num_boost_rounds, hyper_params
 
 
 def _set_feature_selection(name, X_train, y_train, X_test, idx, hyper_params, num_boost_rounds):
@@ -173,20 +171,21 @@ def signals_sell(model_result):
     return signal
 
 
-def calculate(df_current_json, name, idx, current_datetime, df_final_json, **kw):
+def calculate(df_current_json, name, idx, current_datetime, df_final_json, data_freq, hyper_params, **kw):
     df_current = pd.read_json(df_current_json)
     df_final = pd.read_json(df_final_json)
 
     if CONFIG.DEBUG:
+        log.info(hyper_params)
         log.info(str(idx) + ' - ' + str(current_datetime) + ' - ' + str(df_current.iloc[-1].price))
         log.info('from ' + str(df_current.iloc[0].name) + ' - to ' + str(df_current.iloc[-1].name))
 
     # Dataframe size is enough to apply Machine Learning
     if df_current.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
-        num_boost_rounds, hyper_params = _optimize_hyper_params(df_current, name, **kw)
+        num_boost_rounds, hyper_params = _optimize_hyper_params(df_current, name, data_freq, idx, hyper_params, **kw)
 
-        X_train, y_train, X_test = _prepare_data(df_current)
+        X_train, y_train, X_test = _prepare_data(df_current, data_freq)
 
         feature_selected_columns = _set_feature_selection(name, X_train, y_train, X_test, idx, hyper_params, num_boost_rounds)
 
@@ -226,7 +225,7 @@ def calculate(df_current_json, name, idx, current_datetime, df_final_json, **kw)
 
     log.info(f'Result: {model_result}')
     logging.info(model_result, df_results.to_json(), df_final.to_json(), buy, sell)
-    return model_result, df_results.to_json(), df_final.to_json(), buy, sell
+    return model_result, df_results.to_json(), df_final.to_json(), buy, sell, hyper_params
 
 
 def analyze(namespace, name, df_final_json, df_results_json, data_freq, extra_results):

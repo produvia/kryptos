@@ -24,7 +24,7 @@ def enqueue_ml_calculate(df_current, name, idx, current_datetime, df_final, **kw
         q = Queue('ml')
         return q.enqueue(
             'worker.calculate',
-            args=[df_current_json, name, idx, current_datetime, df_final_json],
+            args=[df_current_json, name, idx, current_datetime, df_final_json, DEFAULT_CONFIG['DATA_FREQ']],
             kwargs=kw,
             timeout=str(DEFAULT_CONFIG['MINUTE_FREQ']) + 'm'  # allow job to run for full iteration
         )

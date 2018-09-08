@@ -7,8 +7,7 @@ from ml.utils.feature_engineering import add_ta_features, add_ta_features2, add_
 from ml.utils import merge_two_dicts
 from ml.models import xgb
 
-
-def labeling_regression_data(df, to_optimize=False):
+def labeling_regression_data(df, data_freq, to_optimize=False):
     """Preprocessing data to resolve a regression machine learning problem.
     """
     # Prepare labelling classification problem (1=UP / 2=DOWN)
@@ -23,11 +22,11 @@ def labeling_regression_data(df, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
-    return X_train, y_train, X_test
+    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, data_freq, to_optimize)
+    return X_train, y_train, X_test, y_test
 
 
-def labeling_binary_data(df, to_optimize=False):
+def labeling_binary_data(df, data_freq, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, DOWN) machine learning
     problem.
     """
@@ -45,20 +44,34 @@ def labeling_binary_data(df, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
-    return X_train, y_train.astype('int'), X_test
+    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    return X_train, y_train.astype('int'), X_test, y_test
 
 
-def clean_params(params):
+def clean_params(params, method):
     """
     """
     del params['num_boost_rounds']
     params['max_depth'] = int(params['max_depth'])
-    ml_params = merge_two_dicts(params, xgb.FIXED_PARAMS_DEFAULT)
+
+    if method == 'XGBOOST':
+        fixed_params_default = xgb.FIXED_PARAMS_DEFAULT
+
+    elif method == 'LIGHTGBM':
+        from ml.models import lgb
+        params['num_leaves'] = int(params['num_leaves'])
+        params['min_data_in_leaf'] = int(params['min_data_in_leaf'])
+        params['bagging_freq'] = int(params['bagging_freq'])
+        fixed_params_default = lgb.FIXED_PARAMS_DEFAULT
+
+    else:
+        raise NotImplementedError
+
+    ml_params = merge_two_dicts(params, fixed_params_default)
     return ml_params
 
 
-def labeling_multiclass_data(df, to_optimize=False):
+def labeling_multiclass_data(df, data_freq, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
     learning problem.
     """
@@ -77,8 +90,8 @@ def labeling_multiclass_data(df, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    X_train, y_train, X_test = _preprocessing_feature_engineering(X, y, to_optimize)
-    return X_train, y_train.astype('int'), X_test
+    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    return X_train, y_train.astype('int'), X_test, y_test
 
 
 def normalize_data(X_train, y_train, X_test, name, method='diff'):
@@ -122,28 +135,32 @@ def inverse_normalize_data(result, scaler, method):
     return result
 
 
-def _preprocessing_feature_engineering(X, y, to_optimize):
+def _preprocessing_feature_engineering(X, y, data_freq, to_optimize):
     if not to_optimize:
 
         # Adding different features (feature engineering)
-        X = _add_fe(X)
+        X = _add_fe(X, data_freq)
 
         # Drop nan values after feature engineering process
         X, y = _dropna_after_fe(X, y)
 
     # Prepare data struct
-    X_train, y_train, X_test = _prepare_ml_data(X, y, to_optimize)
+    X_train, y_train, X_test, y_test = _prepare_ml_data(X, y, to_optimize)
 
-    return X_train, y_train, X_test
+    return X_train, y_train, X_test, y_test
 
 
-def _add_fe(df):
+def _add_fe(df, data_freq):
 
     df['timestamp'] = df.index
 
     # Add tsfresh features
     if CONFIG.FE_TSFRESH['enabled']:
         df = add_tsfresh_features(df, CONFIG.FE_TSFRESH)
+
+    # Add fbprophet features
+    if CONFIG.FE_FBPROPHET['enabled']:
+        df = add_fbprophet_features(df, data_freq, CONFIG.FE_FBPROPHET)
 
     # Add dates features
     if CONFIG.FE_DATES:
@@ -156,10 +173,6 @@ def _add_fe(df):
     # Add ta bukosabino library features
     if CONFIG.FE_TA2:
         df = add_ta_features2(df, CONFIG.FE_TA2)
-
-    # Add fbprophet features
-    if CONFIG.FE_FBPROPHET['enabled']:
-        df = add_fbprophet_features(df, CONFIG.FE_FBPROPHET)
 
     # Add utils features
     if CONFIG.FE_UTILS:
@@ -202,9 +215,11 @@ def _prepare_ml_data(X, y, to_optimize=False):
         X_test(pandas.DataFrame): X_test.
     """
     size_test = 1
+    y_test = None
     if to_optimize:
-        size_test = CONFIG.OPTIMIZE_PARAMS['size']
+        size_test = CONFIG.OPTIMIZE_PARAMS['size'] + 1
+        y_test = y.iloc[-size_test:]
     X_train = X.iloc[:-size_test]
     y_train = y.iloc[:-size_test]
     X_test = X.iloc[-size_test:]
-    return X_train, y_train, X_test
+    return X_train, y_train, X_test, y_test
