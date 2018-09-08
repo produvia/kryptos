@@ -16,6 +16,7 @@ lightgbm = "*"
 matplotlib = "*"
 xgboost = "*"
 google-cloud-datastore = "*"
+hyperopt = "*"
 
 [dev-packages]
 
