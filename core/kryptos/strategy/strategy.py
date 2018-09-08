@@ -394,7 +394,7 @@ class Strategy(object):
             # In live mode, "volume" returns the last 24 hour trading volume.
 
             # Update actual context.price
-            if self.trading_info.get("LIVE", False):
+            if not self.is_backtest:
                 context.current = data.current(assets=context.asset,
                             fields=["volume", "close", "price"])
             else:
