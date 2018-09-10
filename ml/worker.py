@@ -13,7 +13,6 @@ from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import logbook
 
