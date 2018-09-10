@@ -17,7 +17,7 @@ import arrow
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
 from catalyst.exchange.utils import stats_utils
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField, ExchangeAuthEmpty
+from catalyst.exchange import exchange_errors
 from ccxt.base import errors as ccxt_errors
 
 from kryptos.utils import load, viz, outputs, tasks
@@ -409,7 +409,7 @@ class Strategy(object):
             record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
 
 
-        except NoValueForField as e:
+        except exchange_errors.NoValueForField as e:
             self.log.warn(e)
             self.log.warn(f'Skipping trade period: {e}')
             return
@@ -954,7 +954,7 @@ class Strategy(object):
                 start=pd.to_datetime(self.trading_info["START"], utc=True),
                 end=pd.to_datetime(self.trading_info["END"], utc=True),
             )
-        except PricingDataNotLoadedError as e:
+        except exchange_errors.PricingDataNotLoadedError as e:
             self.log.critical('Failed to run stratey Requires data ingestion')
             raise e
             # from kryptos.worker import ingester
@@ -1025,9 +1025,14 @@ class Strategy(object):
 
         try:
             self._run_real_time(simulate_orders=False, user_id=user_id, auth_aliases=auth_alias)
-        except ExchangeAuthEmpty:
+        except exchange_errors.ExchangeAuthEmpty:
             self.log.critical('Failed to run strategy due to missing exchange auth')
             self.notify('Failed to run strategy due to missing exchange auth. If you have already provided your API key please re-authenticate to ensure the correct key is correct')
+            return pd.DataFrame()
+
+        except exchange_errors.NotEnoughCashError as e:
+            self.log.critical(str(e))
+            self.notify(f'You do not have enough cash on the exchange account to run the strategy.\n\n{str(e)}')
             return pd.DataFrame()
 
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
