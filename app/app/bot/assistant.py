@@ -167,31 +167,20 @@ def select_strategy(existing_strategy):
 
     resp = inline_keyboard(dedent(speech))
     resp.add_button('View Past Performance', url=backtest_url)
-    resp.add_button('Launch in Paper Mode', 'yes')
-    # resp.add_button('Lauch Live')
+    resp.add_button('Launch in Paper Mode', 'paper')
+    resp.add_button('Lauch in Live mode', 'live')
     resp.add_button('Nevermind', 'no')
 
     return resp
 
-@assist.action('new-strategy-select-yes')
-def launch_strategy(existing_strategy):
-    # will fill with default values
-    start = datetime.datetime.today()
-    end = start + datetime.timedelta(days=7)
+@assist.action('new-strategy-select-paper')
+def launch_strategy_paper(existing_strategy):
+    job_id = launch_paper(existing_strategy)
 
-    user = get_user()
-    strat_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
-    strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
-    strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
-    strat_dict['name'] = f"{existing_strategy}-Paper"
-
-
-
-    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
     url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
 
     speech = f"""\
-    Great! The strategy is now live and will run for the next 7 days.
+    Great! The strategy is now running in paper mode and will run for the next 3 days.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
@@ -199,3 +188,44 @@ def launch_strategy(existing_strategy):
     resp = inline_keyboard(dedent(speech))
     resp.add_button('View your Strategy', url=url)
     return resp
+
+@assist.action('new-strategy-select-live')
+def launch_strategy_paper(existing_strategy):
+    job_id = launch_live(existing_strategy)
+
+    url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
+
+    speech = f"""\
+    Great! The strategy is now live and will run for the next 3 days.
+
+    You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
+    """
+
+    resp = inline_keyboard(dedent(speech))
+    resp.add_button('View your Strategy', url=url)
+    return resp
+
+
+
+def build_strat_dict(strategy_name, mode):
+    start = datetime.datetime.today()
+    end = start + datetime.timedelta(days=3)
+
+    strat_dict = {'trading': {}, 'indicators': [{"name": strategy_name}]}
+    strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
+    strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
+    strat_dict['name'] = f"{strategy_name}-{mode.title()}"
+    return strat_dict
+
+def launch_paper(strategy_name):
+    user = get_user()
+    strat_dict = build_strat_dict(strategy_name, 'paper')
+    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
+
+    return job_id
+
+def launch_live(strategy_name):
+    user = get_user()
+    strat_dict = build_strat_dict(strategy_name, 'live')
+    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=False)
+    return job_id
