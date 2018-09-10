@@ -17,6 +17,7 @@ matplotlib = "*"
 xgboost = "*"
 google-cloud-datastore = "*"
 hyperopt = "*"
+shap = "*"
 
 [dev-packages]
 
