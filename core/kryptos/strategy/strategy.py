@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import uuid
 import shutil
 import os
@@ -16,7 +17,7 @@ import arrow
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
 from catalyst.exchange.utils import stats_utils
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField
+from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField, ExchangeAuthEmpty
 from ccxt.base import errors as ccxt_errors
 
 from kryptos.utils import load, viz, outputs, tasks
@@ -970,16 +971,66 @@ class Strategy(object):
         self._simulate_orders = True
         self._run_real_time(simulate_orders=True)
 
-    def run_live(self):
-        self.log.notice('Running in live mode')
-        if self.user_id is None:
-            raise ValueError('user_id is required for auth when running in live mode')
+    def get_user_auth(self, user_id):
+        from google.cloud import storage
+        from google.api_core.exceptions import NotFound
+        self.log.info('Fetching user exchange auth from storage')
+        exchange_name = self.trading_info['EXCHANGE'].lower()
 
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket('catalyst_auth')
+        blob = bucket.blob(f'auth_{exchange_name}_{user_id}_json')
+
+        home_dir = str(Path.home())
+        exchange_dir = os.path.join(home_dir, '.catalyst/data/exchanges/', exchange_name)
+        user_file = f'auth{user_id}.json'
+        file_name = os.path.join(exchange_dir, user_file)
+        os.makedirs(exchange_dir, exist_ok=True)
+
+        try:
+            auth_json_str = blob.download_as_string().decode("utf-8")
+            self.log.info("Downloaded user's auth json")
+            self.log.error(str(auth_json_str))
+            auth_json = json.loads(auth_json_str)
+            with open(file_name, 'w') as f:
+                self.log.warn(f'Writing auth_json_str to {file_name}')
+                json.dump(auth_json, f)
+
+        except NotFound:
+            self.log.error('Missing user exchange auth')
+            self.notify('Before running a live strategy, you will need to authorize with your API key')
+            return
+
+        self.log.info('Retrieved user exchange auth, writing to catalyst dir')
+
+        auth_alias = {exchange_name: f'auth{user_id}'}
+        self.log.info(f'Will run strat with auth alias {auth_alias}')
+
+        return auth_alias
+
+
+    def run_live(self, user_id):
         self._live = True
         self._simulate_orders = False
-        self._run_real_time(simulate_orders=False, user_id=user_id)
+        self.log.notice('Running in live mode')
+        if user_id is None:
+            raise ValueError('user_id is required for auth when running in live mode')
+        self.user_id = user_id
 
-    def _run_real_time(self, simulate_orders=True, user_id=None):
+        auth_alias = self.get_user_auth(user_id)
+        if auth_alias is None:
+            self.log.error('Aborting strategy due to missing exchange auth')
+            return pd.DataFrame()
+
+
+        try:
+            self._run_real_time(simulate_orders=False, user_id=user_id, auth_aliases=auth_alias)
+        except ExchangeAuthEmpty:
+            self.log.critical('Failed to run strategy due to missing exchange auth')
+            self.notify('Failed to run strategy due to missing exchange auth. If you have already provided your API key please re-authenticate to ensure the correct key is correct')
+            return pd.DataFrame()
+
+    def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
 
         self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
         if self.trading_info['DATA_FREQ'] != 'minute':
