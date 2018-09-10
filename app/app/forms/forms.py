@@ -3,7 +3,7 @@ from wtforms import StringField, DateTimeField, SelectField, IntegerField, Float
 from wtforms.validators import DataRequired, Required, Optional
 
 trade_types = [('backtest','backtest'), ('paper','paper'), ('live','live')]
-exchanges = [('bitfinex', 'bitfinex'), ('poloniex', 'poloniex'), ('bittrex', 'bittrex')]
+exchanges = [('binance', 'binance'), ('bitfinex', 'bitfinex'), ('poloniex', 'poloniex'), ('bittrex', 'bittrex')]
 freqs = [('daily', 'daily'), ('minute', 'minute')]
 datasets = [('None', 'None'), ('Google Trends, google'), ('Quandl Blochain Data', 'quandl')]
 
