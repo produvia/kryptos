@@ -108,4 +108,5 @@ class MLConfig(object):
 
     if CLASSIFICATION_TYPE == 2:
         # Check if threshold is in range [0,1]
-        assert THRESHOLD <= 1.0 and THRESHOLD >= 0.0
+        if THRESHOLD < 0.0 or THRESHOLD > 1.0:
+            raise ValueError('THRESHOLD should be on [0,1] range.')

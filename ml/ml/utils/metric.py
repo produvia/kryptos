@@ -10,7 +10,9 @@ def classification_metrics(namespace, file_name, y_true, y_pred, extra_results, 
     f_path = os.path.join(algo_dir, file_name)
 
     # Check solution and prediction size
-    assert len(y_true) == len(y_pred)
+    # assert len(y_true) == len(y_pred)
+    if len(y_true) != len(y_pred):
+        raise ValueError('Prediction and solution longitude can not be different.')
 
     if len(y_true) > 0 and len(y_pred):
         with open(f_path, "a") as f:
