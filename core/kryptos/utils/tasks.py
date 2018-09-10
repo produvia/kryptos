@@ -17,14 +17,14 @@ def queue_notification(msg, telegram_id):
         )
 
 
-def enqueue_ml_calculate(df_current, name, idx, current_datetime, df_final, **kw):
+def enqueue_ml_calculate(df_current, namespace, name, idx, current_datetime, hyper_params, df_final, **kw):
     df_current_json = df_current.to_json()
     df_final_json = df_final.to_json()
     with Connection(CONN):
         q = Queue('ml')
         return q.enqueue(
             'worker.calculate',
-            args=[df_current_json, name, idx, current_datetime, df_final_json, DEFAULT_CONFIG['DATA_FREQ']],
+            args=[namespace, df_current_json, name, idx, current_datetime, df_final_json, DEFAULT_CONFIG['DATA_FREQ'], hyper_params],
             kwargs=kw,
             timeout=str(DEFAULT_CONFIG['MINUTE_FREQ']) + 'm'  # allow job to run for full iteration
         )

@@ -53,6 +53,12 @@ class MLConfig(object):
         'size': 100 # Test dataframe size to optimize model params
     }
 
+    ## FEATURE MODEL VISUALIZATION: SHAP
+    VISUALIZE_MODEL = {
+        'enabled': True, # Apply hyper model params optimization
+        'iterations': 50 # Test dataframe size to optimize model params
+    }
+
     ## FEATURE SELECTION
     FEATURE_SELECTION = {
         'enabled': True, # Apply feature selection

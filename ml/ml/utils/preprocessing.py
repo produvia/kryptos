@@ -111,16 +111,19 @@ def normalize_data(X_train, y_train, X_test, name, method='diff'):
     else:
         raise ValueError('Internal Error: Value of CONFIG.NORMALIZATION["method"] should be "max", "diff", "std".')
 
-    try:
-        X_train = scaler.fit_transform(X_train)
-        X_test = scaler.transform(X_test)
-        y_train = scaler_y.fit_transform(y_train.values.reshape(-1, 1))
-    except:
-        # TODO: fix ta library: https://github.com/bukosabino/ta
-        raise(ValueError('fix ta library (inf values): https://github.com/bukosabino/ta'))
+    aux = X_train
+    X_train = scaler.fit_transform(X_train)
+    X_train = pd.DataFrame(data=X_train, index=aux.index, columns=aux.columns)
+
+    aux = X_test
+    X_test = scaler.transform(X_test)
+    X_test = pd.DataFrame(data=X_test, index=aux.index, columns=aux.columns)
+    del aux
+
+    y_train = scaler_y.fit_transform(y_train.values.reshape(-1, 1))
 
     if name == 'LIGHTGBM':
-        y_train = [i[0] for i in y_train] # TODO: more efficient
+        y_train = [i[0] for i in y_train] # TODO: to do in a more efficient way
 
     return X_train, y_train, X_test, scaler_y
 

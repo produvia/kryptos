@@ -22,6 +22,7 @@ from ml.feature_selection.filter import filter_feature_selection
 from ml.feature_selection.wrapper import wrapper_feature_selection
 from ml.utils.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params, normalize_data, inverse_normalize_data
 from ml.utils.metric import classification_metrics
+from ml.utils.feature_exploration import visualize_model
 from ml.settings import MLConfig as CONFIG, get_from_datastore
 
 from google.cloud import datastore
@@ -36,7 +37,6 @@ REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.red
 REDIS_PORT = os.getenv('REDIS_PORT', 19779)
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
-
 
 def _prepare_data(df, data_freq):
     if CONFIG.CLASSIFICATION_TYPE == 1:
@@ -105,7 +105,7 @@ def lgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds):
     model = lightgbm_train(X_train, y_train, hyper_params, num_boost_rounds)
     # Predict
     result = lightgbm_test(model, X_test)
-    return result
+    return model, result
 
 
 def xgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds):
@@ -113,17 +113,16 @@ def xgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds):
     model = xgboost_train(X_train, y_train, hyper_params, num_boost_rounds)
     # Predict
     result = xgboost_test(model, X_test)
-    return result
+    return model, result
 
 
 def get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rounds):
     # Train and test indicator
     if name == 'XGBOOST':
-        model_result = xgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds)
+        model, result = xgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds)
     elif name == 'LIGHTGBM':
-        model_result = lgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds)
-
-    return model_result
+        model, result = lgb_train_test(X_train, y_train, X_test, hyper_params, num_boost_rounds)
+    return model, result
 
 
 def write_results_to_df(model_result, current_datetime):
@@ -171,7 +170,7 @@ def signals_sell(model_result):
     return signal
 
 
-def calculate(df_current_json, name, idx, current_datetime, df_final_json, data_freq, hyper_params, **kw):
+def calculate(namespace, df_current_json, name, idx, current_datetime, df_final_json, data_freq, hyper_params, **kw):
     df_current = pd.read_json(df_current_json)
     df_final = pd.read_json(df_final_json)
 
@@ -203,19 +202,21 @@ def calculate(df_current_json, name, idx, current_datetime, df_final_json, data_
             X_train, y_train, X_test, scaler_y = normalize_data(X_train, y_train, X_test, name, method=CONFIG.NORMALIZATION['method'])
 
         # Train and test indicator
-        model_result = get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rounds)
+        model, result = get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rounds)
 
         # Revert normalization
         if CONFIG.NORMALIZATION['enabled']:
-            model_result = inverse_normalize_data(model_result, scaler_y, CONFIG.NORMALIZATION['method'])
+            result = inverse_normalize_data(result, scaler_y, CONFIG.NORMALIZATION['method'])
 
-        df_results = write_results_to_df(model_result, current_datetime)
+        df_results = write_results_to_df(result, current_datetime)
+
+        visualize_model(model, X_train, idx, CONFIG.VISUALIZE_MODEL, namespace, name)
 
     else:
         model_result = 0
 
-    buy = signals_buy(model_result)
-    sell = signals_sell(model_result)
+    buy = signals_buy(result)
+    sell = signals_sell(result)
 
     # Fill df to analyze at end
     if idx == 0:
@@ -223,9 +224,9 @@ def calculate(df_current_json, name, idx, current_datetime, df_final_json, data_
     else:
         df_final.loc[df_current.index[-1]] = df_current.iloc[-1]
 
-    log.info(f'Result: {model_result}')
-    logging.info(model_result, df_results.to_json(), df_final.to_json(), buy, sell)
-    return model_result, df_results.to_json(), df_final.to_json(), buy, sell, hyper_params
+    log.info(f'Result: {result}')
+    logging.info(result, df_results.to_json(), df_final.to_json(), buy, sell)
+    return result, df_results.to_json(), df_final.to_json(), buy, sell, hyper_params
 
 
 def analyze(namespace, name, df_final_json, df_results_json, data_freq, extra_results):

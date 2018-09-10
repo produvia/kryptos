@@ -466,7 +466,7 @@ class Strategy(object):
                     for dataset, manager in self._datasets.items():
                         context.prices.index.tz = None
                         context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
-                i.calculate(context.prices)
+                i.calculate(context.prices, self.name)
                 i.record()
 
         else:

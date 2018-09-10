@@ -46,7 +46,7 @@ class MLIndicator(AbstractIndicator):
     def signals_sell(self):
         return self._signals_buy
 
-    def calculate(self, df, name, **kw):
+    def calculate(self, namespace, df, name, **kw):
         self._signals_buy = False
         self._signals_sell = False
         self.idx += 1
@@ -55,7 +55,7 @@ class MLIndicator(AbstractIndicator):
         self.log.info(str(self.idx) + ' - ' + str(self.current_date) + ' - ' + str(df.iloc[-1].price))
         self.log.info(str(df.iloc[0].name) + ' - ' + str(df.iloc[-1].name))
         self.log.info(f'Queuing {self.name} ML calculation')
-        job = tasks.enqueue_ml_calculate(df, name, self.idx, self.current_date, df_final=self.df_final, self.hyper_params **kw)
+        job = tasks.enqueue_ml_calculate(df, namespace, name, self.idx, self.current_date, self.hyper_params, df_final=self.df_final, **kw)
         self.current_job_id = job.id
 
     def record(self):
@@ -85,8 +85,8 @@ class XGBOOST(MLIndicator):
         self.num_boost_rounds = None
         super(XGBOOST, self).__init__("XGBOOST", **kw)
 
-    def calculate(self, df, **kw):
-        super(XGBOOST, self).calculate(df, "XGBOOST", **kw)
+    def calculate(self, namespace, df, **kw):
+        super(XGBOOST, self).calculate(df, namespace, "XGBOOST", **kw)
 
     def analyze(self, namespace, data_freq, extra_results):
         super(XGBOOST, self).analyze(namespace, "XGBOOST", data_freq, extra_results)
@@ -98,8 +98,8 @@ class LIGHTGBM(MLIndicator):
         self.num_boost_rounds = None
         super(LIGHTGBM, self).__init__("LIGHTGBM", **kw)
 
-    def calculate(self, df, **kw):
-        super(LIGHTGBM, self).calculate(df, "LIGHTGBM", **kw)
+    def calculate(self, namespace, df, **kw):
+        super(LIGHTGBM, self).calculate(df, namespace, "LIGHTGBM", **kw)
 
     def analyze(self, namespace, data_freq, extra_results):
         super(LIGHTGBM, self).analyze(namespace, "LIGHTGBM", data_freq, extra_results)
