@@ -930,13 +930,13 @@ class Strategy(object):
         self.user_id = user_id
 
         if self.is_backtest:
-            self.run_backtest()
+            return self.run_backtest()
 
         elif self.is_paper:
-            self.run_paper()
+            return self.run_paper()
 
         elif self.is_live:
-            self.run_live(user_id)
+            return self.run_live(user_id)
 
 
     def run_backtest(self):
@@ -1042,21 +1042,23 @@ class Strategy(object):
             self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
             self.trading_info['DATA_FREQ'] = 'minute'
 
-        start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
+        # start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
         end = arrow.get(self.trading_info["END"], 'YYYY-M-D')
 
-        if start < arrow.utcnow().floor('day'):
-            self.log.error('Specified start date is in the past, will use today instead')
-            start = arrow.utcnow().shift(seconds=+30)
-            self.trading_info["START"] = start.format('YYYY-M-D')
+        # TODO fix for utc/tz issue
+        # if start < arrow.utcnow().floor('day'):
+        #     self.log.error('Specified start date is in the past, will use today instead')
+        #     start = arrow.utcnow().shift(seconds=+30)
+        #     self.trading_info["START"] = start.format('YYYY-M-D')
 
 
-        if end < start or end < arrow.utcnow().floor('minute'):
+        # if end < start or end < arrow.utcnow().floor('minute'):
+        if end < arrow.utcnow().floor('minute'):
             self.log.error('Specified end date is invalid, will use 3 days from today')
             end = arrow.utcnow().shift(days=+3)
             self.trading_info["END"] = end.format('YYYY-M-D')
 
-        self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
+        # self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
         self.log.notice(f'Stopping strategy {end.humanize()} -- {end}')
 
         run_algorithm(
@@ -1071,6 +1073,7 @@ class Strategy(object):
             live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,
-            start=pd.to_datetime(start.datetime, utc=True),
+            # start=pd.to_datetime(start.datetime, utc=True),
             end=pd.to_datetime(end.datetime, utc=True),
+            auth_aliases=auth_aliases
         )
