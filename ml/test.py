@@ -17,5 +17,6 @@ hyper_params = None
 namespace = 'inventado'
 
 # calculate
-results = calculate(namespace, df, name, idx, current_datetime, df_final_json, data_freq, hyper_params)
+results = calculate(namespace, df, 'LIGHTGBM', idx, current_datetime, df_final_json, data_freq, hyper_params)
+results = calculate(namespace, df, 'XGBOOST', idx, current_datetime, df_final_json, data_freq, hyper_params)
 print('final')
