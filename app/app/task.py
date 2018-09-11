@@ -50,6 +50,7 @@ def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depe
             'strat_id': strat_model.uuid,
             'telegram_id': telegram_id, # allows worker to queue notfication w/o db
             'live': live,
+            'user_id': user_id,
             'simulate_orders': simulate_orders
         },
         timeout=-1,

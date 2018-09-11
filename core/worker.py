@@ -35,15 +35,18 @@ def get_queue(queue_name):
     return Queue(queue_name, connection=CONN)
 
 
-def run_strat(strat_json, strat_id, telegram_id=None, live=False, simulate_orders=True):
+def run_strat(strat_json, strat_id, user_id=None, telegram_id=None, live=False, simulate_orders=True):
     log.info(f'Worker received job for strat {strat_id}')
     strat_dict = json.loads(strat_json)
     strat = Strategy.from_dict(strat_dict)
     strat.id = strat_id
     strat.telegram_id = telegram_id
 
-    strat.run(viz=False, live=live, simulate_orders=simulate_orders, as_job=True)
+    strat.run(viz=False, live=live, simulate_orders=simulate_orders, user_id=user_id, as_job=True)
     result_df = strat.quant_results
+    if result_df is None:
+        log.warning('No results from strategy')
+        return
 
     return result_df.to_json()
 

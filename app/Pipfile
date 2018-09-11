@@ -22,6 +22,7 @@ honcho = "*"
 google-cloud-datastore = "*"
 logbook = "*"
 raven = {extras = ["flask"]}
+google-cloud-storage = "*"
 
 [dev-packages]
 black = "==18.4a4"

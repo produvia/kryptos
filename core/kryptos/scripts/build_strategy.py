@@ -38,10 +38,11 @@ LOCAL_BASE_URL = "http://web:8080"
 @click.option("--json-file", "-f")
 @click.option("--python-script", "-p")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
+@click.option("--live", is_flag=True, help="Run the strategy in Paper trading mode")
 @click.option("--api", "-a", is_flag=True, help="Run the strategy via API")
 @click.option("--worker", "-w", is_flag=True, help="Run the strategy inside an RQ worker")
 @click.option("--hosted", "-h", is_flag=True, help="Run on a GCP instance via the API")
-def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, api, worker, hosted):
+def run(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, live, api, worker, hosted):
     if api and worker:
         if not hosted:
             click.secho('Providing the `--worker` flag is not required when using the api', fg='yellow')
@@ -54,17 +55,17 @@ def run(market_indicators, machine_learning_models, dataset, columns, data_indic
     click.secho(f'Running in Paper mode: {paper}', fg='yellow')
 
     if api or hosted:
-        run_from_api(strat, paper, hosted)
+        run_from_api(strat, paper=paper, live=live, hosted=hosted)
         return
 
     elif worker:
-        run_in_worker(strat, paper)
+        run_in_worker(strat, paper=paper, live=live)
         return
 
     else:
         click.secho('Running locally w/o worker (ML still requires a worker process)', fg='cyan')
         viz = not in_docker()
-        strat.run(live=paper, viz=viz)
+        strat.run(live=paper or live, viz=viz, simulate_orders=not live)
         result_json = strat.quant_results.to_json()
         display_summary(result_json)
 
@@ -109,7 +110,7 @@ def display_summary(result_json):
         click.secho("{}: {}".format(metric, val), fg="green")
 
 
-def run_from_api(strat, paper, hosted=False):
+def run_from_api(strat, paper=False, live=False, hosted=False):
     click.secho('Running strat via API', fg='cyan')
     if hosted:
         click.secho('Running remotely', fg='yellow')
@@ -122,6 +123,8 @@ def run_from_api(strat, paper, hosted=False):
 
     if paper:
         q_name = 'paper'
+    elif live:
+        q_name= 'live'
     else:
         q_name = 'backtest'
 
@@ -164,10 +167,12 @@ def get_strat_url(strat_id, base_url, paper):
         return os.path.join(base_url, 'strategy/strategy', strat_id)
     return os.path.join(base_url, 'strategy/backtest/strategy', strat_id)
 
-def run_in_worker(strat, paper):
+def run_in_worker(strat, paper=False, live=False):
     click.secho('Running local strategy using worker', fg='cyan')
     if paper:
         q_name = 'paper'
+    elif live:
+        q_name = 'live'
     else:
         q_name = 'backtest'
     q = Queue(q_name, connection=tasks.CONN)
@@ -181,8 +186,8 @@ def run_in_worker(strat, paper):
             'strat_json': json.dumps(strat.to_dict()),
             'strat_id': strat.id,
             'telegram_id': None,
-            'live': paper,
-            'simulate_orders': True
+            'live': paper or live,
+            'simulate_orders': not live
         },
         timeout=-1
     )

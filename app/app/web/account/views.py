@@ -3,10 +3,12 @@ import os
 import json
 from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash, jsonify, session
 from flask_user import current_user, login_required
+from google.cloud import storage
 
 from app.extensions import db
 from app.forms import forms
 from app.models import User, StrategyModel
+
 
 
 blueprint = Blueprint('account', __name__, url_prefix='/account')
@@ -82,20 +84,19 @@ def manage_exchanges():
             'secret': form.api_secret.data
         }
 
-        root = os.path.expanduser
-        base = 'catalyst/data/exchanges'
-        exchange_dir = os.path.join(base, form.exchange.data)
-        file_name = 'auth_' + str(current_user.id) + '.json'
-        user_auth_file = os.path.join(exchange_dir, file_name)
+        blob_name = f"auth_{exchange_dict['name']}_{current_user.id}_json"
 
-        if not os.path.exists(exchange_dir):
-            os.makedirs(exchange_dir)
+        storage_client = storage.Client()
+        auth_bucket = storage_client.get_bucket('catalyst_auth')
+        blob = auth_bucket.blob(blob_name)
 
+        auth_json = json.dumps(exchange_dict)
 
-        with open(user_auth_file, 'w') as f:
-            current_app.logger.error(f'Writing to {user_auth_file}')
-            json.dump(exchange_dict, f)
+        blob.upload_from_string(auth_json)
 
+        current_app.logger.warn('Exchange Auth {} uploaded to {} bucket.'.format(
+            blob_name,
+            auth_bucket))
 
         return redirect(url_for('strategy.build_strategy'))
 

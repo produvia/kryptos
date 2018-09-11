@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import uuid
 import shutil
 import os
@@ -11,11 +12,12 @@ import logbook
 import pandas as pd
 import numpy as np
 from rq import get_current_job
+import arrow
 
 from catalyst import run_algorithm
 from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
 from catalyst.exchange.utils import stats_utils
-from catalyst.exchange.exchange_errors import PricingDataNotLoadedError, NoValueForField
+from catalyst.exchange import exchange_errors
 from ccxt.base import errors as ccxt_errors
 
 from kryptos.utils import load, viz, outputs, tasks
@@ -117,7 +119,9 @@ class Strategy(object):
         self._sell_func = None
 
         self.trading_info.update(kw)
-        self.is_live = False
+
+        self._live = False
+        self._simulate_orders = True
 
         self.log = StratLogger(self)
         logger_group.add_logger(self.log)
@@ -126,6 +130,18 @@ class Strategy(object):
         self.last_date = None
         self.filter_dates = None
         self.date_init_reference = None
+
+    @property
+    def is_live(self):
+        return self._live and not self._simulate_orders
+
+    @property
+    def is_paper(self):
+        return self._live and self._simulate_orders
+
+    @property
+    def is_backtest(self):
+        return not self._live
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -312,7 +328,8 @@ class Strategy(object):
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
         context.asset = symbol(self.trading_info["ASSET"])
-        if not self.is_live:
+        if self.is_backtest:
+            self.log.debug('Setting benchmark')
             set_benchmark(context.asset)
         context.i = 0
         context.errors = []
@@ -386,7 +403,7 @@ class Strategy(object):
             # In live mode, "volume" returns the last 24 hour trading volume.
 
             # Update actual context.price
-            if self.trading_info.get("LIVE", False):
+            if not self.is_backtest:
                 context.current = data.current(assets=context.asset,
                             fields=["volume", "close", "price"])
             else:
@@ -396,7 +413,7 @@ class Strategy(object):
             record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
 
 
-        except NoValueForField as e:
+        except exchange_errors.NoValueForField as e:
             self.log.warn(e)
             self.log.warn(f'Skipping trade period: {e}')
             return
@@ -896,7 +913,7 @@ class Strategy(object):
     # Save the prices and analysis to send to analyze
 
 
-    def run(self, live=False, simulate_orders=True, viz=True, as_job=False):
+    def run(self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False):
         """Executes the trade strategy as a catalyst algorithm
 
         Basic algorithm behavior is defined cia the config object, while
@@ -911,13 +928,36 @@ class Strategy(object):
             job.meta['telegram_id'] = self.telegram_id
             job.save_meta()
 
-        try:
-            if live or self.trading_info.get("LIVE", False):
-                self.run_live(simulate_orders=simulate_orders)
-            else:
-                self.run_backtest()
+        self._live = live or self.trading_info.get("LIVE", False)
+        self._simulate_orders = simulate_orders
+        self.user_id = user_id
 
-        except PricingDataNotLoadedError as e:
+        if self.is_backtest:
+            return self.run_backtest()
+
+        elif self.is_paper:
+            return self.run_paper()
+
+        elif self.is_live:
+            return self.run_live(user_id)
+
+
+    def run_backtest(self):
+        self.log.notice('Running in backtest mode')
+        try:
+            run_algorithm(
+                algo_namespace=self.id,
+                capital_base=self.trading_info["CAPITAL_BASE"],
+                data_frequency=self.trading_info["DATA_FREQ"],
+                initialize=self._init_func,
+                handle_data=self._process_data,
+                analyze=self._analyze,
+                exchange_name=self.trading_info["EXCHANGE"],
+                quote_currency=self.trading_info["BASE_CURRENCY"],
+                start=pd.to_datetime(self.trading_info["START"], utc=True),
+                end=pd.to_datetime(self.trading_info["END"], utc=True),
+            )
+        except exchange_errors.PricingDataNotLoadedError as e:
             self.log.critical('Failed to run stratey Requires data ingestion')
             raise e
             # from kryptos.worker import ingester
@@ -926,27 +966,103 @@ class Strategy(object):
             # self.log.warn("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)
 
-    def run_backtest(self):
-        run_algorithm(
-            algo_namespace=self.id,
-            capital_base=self.trading_info["CAPITAL_BASE"],
-            data_frequency=self.trading_info["DATA_FREQ"],
-            initialize=self._init_func,
-            handle_data=self._process_data,
-            analyze=self._analyze,
-            exchange_name=self.trading_info["EXCHANGE"],
-            quote_currency=self.trading_info["BASE_CURRENCY"],
-            start=pd.to_datetime(self.trading_info["START"], utc=True),
-            end=pd.to_datetime(self.trading_info["END"], utc=True),
-        )
 
 
-    def run_live(self, simulate_orders=True):
+    def run_paper(self):
+        self.log.notice('Running in paper mode')
+        self._live = True
+        self._simulate_orders = True
+        self._run_real_time(simulate_orders=True)
+
+    def get_user_auth(self, user_id):
+        from google.cloud import storage
+        from google.api_core.exceptions import NotFound
+        self.log.info('Fetching user exchange auth from storage')
+        exchange_name = self.trading_info['EXCHANGE'].lower()
+
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket('catalyst_auth')
+        blob = bucket.blob(f'auth_{exchange_name}_{user_id}_json')
+
+        home_dir = str(Path.home())
+        exchange_dir = os.path.join(home_dir, '.catalyst/data/exchanges/', exchange_name)
+        user_file = f'auth{user_id}.json'
+        file_name = os.path.join(exchange_dir, user_file)
+        os.makedirs(exchange_dir, exist_ok=True)
+
+        try:
+            auth_json_str = blob.download_as_string().decode("utf-8")
+            self.log.info("Downloaded user's auth json")
+            self.log.error(str(auth_json_str))
+            auth_json = json.loads(auth_json_str)
+            with open(file_name, 'w') as f:
+                self.log.warn(f'Writing auth_json_str to {file_name}')
+                json.dump(auth_json, f)
+
+        except NotFound:
+            self.log.error('Missing user exchange auth')
+            self.notify('Before running a live strategy, you will need to authorize with your API key')
+            return
+
+        self.log.info('Retrieved user exchange auth, writing to catalyst dir')
+
+        auth_alias = {exchange_name: f'auth{user_id}'}
+        self.log.info(f'Will run strat with auth alias {auth_alias}')
+
+        return auth_alias
+
+
+    def run_live(self, user_id):
+        self._live = True
+        self._simulate_orders = False
+        self.log.notice('Running in live mode')
+        if user_id is None:
+            raise ValueError('user_id is required for auth when running in live mode')
+        self.user_id = user_id
+
+        auth_alias = self.get_user_auth(user_id)
+        if auth_alias is None:
+            self.log.error('Aborting strategy due to missing exchange auth')
+            return pd.DataFrame()
+
+
+        try:
+            self._run_real_time(simulate_orders=False, user_id=user_id, auth_aliases=auth_alias)
+        except exchange_errors.ExchangeAuthEmpty:
+            self.log.critical('Failed to run strategy due to missing exchange auth')
+            self.notify('Failed to run strategy due to missing exchange auth. If you have already provided your API key please re-authenticate to ensure the correct key is correct')
+            return pd.DataFrame()
+
+        except exchange_errors.NotEnoughCashError as e:
+            self.log.critical(str(e))
+            self.notify(f'You do not have enough cash on the exchange account to run the strategy.\n\n{str(e)}')
+            return pd.DataFrame()
+
+    def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
+
         self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
-        self.is_live = True
         if self.trading_info['DATA_FREQ'] != 'minute':
             self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
             self.trading_info['DATA_FREQ'] = 'minute'
+
+        # start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
+        end = arrow.get(self.trading_info["END"], 'YYYY-M-D')
+
+        # TODO fix for utc/tz issue
+        # if start < arrow.utcnow().floor('day'):
+        #     self.log.error('Specified start date is in the past, will use today instead')
+        #     start = arrow.utcnow().shift(seconds=+30)
+        #     self.trading_info["START"] = start.format('YYYY-M-D')
+
+
+        # if end < start or end < arrow.utcnow().floor('minute'):
+        if end < arrow.utcnow().floor('minute'):
+            self.log.error('Specified end date is invalid, will use 3 days from today')
+            end = arrow.utcnow().shift(days=+3)
+            self.trading_info["END"] = end.format('YYYY-M-D')
+
+        # self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
+        self.log.notice(f'Stopping strategy {end.humanize()} -- {end}')
 
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
@@ -960,4 +1076,7 @@ class Strategy(object):
             live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,
+            # start=pd.to_datetime(start.datetime, utc=True),
+            end=pd.to_datetime(end.datetime, utc=True),
+            auth_aliases=auth_aliases
         )
