@@ -46,7 +46,7 @@ class MLIndicator(AbstractIndicator):
     def signals_sell(self):
         return self._signals_buy
 
-    def calculate(self, namespace, df, **kw):
+    def calculate(self, df, namespace, **kw):
         self._signals_buy = False
         self._signals_sell = False
         self.idx += 1
