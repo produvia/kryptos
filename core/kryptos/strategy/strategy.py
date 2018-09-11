@@ -7,7 +7,7 @@ import datetime
 import copy
 from textwrap import dedent
 import logbook
-import matplotlib.pyplot as plt
+
 import pandas as pd
 import numpy as np
 from rq import get_current_job
@@ -23,10 +23,14 @@ from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
-from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS
+from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR
 from kryptos.analysis import quant
 
 from redo import retry
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
 
 
 class StratLogger(logbook.Logger):
@@ -546,7 +550,13 @@ class Strategy(object):
         pos += self._extra_plots
 
         viz.plot_buy_sells(results, pos=pos)
-        viz.show_plot()
+
+        strat_dir = os.path.join(os.path.abspath(PERF_DIR), self.name)
+        os.makedirs(strat_dir, exist_ok=True)
+        plot_file = f"summary_plot.png"
+        filename = os.path.join(strat_dir, plot_file)
+        plt.savefig(filename)
+        plt.close()
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
@@ -555,12 +565,9 @@ class Strategy(object):
         self.log.notice('Completed for {} trading periods'.format(context.i))
         self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
 
-        try:
-            if self.viz:
-                self._make_plots(context, results)
-                quant.dump_plots_to_file(self.name, results)
-        except:
-            pass
+        self._make_plots(context, results)
+        # TODO - fix KeyError in quant analysis
+        # quant.dump_plots_to_file(self.name, results)
 
         self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
