@@ -1,15 +1,18 @@
 import os
-import matplotlib.pyplot as plt
 import xgboost as xgb
 import lightgbm as lgb
 import shap
 
 from ml.utils import get_algo_dir
 
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
 
 def visualize_model(model, X, idx, configuration, namespace, name):
 
-    if configuration['enabled'] and idx % configuration['iterations'] == 0:
+    if configuration['enabled'] and idx % configuration['n_iterations'] == 0:
 
         explainer = shap.TreeExplainer(model)
         shap_values = explainer.shap_values(X)
@@ -32,12 +35,10 @@ def visualize_model(model, X, idx, configuration, namespace, name):
         else:
             pass
 
-# TODO: fusion with Cam method
+
 def save_fig(namespace, name, idx, importance_type):
 
-    # TODO: meter carpeta intermedia "feature_exploration"
-
-    folder_path = get_algo_dir(namespace)
+    folder_path = get_algo_dir(namespace + '/feature_exploration/')
     f_path = os.path.join(folder_path, "{}_{}_analyze_{}_features.png".format(name, idx, importance_type))
 
     if importance_type == 'gain' and name == 'XGBOOST':

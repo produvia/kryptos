@@ -10,9 +10,12 @@ import logbook
 from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
-import matplotlib.pyplot as plt
 import pandas as pd
 import logbook
+
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 
 from ml.models.xgb import xgboost_train, xgboost_test, optimize_xgboost_params
 from ml.models.lgb import lightgbm_train, lightgbm_test, optimize_lightgbm_params
