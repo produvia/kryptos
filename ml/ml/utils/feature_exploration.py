@@ -1,5 +1,6 @@
 import os
 import matplotlib.pyplot as plt
+import xgboost as xgb
 import shap
 
 from ml.utils import get_algo_dir
@@ -13,11 +14,29 @@ def visualize_model(model, X, idx, configuration, namespace, name):
 
         # save files
         folder_path = get_algo_dir(namespace)
-        f_path = os.path.join(folder_path, "{}_{}_analyze_features.png".format(name, idx))
+        f_path = os.path.join(folder_path, "{}_{}_analyze_shap_features.png".format(name, idx))
         plt.savefig(f_path, bbox_inches="tight", dpi=300)
 
-        # TODO: save in a image more results (weight, gain, etc)
         if name == 'XGBOOST':
-            pass
+            # TODO: exportar codigo a una función.
+
+            importance_type = 'weight'
+            xgb.plot_importance(model, importance_type=importance_type, max_num_features=20)
+            folder_path = get_algo_dir(namespace)
+            f_path = os.path.join(folder_path, "{}_{}_analyze_xgboost_{}_features.png".format(name, idx, importance_type))
+            plt.savefig(f_path, bbox_inches="tight", dpi=300)
+
+            importance_type = 'cover'
+            xgb.plot_importance(model, importance_type=importance_type, max_num_features=20)
+            folder_path = get_algo_dir(namespace)
+            f_path = os.path.join(folder_path, "{}_{}_analyze_xgboost_{}_features.png".format(name, idx, importance_type))
+            plt.savefig(f_path, bbox_inches="tight", dpi=300)
+
+            importance_type = 'gain'
+            xgb.plot_importance(model.get_score(fmap='', importance_type=importance_type), importance_type=importance_type, max_num_features=20)
+            folder_path = get_algo_dir(namespace)
+            f_path = os.path.join(folder_path, "{}_{}_analyze_xgboost_{}_features.png".format(name, idx, importance_type))
+            plt.savefig(f_path, dpi="figure")
+
         elif name == 'LIGHTGBM':
             pass
