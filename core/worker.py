@@ -44,6 +44,9 @@ def run_strat(strat_json, strat_id, user_id=None, telegram_id=None, live=False, 
 
     strat.run(viz=False, live=live, simulate_orders=simulate_orders, user_id=user_id, as_job=True)
     result_df = strat.quant_results
+    if result_df is None:
+        log.warning('No results from strategy')
+        return
 
     return result_df.to_json()
 
