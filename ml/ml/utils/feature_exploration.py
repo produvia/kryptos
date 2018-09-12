@@ -38,7 +38,8 @@ def visualize_model(model, X, idx, configuration, namespace, name):
 
 def save_fig(namespace, name, idx, importance_type):
 
-    folder_path = get_algo_dir(namespace + '/feature_exploration/')
+    folder = os.path.join(namespace, 'feature_exploration')
+    folder_path = get_algo_dir(folder)
     f_path = os.path.join(folder_path, "{}_{}_analyze_{}_features.png".format(name, idx, importance_type))
 
     if importance_type == 'gain' and name == 'XGBOOST':
