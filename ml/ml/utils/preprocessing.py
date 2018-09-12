@@ -52,7 +52,8 @@ def clean_params(params, method):
     """
     """
     del params['num_boost_rounds']
-    params['max_depth'] = int(params['max_depth'])
+    if 'max_depth' in params:
+        params['max_depth'] = int(params['max_depth'])
 
     if method == 'XGBOOST':
         fixed_params_default = xgb.FIXED_PARAMS_DEFAULT

@@ -38,6 +38,7 @@ else:
 
 FIXED_PARAMS = {
     'num_threads': multiprocessing.cpu_count(),
+    'max_depth': -1,
     'verbose': -1,
     'seed': LIGHTGBM_SEED
 }
@@ -49,7 +50,7 @@ OPTIMIZABLE_PARAMS = {
     'bagging_fraction': 1, # 1
     'feature_fraction': 1, # 1
     'bagging_freq': 5,
-    'max_depth': -1,
+    # 'max_depth': -1,
     'min_data_in_leaf': 350 # default=20
 }
 
@@ -84,11 +85,12 @@ def optimize_lightgbm_params(X_train_optimize, y_train_optimize, X_test_optimize
     space = {
         'num_boost_rounds': hp.quniform('num_boost_rounds', 400, 1200, 50),
         'num_leaves': hp.quniform('num_leaves', 63, 511, 64),
-        'learning_rate': hp.quniform('learning_rate', 0.001, 0.500, 0.010),
+        # 'learning_rate': hp.quniform('learning_rate', 0.001, 0.500, 0.010),
+        'learning_rate': hp.uniform('learning_rate', 0.005, 0.500),
         'bagging_fraction': hp.quniform('bagging_fraction', 0.6, 1, 0.05),
         'feature_fraction': hp.quniform('feature_fraction', 0.6, 1, 0.05),
         'bagging_freq': hp.quniform('bagging_freq', 0, 20, 2),
-        'max_depth': hp.quniform('max_depth', -1, 30, 5),
+        # 'max_depth': hp.quniform('max_depth', -1, 30, 5),
         'min_data_in_leaf': hp.quniform('min_data_in_leaf', 0, 500, 50)
     }
 
