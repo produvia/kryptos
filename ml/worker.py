@@ -11,6 +11,7 @@ from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
 import pandas as pd
+import numpy as np
 import logbook
 
 import matplotlib
@@ -26,6 +27,7 @@ from ml.feature_selection.wrapper import wrapper_feature_selection
 from ml.utils.preprocessing import labeling_multiclass_data, labeling_binary_data, labeling_regression_data, clean_params, normalize_data, inverse_normalize_data
 from ml.utils.metric import classification_metrics
 from ml.utils.feature_exploration import visualize_model
+from ml.utils.input_data_report import profile_report
 from ml.settings import MLConfig as CONFIG, get_from_datastore
 
 from google.cloud import datastore
@@ -185,6 +187,7 @@ def calculate(namespace, df_current_json, name, idx, current_datetime, df_final_
     # Dataframe size is enough to apply Machine Learning
     if df_current.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
+        profile_report(df_current, idx, namespace, name, CONFIG.PROFILING_REPORT)
         num_boost_rounds, hyper_params = _optimize_hyper_params(df_current, name, data_freq, idx, hyper_params, **kw)
 
         X_train, y_train, X_test = _prepare_data(df_current, data_freq)
@@ -203,6 +206,10 @@ def calculate(namespace, df_current_json, name, idx, current_datetime, df_final_
         # Normalize data
         if CONFIG.NORMALIZATION['enabled']:
             X_train, y_train, X_test, scaler_y = normalize_data(X_train, y_train, X_test, name, method=CONFIG.NORMALIZATION['method'])
+
+        X_train['tmp'] = y_train
+        profile_report(X_train, idx, namespace, name, CONFIG.PROFILING_REPORT)
+        del X_train['tmp']
 
         # Train and test indicator
         model, result = get_model_result(name, X_train, y_train, X_test, hyper_params, num_boost_rounds)
