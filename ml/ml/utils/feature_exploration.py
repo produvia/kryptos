@@ -40,7 +40,7 @@ def save_fig(namespace, name, idx, importance_type):
 
     folder = os.path.join(namespace, 'feature_exploration')
     folder_path = get_algo_dir(folder)
-    f_path = os.path.join(folder_path, "{}_{}_analyze_{}_features.png".format(name, idx, importance_type))
+    f_path = os.path.join(folder_path, "analyze_features_model_{}_idx_{}_importance_type_{}.png".format(name, idx, importance_type))
 
     if importance_type == 'gain' and name == 'XGBOOST':
         plt.savefig(f_path, dpi='figure')
