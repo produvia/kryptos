@@ -49,14 +49,20 @@ class MLConfig(object):
     OPTIMIZE_PARAMS = {
         'enabled': True, # Apply hyper model params optimization
         'iterations': 30, # Test dataframe size to optimize model params
-        'n_evals': 10, # Number of evaluations to hyperopt
+        'n_evals': 10, # Number of evaluations to apply hyperopt
         'size': 100 # Test dataframe size to optimize model params
     }
 
     ## FEATURE MODEL VISUALIZATION: SHAP
     VISUALIZE_MODEL = {
         'enabled': True, # Apply hyper model params optimization
-        'n_iterations': 50 # Test dataframe size to optimize model params
+        'n_iterations': 50 # Number of evaluations to apply shap
+    }
+
+    ## Generates profile reports from a pandas DataFrame: pandas-profiling
+    PROFILING_REPORT = {
+        'enabled': True, # Apply pandas-profiling
+        'n_iterations': 50 # Number of evaluations to apply pandas-profiling
     }
 
     ## FEATURE SELECTION

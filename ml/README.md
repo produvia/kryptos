@@ -43,6 +43,7 @@ You need to set the OPTIMIZE_PARAMS setting variable:
   * 'n_evals' -> Number of evaluations to hyperopt
   * 'size' -> Test dataframe size to optimize model params
 
+
 #### Feature Selection techniques
 
 Using embedded, filter and wrapper methods: https://machinelearningmastery.com/an-introduction-to-feature-selection/
@@ -63,6 +64,7 @@ You can set the VISUALIZE_MODEL setting variable:
   * 'enabled' -> Apply feature Exploration
   * 'n_iterations' -> Number of iterations to get detailed information.
 
+
 #### Extra datasets
 
 Also, you can add external datasets as features too (to work with daily frequency only):
@@ -82,7 +84,15 @@ $ strat -ml xgboost -d quandl -c 'MKTCP' -c 'NTRAN'
 ```
 
 
+#### Data pre visualization
+
+We generate profile reports from a pandas DataFrame using pandas-profiling tool.
+
+You can set the PROFILING_REPORT setting variable:
+
+  * 'enabled' -> Apply feature Exploration
+  * 'n_iterations' -> Number of iterations to visualize input data.
 
 #### Results
 
-talk about confusion matrix, librería nueva, etc
+TODO: talk about confussion matrix...
