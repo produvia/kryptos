@@ -7,7 +7,7 @@ from ml.utils.feature_engineering import add_ta_features, add_ta_features2, add_
 from ml.utils import merge_two_dicts
 from ml.models import xgb
 
-def labeling_regression_data(df, data_freq, to_optimize=False):
+def labeling_regression_data(df, data_freq, minute_freq, to_optimize=False):
     """Preprocessing data to resolve a regression machine learning problem.
     """
     # Prepare labelling classification problem (1=UP / 2=DOWN)
@@ -22,11 +22,11 @@ def labeling_regression_data(df, data_freq, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, data_freq, to_optimize)
+    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, data_freq, minute_freq, to_optimize)
     return X_train, y_train, X_test, y_test
 
 
-def labeling_binary_data(df, data_freq, to_optimize=False):
+def labeling_binary_data(df, data_freq, minute_freq, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, DOWN) machine learning
     problem.
     """
@@ -44,7 +44,7 @@ def labeling_binary_data(df, data_freq, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, data_freq, minute_freq, to_optimize)
     return X_train, y_train.astype('int'), X_test, y_test
 
 
@@ -72,7 +72,7 @@ def clean_params(params, method):
     return ml_params
 
 
-def labeling_multiclass_data(df, data_freq, to_optimize=False):
+def labeling_multiclass_data(df, data_freq, minute_freq, to_optimize=False):
     """Preprocessing data to resolve a multiclass (UP, KEEP, DOWN) machine
     learning problem.
     """
@@ -91,7 +91,7 @@ def labeling_multiclass_data(df, data_freq, to_optimize=False):
     X = df[cols]
     y = df['target']
 
-    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, to_optimize)
+    X_train, y_train, X_test, y_test = _preprocessing_feature_engineering(X, y, data_freq, minute_freq, to_optimize)
     return X_train, y_train.astype('int'), X_test, y_test
 
 
@@ -139,11 +139,11 @@ def inverse_normalize_data(result, scaler, method):
     return result
 
 
-def _preprocessing_feature_engineering(X, y, data_freq, to_optimize):
+def _preprocessing_feature_engineering(X, y, data_freq, minute_freq, to_optimize):
     if not to_optimize:
 
         # Adding different features (feature engineering)
-        X = _add_fe(X, data_freq)
+        X = _add_fe(X, data_freq, minute_freq)
 
         # Drop nan values after feature engineering process
         X, y = _dropna_after_fe(X, y)
@@ -154,7 +154,7 @@ def _preprocessing_feature_engineering(X, y, data_freq, to_optimize):
     return X_train, y_train, X_test, y_test
 
 
-def _add_fe(df, data_freq):
+def _add_fe(df, data_freq, minute_freq):
 
     df['timestamp'] = df.index
 
@@ -164,7 +164,7 @@ def _add_fe(df, data_freq):
 
     # Add fbprophet features
     if CONFIG.FE_FBPROPHET['enabled']:
-        df = add_fbprophet_features(df, data_freq, CONFIG.FE_FBPROPHET)
+        df = add_fbprophet_features(df, data_freq, minute_freq, CONFIG.FE_FBPROPHET)
 
     # Add dates features
     if CONFIG.FE_DATES:

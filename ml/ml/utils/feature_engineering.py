@@ -6,7 +6,7 @@ from datetime import datetime
 from ta import add_all_ta_features
 #from tsfresh import extract_features, extract_relevant_features
 #from tsfresh.utilities.dataframe_functions import roll_time_series
-#from fbprophet import Prophet
+from fbprophet import Prophet
 
 def add_utils_features(df):
     """Add utils features.
@@ -270,38 +270,29 @@ def add_ta_features(df, ta_settings):
     return df
 
 
-def add_fbprophet_features(df, data_freq, fbprophet_settings):
+def add_fbprophet_features(df, data_freq, minute_freq, fbprophet_settings):
     """
-    """
-    pass
-
     """
     df_prophet = df[['timestamp', 'price']]
     df_prophet.columns = ['ds', 'y']
 
-    # m = Prophet()
-    # m.fit(df_prophet)
-
     m = Prophet().fit(df_prophet)
-
-    import pdb; pdb.set_trace()
 
     if data_freq == "daily":
         freq = 'D'
     else:
         freq = 'min'
 
-    future = m.make_future_dataframe(periods=1, freq=freq)
+    future = m.make_future_dataframe(periods=int(minute_freq), freq=freq) # TODO: parametrizar el número de minutos...
     forecast = m.predict(future)
 
-    print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
-    print(df_prophet.tail())
-    print(df.tail())
+    # build a new feature
+    df_prophet = df_prophet.shift(-1)
+    listado = df_prophet.y.tolist()
+    listado[-1] = forecast.iloc[-1]['yhat']
+    df['fbprophet'] = listado
 
-    df_prophet.shift(1) # hacia arriba
-    df = pd.concat([df, df_prophet], axis=1, join_axes=[df.index]) # merge
     return df
-    """
 
 
 def add_tsfresh_features(df, tsfresh_settings):

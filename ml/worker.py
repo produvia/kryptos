@@ -43,29 +43,29 @@ REDIS_PORT = os.getenv('REDIS_PORT', 19779)
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
-def _prepare_data(df, data_freq):
+def _prepare_data(df, data_freq, minute_freq):
     if CONFIG.CLASSIFICATION_TYPE == 1:
-        X_train, y_train, X_test, y_test = labeling_regression_data(df, data_freq)
+        X_train, y_train, X_test, y_test = labeling_regression_data(df, data_freq, minute_freq)
     elif CONFIG.CLASSIFICATION_TYPE == 2:
-        X_train, y_train, X_test, y_test = labeling_binary_data(df, data_freq)
+        X_train, y_train, X_test, y_test = labeling_binary_data(df, data_freq, minute_freq)
     elif CONFIG.CLASSIFICATION_TYPE == 3:
-        X_train, y_train, X_test, y_test = labeling_multiclass_data(df, data_freq)
+        X_train, y_train, X_test, y_test = labeling_multiclass_data(df, data_freq, minute_freq)
     else:
         raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
     return X_train, y_train, X_test
 
 
-def _optimize_hyper_params(df, name, data_freq, idx, hyper_params):
+def _optimize_hyper_params(df, name, data_freq, minute_freq, idx, hyper_params):
     num_boost_rounds = None
     # Optimize Hyper Params for Xgboost model
     if CONFIG.OPTIMIZE_PARAMS['enabled'] and idx % CONFIG.OPTIMIZE_PARAMS['iterations'] == 0:
         # Prepare data to machine learning problem
         if CONFIG.CLASSIFICATION_TYPE == 1:
-            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_regression_data(df, data_freq, to_optimize=True)
+            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_regression_data(df, data_freq, minute_freq, to_optimize=True)
         elif CONFIG.CLASSIFICATION_TYPE == 2:
-            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_binary_data(df, data_freq, to_optimize=True)
+            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_binary_data(df, data_freq, minute_freq, to_optimize=True)
         elif CONFIG.CLASSIFICATION_TYPE == 3:
-            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_multiclass_data(df, data_freq, to_optimize=True)
+            X_train_optimize, y_train_optimize, X_test_optimize, y_test_optimize = labeling_multiclass_data(df, data_freq, minute_freq, to_optimize=True)
         else:
             raise ValueError('Internal Error: Value of CONFIG.CLASSIFICATION_TYPE should be 1, 2 or 3')
 
@@ -175,7 +175,7 @@ def signals_sell(model_result):
     return signal
 
 
-def calculate(namespace, df_current_json, name, idx, current_datetime, df_final_json, data_freq, hyper_params, **kw):
+def calculate(namespace, df_current_json, name, idx, current_datetime, df_final_json, data_freq, minute_freq, hyper_params, **kw):
     df_current = pd.read_json(df_current_json)
     df_final = pd.read_json(df_final_json)
 
@@ -188,9 +188,9 @@ def calculate(namespace, df_current_json, name, idx, current_datetime, df_final_
     if df_current.shape[0] > CONFIG.MIN_ROWS_TO_ML:
 
         profile_report(df_current, idx, namespace, name, CONFIG.PROFILING_REPORT)
-        num_boost_rounds, hyper_params = _optimize_hyper_params(df_current, name, data_freq, idx, hyper_params, **kw)
+        num_boost_rounds, hyper_params = _optimize_hyper_params(df_current, name, data_freq, minute_freq, idx, hyper_params, **kw)
 
-        X_train, y_train, X_test = _prepare_data(df_current, data_freq)
+        X_train, y_train, X_test = _prepare_data(df_current, data_freq, minute_freq)
 
         feature_selected_columns = _set_feature_selection(name, X_train, y_train, X_test, idx, hyper_params, num_boost_rounds)
 

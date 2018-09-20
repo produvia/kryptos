@@ -49,7 +49,7 @@ class MLConfig(object):
     OPTIMIZE_PARAMS = {
         'enabled': True, # Apply hyper model params optimization
         'iterations': 30, # Test dataframe size to optimize model params
-        'n_evals': 10, # Number of evaluations to apply hyperopt
+        'n_evals': 50, # Number of evaluations to apply hyperopt
         'size': 100 # Test dataframe size to optimize model params
     }
 
@@ -104,7 +104,7 @@ class MLConfig(object):
 
     # Feature Engineering: fbprophet
     FE_FBPROPHET = {
-        'enabled': False
+        'enabled': True
     }
 
     # Feature Engineering: utils
