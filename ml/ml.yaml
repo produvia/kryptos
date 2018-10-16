@@ -13,6 +13,7 @@ env_variables:
     REDIS_HOST: redis-19779.c1.us-central1-2.gce.cloud.redislabs.com
     REDIS_PORT: 19779
     CONFIG_ENV: 'production'
+    PROJECT_ID:  kryptos-205115
 
 network:
   name: default

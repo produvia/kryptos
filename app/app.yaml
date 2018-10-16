@@ -13,6 +13,7 @@ env_variables:
     REDIS_PORT: 19779
     CONFIG_ENV: 'production'
     SENTRY_DSN: 'https://919694577d5b4907a54de058d3df359b:f2426c5c9e274fcfb1d84295107e5b60@sentry.io/1269706'
+    PROJECT_ID:  kryptos-205115 
 
 beta_settings:
     cloud_sql_instances: kryptos-205115:us-west1:kryptos-db
