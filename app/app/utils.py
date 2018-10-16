@@ -11,11 +11,22 @@ key_client = kms_v1.KeyManagementServiceClient()
 storage_client = storage.Client()
 
 
-def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
-    current_app.logger.info("Creating new crypto key for user {} {} auth")
-    keyring_path = key_client.key_ring_path(
+def get_keyring_path():
+    return key_client.key_ring_path(
         current_app.config["PROJECT_ID"], "global", "exchange_auth"
     )
+
+def get_key_path(user_id: int, exchange_name: str) -> str:
+    return key_client.crypto_key_path_path(
+        current_app.config["PROJECT_ID"],
+        "global",
+        "exchange_auth",
+        f"{exchange_name}_{user_id}_key",
+    )
+
+def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
+    current_app.logger.info("Creating new crypto key for user {} {} auth")
+    keyring_path = get_keyring_path()
 
     crypto_key_id = f"{exchange_name}_{user_id}_key"
     purpose = enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
@@ -24,17 +35,21 @@ def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
     current_app.logger.debug(f"Created crypto key {response.name}")
     return response.name
 
+def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
+    current_app.logger.info(f"Deleting crypto key for user {user_id} {exchange_name} auth")
+    key_path = get_key_path(user_id, exchange_name)
+    key = key_client.get_crypto_key(key_path)
+
+    version_name = key.primary.name
+    resp = key_client.destroy_crypto_key_version(version_name)
+    return resp
+
 
 def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
     exchange_name = exchange_dict["name"]
     current_app.logger.debug(f"Encrypting User {user_id} exchange auth for {exchange_name}")
 
-    key_path = key_client.crypto_key_path_path(
-        current_app.config["PROJECT_ID"],
-        "global",
-        "exchange_auth",
-        f"{exchange_name}_{user_id}_key",
-    )
+    key_path = get_key_path(user_id, exchange_name)
 
     plaintext = json.dumps(exchange_dict).encode()
 
