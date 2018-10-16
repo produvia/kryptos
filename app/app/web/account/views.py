@@ -7,7 +7,7 @@ from google.cloud import storage
 
 from app.extensions import db
 from app.forms import forms
-from app.models import User
+from app.models import User, UserExchangeAuth
 from app.utils import upload_user_auth
 
 
@@ -100,6 +100,10 @@ def manage_exchanges():
         }
 
         blob_name, auth_bucket = upload_user_auth(exchange_dict, current_user.id)
+        user = current_user
+        exchange_ref = UserExchangeAuth(exchange=form.exchange.data.lower(), user=user)
+        db.session.add(exchange_ref)
+        db.session.commit()
 
         current_app.logger.warn(
             "Exchange Auth {} uploaded to {} bucket.".format(blob_name, auth_bucket)
