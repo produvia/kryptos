@@ -7,17 +7,15 @@ import shortuuid
 from app.extensions import db
 
 
-
 class User(db.Model, UserMixin):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     # User auth keys are not stored in the db
     # Because catalyst utilzies auth files in the .catalyst directory
     # We can simply create auth files with the user ID and pass the file to the strategy
 
     id = db.Column(db.Integer, primary_key=True)
-    active = db.Column('is_active', db.Boolean(), nullable=False, server_default='1')
-
+    active = db.Column("is_active", db.Boolean(), nullable=False, server_default="1")
 
     # User Authentication fields
     email = db.Column(db.String(255), nullable=False, unique=True)
@@ -29,8 +27,9 @@ class User(db.Model, UserMixin):
     telegram_photo = db.Column(db.String(), nullable=True, unique=False)
     telegram_auth_date = db.Column(db.Integer, nullable=True, unique=False)
 
-
     strategies = db.relationship("StrategyModel", backref="user", lazy=True)
+    authenticated_exchanges = db.relationship("UserExchangeAuth", backref="user", lazy=True)
+
     # User information
     # first_name = db.Column(db.String(100), nullable=False, server_default='')
     # last_name = db.Column(db.String(100), nullable=False, server_default='')
@@ -44,8 +43,14 @@ class User(db.Model, UserMixin):
         db.session.commit()
 
 
+class UserExchangeAuth(db.Model):
+    id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
+    exchange = db.Column(db.String(), nullable=False, unique=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+
 class StrategyModel(db.Model):
-    __tablename__ = 'strategies'
+    __tablename__ = "strategies"
 
     id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
     uuid = db.Column(db.String(), unique=True, default=shortuuid.uuid())
@@ -55,7 +60,6 @@ class StrategyModel(db.Model):
     dataset_config = db.Column(db.JSON(), nullable=False, unique=False)
     indicators_config = db.Column(db.JSON(), nullable=False, unique=False)
     signals_config = db.Column(db.JSON(), nullable=False, unique=False)
-
 
     status = db.Column(db.String(), nullable=True, unique=False, primary_key=False)
 
@@ -69,11 +73,11 @@ class StrategyModel(db.Model):
         instance = cls()
 
         instance.uuid = shortuuid.uuid()
-        instance.name = d.get('name')
-        instance.trading_config = d.get('trading')
-        instance.dataset_config = d.get('datasets')
-        instance.indicators_config = d.get('indicators')
-        instance.signals_config = d.get('signals')
+        instance.name = d.get("name")
+        instance.trading_config = d.get("trading")
+        instance.dataset_config = d.get("datasets")
+        instance.indicators_config = d.get("indicators")
+        instance.signals_config = d.get("signals")
 
         if user_id is not None:
             instance.user_id = user_id
@@ -91,15 +95,14 @@ class StrategyModel(db.Model):
 
     def config_to_json(self):
         d = {
-            'id': self.id,
-            'name': self.name,
-            'trading': self.trading_config,
-            'datasets': self.dataset_config,
-            'indicator': self.indicators_config,
-            'signals_config': self.signals_config
+            "id": self.id,
+            "name": self.name,
+            "trading": self.trading_config,
+            "datasets": self.dataset_config,
+            "indicator": self.indicators_config,
+            "signals_config": self.signals_config,
         }
         return json.dumps(d)
-
 
     @property
     def parsed_result_json(self):
@@ -113,9 +116,8 @@ class StrategyModel(db.Model):
             clean_result[metric] = val
         return clean_result
 
-
     def pretty_result(self):
-        string = ''
+        string = ""
         if self.result_json is None:
             return None
         result_dict = json.loads(self.result_json)
