@@ -8,7 +8,7 @@ from google.cloud import storage
 from app.extensions import db
 from app.forms import forms
 from app.models import User, UserExchangeAuth
-from app.utils import upload_user_auth
+from app.utils import upload_user_auth, destroy_user_exchange_key
 
 
 blueprint = Blueprint("account", __name__, url_prefix="/account")
@@ -86,29 +86,66 @@ def user_strategies():
     return render_template("account/strategies.html")
 
 
+@blueprint.route("/exchanges/remove", methods=["POST"])
+def remove_exchange_auth():
+    new_form = forms.UserExchangeKeysForm()
+
+    remove_form = forms.UserExchangeKeyRemoveForm()
+    remove_form.exchange_name.choices = [
+        (e.exchange, e.exchange) for e in current_user.authenticated_exchanges
+    ]
+
+    if remove_form.validate():
+        exchange_name = remove_form.exchange_name.data
+        current_app.logger.info(f"Removing new auth key for {current_user} {exchange_name}")
+        try:
+            destroy_user_exchange_key(current_user.id, exchange_name)
+
+        except Exception as e:
+            flash(e.message)
+
+        auth_ref = UserExchangeAuth.query.filter_by(
+            user=current_user, exchange=exchange_name
+        ).first()
+        db.session.delete(auth_ref)
+        db.session.commit()
+
+    return redirect(url_for("account.manage_exchanges"))
+
+
 @blueprint.route("/exchanges", methods=["GET", "POST"])
 @login_required
 def manage_exchanges():
-    form = forms.UserExchangeKeysForm()
+    new_form = forms.UserExchangeKeysForm()
+    # remove_form = forms.UserExchangeKeysForm()
+    remove_form = forms.UserExchangeKeyRemoveForm()
+    remove_form.exchange_name.choices = [
+        (e.exchange, e.exchange) for e in current_user.authenticated_exchanges
+    ]
 
-    if request.method == "POST" and form.validate():
+    if request.method == "POST" and new_form.validate():
 
         exchange_dict = {
-            "name": form.exchange.data,
-            "key": form.api_key.data,
-            "secret": form.api_secret.data,
+            "name": new_form.exchange.data,
+            "key": new_form.api_key.data,
+            "secret": new_form.api_secret.data,
         }
+        current_app.logger.info(
+            f'Adding new auth key for {current_user} {exchange_dict["name"]}'
+        )
 
         blob_name, auth_bucket = upload_user_auth(exchange_dict, current_user.id)
         user = current_user
-        exchange_ref = UserExchangeAuth(exchange=form.exchange.data.lower(), user=user)
+        exchange_ref = UserExchangeAuth(exchange=new_form.exchange.data.lower(), user=user)
         db.session.add(exchange_ref)
         db.session.commit()
 
-        current_app.logger.warn(
-            "Exchange Auth {} uploaded to {} bucket.".format(blob_name, auth_bucket)
+        current_app.logger.debug(
+            "Encrypted auth {} uploaded to {} bucket.".format(blob_name, auth_bucket)
         )
 
         return redirect(url_for("strategy.build_strategy"))
 
-    return render_template("account/user_exchanges.html", form=form)
+    return render_template(
+        "account/user_exchanges.html", new_form=new_form, remove_form=remove_form
+    )

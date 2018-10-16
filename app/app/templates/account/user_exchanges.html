@@ -2,20 +2,45 @@
 
 {% block content %}
 {% from "flask_user/_macros.html" import render_field, render_checkbox_field, render_submit_field %}
+ {% from "_macros.html" import render_form, render_submit_as_btn %}
 <h1>{%trans%}Authorize Exchange Accounts{%endtrans%}</h1>
 
-<form action="" method="POST" class="form" role="form">
-    {{ form.hidden_tag() }}
-    {% for field in form %}
-        {% if not field.flags.hidden %}
-            {% if field.type=='SubmitField' %}
-                {{ render_submit_field(field, tabindex=loop.index*10) }}
-            {% else %}
-                {{ render_field(field, tabindex=loop.index*10) }}
-            {% endif %}
-        {% endif %}
-    {% endfor %}
-</form>
-<br/>
+<div class="container">
+    <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12">
+                <form action="{{url_for('account.manage_exchanges')}}" method="POST" class="form" role="form">
+                    {{ new_form.hidden_tag() }}
+                    {% for field in new_form %}
+                        {% if not field.flags.hidden %}
+                            {% if field.type=='SubmitField' %}
+                                {{ render_submit_as_btn(field, tabindex=loop.index*10) }}
+                            {% else %}
+                                {{ render_field(field, tabindex=loop.index*10) }}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </form>
+            </div>
+        <br/>
+    </div>
+    <br>
+    {# <div class="container"> #}
+
+
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Authenticated Exchanges</h3>
+                    </div>
+                    <div class="panel-body">
+                        {{ render_form(remove_form, url_for('account.remove_exchange_auth'))}}
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+</div>
+{# </div> #}
 
 {% endblock %}

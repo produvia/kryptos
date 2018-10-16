@@ -1,1 +1,1 @@
-from .user import User, StrategyModel
+from .user import User, StrategyModel, UserExchangeAuth
