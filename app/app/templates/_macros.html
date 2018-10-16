@@ -1,8 +1,8 @@
 {% from "flask_user/_macros.html" import render_field, render_checkbox_field, render_submit_field, render_form %}
 
 
-{% macro render_form(form) -%}
-<form action="" method="POST" class="form" role="form">
+{% macro render_form(form, action) -%}
+<form action="{{action}}" method="POST" class="form" role="form">
     {{ form.hidden_tag() }}
     {% for field in form %}
         {% if not field.flags.hidden %}
