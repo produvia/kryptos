@@ -4,60 +4,20 @@ import json
 from textwrap import dedent
 import datetime
 
-from flask import Blueprint, request, current_app
-from flask_assistant import Assistant, tell, event, context_manager
-from flask_assistant.response import _Response
+from flask import Blueprint, current_app
+from flask_assistant import Assistant, tell
 import talib as ta
 import talib.abstract as ab
 
-from app.models import User
 from app.bot.response import ask, inline_keyboard
 from app import task
+from app.bot.utils import get_user, get_first_name, EXISTING_STRATS
 
 blueprint = Blueprint('bot', __name__, url_prefix='/bot')
 assist = Assistant(blueprint=blueprint)
 
 
 logging.getLogger('flask_assistant').setLevel(logging.INFO)
-
-EXISTING_STRATS = [
-    # display, callback
-    ('Bollinger Bands (BBANDS)', 'BBANDS'),
-    ('Stop and Reverse (SAR)', 'SAR'),
-    ('Moving Average Convergence/Divergence (MACD)', 'MACD'),
-    ('Moving Average Convergence/Divergence Fix (MACDFIX)', 'MACDFIX'),
-    ('On Balance Volume (OBV)', 'OBV'),
-    ('Relative Strength Index (RSI)', 'RSI'),
-    ('Stochastic (STOCH)', 'STOCH')
-]
-
-
-# TODO possibly use tleegram chat_id
-def get_user():
-    telegram_id = get_message_payload()['id']
-    user = User.query.filter_by(telegram_id=telegram_id).first()
-    current_app.logger.debug(f'Got user {user}')
-    return user
-
-def get_first_name():
-    name =  get_message_payload().get('first_name', None)
-    if name is not None:
-        return name
-    return ''
-
-
-
-def get_message_payload():
-    platform_data =  request.json.get('originalRequest', {}).get('data', {})
-    current_app.logger.info(platform_data)
-    if not platform_data:
-        return {'first_name': 'DialogFlow', 'id': 111}
-
-    if platform_data.get('message'):
-        return platform_data['message']['from']
-
-    elif platform_data.get('callback_query'):
-        return platform_data['callback_query']['from']
 
 
 @assist.action('Default Welcome Intent')
@@ -70,7 +30,7 @@ def welcome_message():
         msg += f"\n\nBefore we can get started, you'll need to create a free Kryptos account and authentiate with Telegram"
         resp = inline_keyboard(msg)
         url = os.path.join(current_app.config['FRONTEND_URL'], 'account/telegram')
-        resp.add_button('Create an account', url=current_app.config['FRONTEND_URL'])
+        resp.add_button('Create an account', url=url)
         return resp
 
     return ask(msg)
