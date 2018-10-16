@@ -14,17 +14,17 @@ from app.extensions import cors, db, migrate, sentry
 from app.settings import DockerDevConfig, ProdConfig
 
 
-logging.getLogger('flask_assistant').setLevel(logging.INFO)
+logging.getLogger("flask_assistant").setLevel(logging.INFO)
 
 
 def in_docker():
-    if not os.path.exists('/proc/self/cgroup'):
+    if not os.path.exists("/proc/self/cgroup"):
         return False
-    with open('/proc/self/cgroup', 'r') as procfile:
+    with open("/proc/self/cgroup", "r") as procfile:
         for line in procfile:
-            fields = line.strip().split('/')
-            if 'docker' in fields:
-                print('**Inside Docker container, will disable visualization**')
+            fields = line.strip().split("/")
+            if "docker" in fields:
+                print("**Inside Docker container, will disable visualization**")
                 return True
 
     return False
@@ -57,6 +57,7 @@ def create_app(config_object=None):
     app.logger.warn("Using {}".format(config_object))
     register_extensions(app)
     register_blueprints(app)
+    app.logger.warn("USING DB {}".format(app.config["SQLALCHEMY_DATABASE_URI"]))
 
     return app
 
@@ -72,10 +73,15 @@ def register_extensions(app):
     sentry.init_app(app)
     cors.init_app(app, resources={r"*": {"origins": "*"}})
     db.init_app(app)
-    migrate.init_app(app, db, directory=app.config['MIGRATIONS_DIR'])
+    migrate.init_app(app, db, directory=app.config["MIGRATIONS_DIR"])
 
     # Setup Flask-User and specify the User data-model
     UserManager(app, db, models.User)
+
+    # apply any/all pending migrations.
+    with app.app_context():
+        from flask_migrate import upgrade as _upgrade
+        _upgrade()
 
     return None
 
