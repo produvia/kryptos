@@ -11,6 +11,8 @@ def get_from_datastore(config_key, env):
 
     return entity[config_key]
 
+
+PROJECT_ID = os.getenv('PROJECT_ID', 'kryptos-205115')
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
 PERF_DIR = os.path.join(BASE_DIR, "performance_results")
