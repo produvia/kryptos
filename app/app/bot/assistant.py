@@ -11,43 +11,44 @@ import talib.abstract as ab
 
 from app.bot.response import ask, inline_keyboard
 from app import task
-from app.bot.utils import get_user, get_first_name, EXISTING_STRATS
+from app.bot import utils
 
-blueprint = Blueprint('bot', __name__, url_prefix='/bot')
+blueprint = Blueprint("bot", __name__, url_prefix="/bot")
 assist = Assistant(blueprint=blueprint)
 
 
-logging.getLogger('flask_assistant').setLevel(logging.INFO)
+logging.getLogger("flask_assistant").setLevel(logging.INFO)
 
 
-@assist.action('Default Welcome Intent')
+@assist.action("Default Welcome Intent")
 def welcome_message():
-    user_name = get_first_name()
+    user_name = utils.get_first_name()
     msg = f"Hello {user_name}! I’m Kryptos AI, your virtual investment assistant that manages your cryptocurrency portfolio and automates your cryptocurrency trading"
 
     if get_user() is None:
-        current_app.logger.info('Prompting user to login')
+        current_app.logger.info("Prompting user to login")
         msg += f"\n\nBefore we can get started, you'll need to create a free Kryptos account and authentiate with Telegram"
         resp = inline_keyboard(msg)
-        url = os.path.join(current_app.config['FRONTEND_URL'], 'account/telegram')
-        resp.add_button('Create an account', url=url)
+        url = os.path.join(current_app.config["FRONTEND_URL"], "account/telegram")
+        resp.add_button("Create an account", url=url)
         return resp
 
     return ask(msg)
 
 
-@assist.action('account-unlink')
+@assist.action("account-unlink")
 def unlink_telegram_confirm():
     speech = """\
     Are you sure you want to unlink your telegram account from Kryptos?
     You won't be able to receive updates from me anymore.
     """
 
-    return ask(dedent(speech)).with_quick_reply('yes', 'no')
+    return ask(dedent(speech)).with_quick_reply("yes", "no")
 
-@assist.action('account-unlink-yes')
+
+@assist.action("account-unlink-yes")
 def unlink_telegram_account():
-    user = get_user()
+    user = utils.get_user()
     user.unlink_telegram()
     speech = f"""\
     Your account is now unlinked
@@ -56,9 +57,9 @@ def unlink_telegram_account():
     return tell(dedent(speech))
 
 
-@assist.action('activity-menu')
+@assist.action("activity-menu")
 def show_menu():
-    user_name = get_first_name()
+    user_name = utils.get_first_name()
     speech = f"""\
     Hi {user_name}. Let's get started. Please select a number or text me the named
     1. Launch New Strategy
@@ -66,7 +67,7 @@ def show_menu():
     3. Update Goals
     4. Upgrade SKills
     5. Adjust Kryptos"""
-    return ask(speech).with_quick_reply('1', '2', '3', '4', '5')
+    return ask(speech).with_quick_reply("1", "2", "3", "4", "5")
 
 
 # @assist.context('activity-selection')
@@ -151,9 +152,9 @@ def launch_strategy_paper(existing_strategy):
 
 @assist.action('new-strategy-select-live')
 def launch_strategy_paper(existing_strategy):
-    job_id = launch_live(existing_strategy)
+    job_id = utils.launch_live(existing_strategy)
 
-    url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
+    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
     speech = f"""\
     Great! The strategy is now live and will run for the next 3 days.
@@ -167,25 +168,4 @@ def launch_strategy_paper(existing_strategy):
 
 
 
-def build_strat_dict(strategy_name, mode):
-    start = datetime.datetime.today()
-    end = start + datetime.timedelta(days=3)
 
-    strat_dict = {'trading': {}, 'indicators': [{"name": strategy_name}]}
-    strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
-    strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
-    strat_dict['name'] = f"{strategy_name}-{mode.title()}"
-    return strat_dict
-
-def launch_paper(strategy_name):
-    user = get_user()
-    strat_dict = build_strat_dict(strategy_name, 'paper')
-    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
-
-    return job_id
-
-def launch_live(strategy_name):
-    user = get_user()
-    strat_dict = build_strat_dict(strategy_name, 'live')
-    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=False)
-    return job_id

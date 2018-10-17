@@ -38,3 +38,26 @@ def get_message_payload():
 
     elif platform_data.get("callback_query"):
         return platform_data["callback_query"]["from"]
+
+def build_strat_dict(strategy_name, mode):
+    start = datetime.datetime.today()
+    end = start + datetime.timedelta(days=3)
+
+    strat_dict = {'trading': {}, 'indicators': [{"name": strategy_name}]}
+    strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
+    strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
+    strat_dict['name'] = f"{strategy_name}-{mode.title()}"
+    return strat_dict
+
+def launch_paper(strategy_name):
+    user = get_user()
+    strat_dict = build_strat_dict(strategy_name, 'paper')
+    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
+
+    return job_id
+
+def launch_live(strategy_name):
+    user = get_user()
+    strat_dict = build_strat_dict(strategy_name, 'live')
+    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=False)
+    return job_id
