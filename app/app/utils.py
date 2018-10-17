@@ -5,16 +5,16 @@ from flask import current_app
 from google.cloud import storage, kms_v1
 from google.cloud.kms_v1 import enums
 
-from google.api_core.exceptions import NotFound
+
+from google.api_core.exceptions import NotFound, FailedPrecondition
 
 key_client = kms_v1.KeyManagementServiceClient()
 storage_client = storage.Client()
 
 
 def get_keyring_path():
-    return key_client.key_ring_path(
-        current_app.config["PROJECT_ID"], "global", "exchange_auth"
-    )
+    return key_client.key_ring_path(current_app.config["PROJECT_ID"], "global", "exchange_auth")
+
 
 def get_key_path(user_id: int, exchange_name: str) -> str:
     return key_client.crypto_key_path_path(
@@ -24,6 +24,7 @@ def get_key_path(user_id: int, exchange_name: str) -> str:
         f"{exchange_name}_{user_id}_key",
     )
 
+
 def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
     current_app.logger.info("Creating new crypto key for user {} {} auth")
     keyring_path = get_keyring_path()
@@ -31,9 +32,12 @@ def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
     crypto_key_id = f"{exchange_name}_{user_id}_key"
     purpose = enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
     crypto_key = {"purpose": purpose}
-    response = key_client.create_crypto_key(keyring_path, crypto_key_id, crypto_key)
-    current_app.logger.debug(f"Created crypto key {response.name}")
-    return response.name
+    key = key_client.create_crypto_key(keyring_path, crypto_key_id, crypto_key)
+    current_app.logger.debug(
+        f"Created crypto key {response.name} - version {response.primary.name}"
+    )
+    return key.name
+
 
 def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
     current_app.logger.info(f"Deleting crypto key for user {user_id} {exchange_name} auth")
@@ -41,8 +45,8 @@ def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
     key = key_client.get_crypto_key(key_path)
 
     version_name = key.primary.name
-    resp = key_client.destroy_crypto_key_version(version_name)
-    return resp
+    key_version = key_client.destroy_crypto_key_version(version_name)
+    return key_version
 
 
 def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
@@ -53,11 +57,30 @@ def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
 
     plaintext = json.dumps(exchange_dict).encode()
 
+    key = key_client.get_crypto_key(key_path)
+
+    current_app.logger.debug(f"Current kms key: {key.name}")
+
+    key_version = key.primary
+
+    if key_version.state == enums.CryptoKeyVersion.CryptoKeyVersionState.DESTROY_SCHEDULED:
+        # key_client.create_crypto_key_version(key_path)
+
+        current_app.logger.debug("Restoring DESTROY_SCHEDULED key")
+        key_version = key_client.restore_crypto_key_version(key_version.name)
+        current_app.logger.debug("Re-enabling key")
+        key_version = key_client.update_crypto_key_version(key_version, {"state": "ENABLED"})
+
+    if key_version.state == enums.CryptoKeyVersion.CryptoKeyVersionState.DISABLED:
+        current_app.logger.info("Creating new version")
+        key_version = key_client.create_crypto_key_version(key_path, {})
+        current_app.logger.debug("New key version: {key_version.name}")
+
     try:
-        resp = key_client.encrypt(key_path, plaintext)
+        resp = key_client.encrypt(key_version.name, plaintext)
     except NotFound:
-        create_user_exchange_key(user_id, exchange_dict["name"])
-        resp = key_client.encrypt(key_path, plaintext)
+        create_user_exchange_key(user_id, exchange_name)
+        resp = key_client.encrypt(key_version.name, plaintext)
 
     current_app.logger.info("Successfully encrypted auth info")
     return resp.ciphertext
