@@ -4,6 +4,7 @@ from typing import Dict, Tuple
 from flask import current_app
 from google.cloud import storage, kms_v1
 from google.cloud.kms_v1 import enums
+from google.cloud.kms_v1.types import CryptoKey
 
 
 from google.api_core.exceptions import NotFound, FailedPrecondition
@@ -25,7 +26,7 @@ def get_key_path(user_id: int, exchange_name: str) -> str:
     )
 
 
-def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
+def create_user_exchange_key(user_id: int, exchange_name: str) -> CryptoKey:
     current_app.logger.info("Creating new crypto key for user {} {} auth")
     keyring_path = get_keyring_path()
 
@@ -34,9 +35,9 @@ def create_user_exchange_key(user_id: int, exchange_name: str) -> str:
     crypto_key = {"purpose": purpose}
     key = key_client.create_crypto_key(keyring_path, crypto_key_id, crypto_key)
     current_app.logger.debug(
-        f"Created crypto key {response.name} - version {response.primary.name}"
+        f"Created crypto key {key.name} - version {key.primary.name}"
     )
-    return key.name
+    return key
 
 
 def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
@@ -57,7 +58,10 @@ def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
 
     plaintext = json.dumps(exchange_dict).encode()
 
-    key = key_client.get_crypto_key(key_path)
+    try:
+        key = key_client.get_crypto_key(key_path)
+    except NotFound:
+        key = create_user_exchange_key(user_id, exchange_name)
 
     current_app.logger.debug(f"Current kms key: {key.name}")
 
@@ -76,11 +80,8 @@ def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
         key_version = key_client.create_crypto_key_version(key_path, {})
         current_app.logger.debug("New key version: {key_version.name}")
 
-    try:
-        resp = key_client.encrypt(key_version.name, plaintext)
-    except NotFound:
-        create_user_exchange_key(user_id, exchange_name)
-        resp = key_client.encrypt(key_version.name, plaintext)
+
+    resp = key_client.encrypt(key_version.name, plaintext)
 
     current_app.logger.info("Successfully encrypted auth info")
     return resp.ciphertext
