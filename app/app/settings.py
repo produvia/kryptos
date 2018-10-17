@@ -47,7 +47,7 @@ class Config(object):
     CLIENT_ACCESS_TOKEN = get_from_datastore("CLIENT_ACCESS_TOKEN", "production")
     DEV_ACCESS_TOKEN = get_from_datastore("DEV_ACCESS_TOKEN", "production")
 
-
+    TEMPLATES_AUTO_RELOAD = True
 
     # Flask-Mail SMTP server settings
     MAIL_SERVER = 'smtp.gmail.com'
