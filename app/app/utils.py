@@ -67,19 +67,12 @@ def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
 
     key_version = key.primary
 
-    if key_version.state == enums.CryptoKeyVersion.CryptoKeyVersionState.DESTROY_SCHEDULED:
-        # key_client.create_crypto_key_version(key_path)
+    if key_version.state != enums.CryptoKeyVersion.CryptoKeyVersionState.ENABLED:
 
-        current_app.logger.debug("Restoring DESTROY_SCHEDULED key")
-        key_version = key_client.restore_crypto_key_version(key_version.name)
-        current_app.logger.debug("Re-enabling key")
-        key_version = key_client.update_crypto_key_version(key_version, {"state": "ENABLED"})
-
-    if key_version.state == enums.CryptoKeyVersion.CryptoKeyVersionState.DISABLED:
+        current_app.logger.debug("Current key version : {}".format(key_version.state))
         current_app.logger.info("Creating new version")
         key_version = key_client.create_crypto_key_version(key_path, {})
-        current_app.logger.debug("New key version: {key_version.name}")
-
+        current_app.logger.debug(f"New key version: {key_version.name}")
 
     resp = key_client.encrypt(key_version.name, plaintext)
 
