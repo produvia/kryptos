@@ -34,20 +34,26 @@ def create_user_exchange_key(user_id: int, exchange_name: str) -> CryptoKey:
     purpose = enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
     crypto_key = {"purpose": purpose}
     key = key_client.create_crypto_key(keyring_path, crypto_key_id, crypto_key)
-    current_app.logger.debug(
-        f"Created crypto key {key.name} - version {key.primary.name}"
-    )
+    current_app.logger.debug(f"Created crypto key {key.name} - version {key.primary.name}")
     return key
 
 
 def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
     current_app.logger.info(f"Deleting crypto key for user {user_id} {exchange_name} auth")
     key_path = get_key_path(user_id, exchange_name)
-    key = key_client.get_crypto_key(key_path)
+    try:
+        key = key_client.get_crypto_key(key_path)
+    except NotFound:
+        current_app.logger.warn(
+            f"Attempted to destory user {user_id} {exchange_name} key that does not exist"
+        )
+        return
 
-    version_name = key.primary.name
-    key_version = key_client.destroy_crypto_key_version(version_name)
-    return key_version
+    try:
+        version_name = key.primary.name
+        key_client.destroy_crypto_key_version(version_name)
+    except FailedPrecondition:
+        current_app.logger.info("f{user_id} {exchange_name} already scheduled for destroy")
 
 
 def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
