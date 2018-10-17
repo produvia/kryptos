@@ -20,7 +20,7 @@ from catalyst.exchange.utils import stats_utils
 from catalyst.exchange import exchange_errors
 from ccxt.base import errors as ccxt_errors
 
-from kryptos.utils import load, viz, outputs, tasks
+from kryptos.utils import viz, tasks, auth
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
@@ -29,11 +29,6 @@ from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR
 from kryptos.analysis import quant
 
 from redo import retry
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-
-
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -974,45 +969,12 @@ class Strategy(object):
         self._simulate_orders = True
         self._run_real_time(simulate_orders=True)
 
-    def get_user_auth(self, user_id):
-        from google.cloud import storage
-        from google.api_core.exceptions import NotFound
-        self.log.info('Fetching user exchange auth from storage')
-        exchange_name = self.trading_info['EXCHANGE'].lower()
 
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket('catalyst_auth')
-        blob = bucket.blob(f'auth_{exchange_name}_{user_id}_json')
-
-        home_dir = str(Path.home())
-        exchange_dir = os.path.join(home_dir, '.catalyst/data/exchanges/', exchange_name)
-        user_file = f'auth{user_id}.json'
-        file_name = os.path.join(exchange_dir, user_file)
-        os.makedirs(exchange_dir, exist_ok=True)
-
-        try:
-            auth_json_str = blob.download_as_string().decode("utf-8")
-            self.log.info("Downloaded user's auth json")
-            self.log.error(str(auth_json_str))
-            auth_json = json.loads(auth_json_str)
-            with open(file_name, 'w') as f:
-                self.log.warn(f'Writing auth_json_str to {file_name}')
-                json.dump(auth_json, f)
-
-        except NotFound:
-            self.log.error('Missing user exchange auth')
-            self.notify('Before running a live strategy, you will need to authorize with your API key')
-            return
-
-        self.log.info('Retrieved user exchange auth, writing to catalyst dir')
-
-        auth_alias = {exchange_name: f'auth{user_id}'}
-        self.log.info(f'Will run strat with auth alias {auth_alias}')
-
-        return auth_alias
 
 
     def run_live(self, user_id):
+        from google.api_core.exceptions import NotFound
+
         self._live = True
         self._simulate_orders = False
         self.log.notice('Running in live mode')
@@ -1020,7 +982,13 @@ class Strategy(object):
             raise ValueError('user_id is required for auth when running in live mode')
         self.user_id = user_id
 
-        auth_alias = self.get_user_auth(user_id)
+        try:
+            auth_alias = auth.get_user_auth_alias(self.user_id, self.trading_info['EXCHANGE'].lower())
+        except NotFound:
+            self.log.error('Missing user exchange auth')
+            self.notify('Before running a live strategy, you will need to authorize with your API key')
+            return pd.DataFrame()
+
         if auth_alias is None:
             self.log.error('Aborting strategy due to missing exchange auth')
             return pd.DataFrame()

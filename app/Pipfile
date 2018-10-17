@@ -23,6 +23,7 @@ google-cloud-datastore = "*"
 logbook = "*"
 raven = {extras = ["flask"]}
 google-cloud-storage = "*"
+google-cloud-kms = "*"
 
 [dev-packages]
 black = "==18.4a4"
