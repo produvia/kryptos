@@ -53,7 +53,7 @@ def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
         version_name = key.primary.name
         key_client.destroy_crypto_key_version(version_name)
     except FailedPrecondition:
-        current_app.logger.info("f{user_id} {exchange_name} already scheduled for destroy")
+        current_app.logger.info(f"{user_id} {exchange_name} already scheduled for destroy")
 
 
 def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
@@ -74,6 +74,7 @@ def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
     key_version = key.primary
 
     if key_version.state != enums.CryptoKeyVersion.CryptoKeyVersionState.ENABLED:
+        destroy_user_exchange_key(user_id, exchange_name)
 
         current_app.logger.debug("Current key version : {}".format(key_version.state))
         current_app.logger.info("Creating new version")
