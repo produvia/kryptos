@@ -5,7 +5,7 @@ from textwrap import dedent
 import datetime
 
 from flask import Blueprint, current_app
-from flask_assistant import Assistant, tell
+from flask_assistant import Assistant, tell, event, context_manager
 import talib as ta
 import talib.abstract as ab
 
@@ -70,37 +70,63 @@ def show_menu():
     return ask(speech).with_quick_reply("1", "2", "3", "4", "5")
 
 
-# @assist.context('activity-selection')
-@assist.action('new-strategy')
-def display_available_strats():
-    # speech = """\
-    # Great. Which strategy do you wish to try?
-    # 1. Simple Moving Average (SMA) Crossover
-    # 2. Relative Strength Index (RSI)
-    # 3. Explore Momentum Indicators
-    # """
-    resp = inline_keyboard("Which strategy do you wish to try?")
-    for i in EXISTING_STRATS:
-        resp.add_button(*i)
-    return resp
-
-
-
-@assist.action('new-strategy-display-momentum')
+@assist.action("new-strategy-display-momentum")
 def display_momentum_indicators():
-    momentum_indicators = ta.get_function_groups()['Momentum Indicators']
+    momentum_indicators = ta.get_function_groups()["Momentum Indicators"]
     speech = "Here are all the possible Momentum Indicators you can use:"
     for i in range(len(momentum_indicators)):
         abbrev = momentum_indicators[i]
 
         func = getattr(ab, abbrev)
-        name = func.info['display_name']
-        speech += f'\n{i+1}. {abbrev} - {name}'
+        name = func.info["display_name"]
+        speech += f"\n{i+1}. {abbrev} - {name}"
     return ask(speech)
 
-@assist.context('new-strategy-select-followup')
-@assist.action('new-strategy-select')
+
+#########################
+# BUILD STRATEGY CONFIG #
+#########################
+
+
+@assist.action("new-strategy")
+def display_available_strats():
+    resp = inline_keyboard("Which strategy do you wish to try?")
+    for i in utils.EXISTING_STRATS:
+        resp.add_button(*i)
+    return resp
+
+@assist.action("new-strategy-select-strat")
 def select_strategy(existing_strategy):
+    return event("strat-config-start", existing_strategy=existing_strategy)
+
+
+@assist.action("strat-config", events=["strat-config-start"])
+def prompt_exchange(existing_strategy):
+    speech = "Which exchange would you like to trade on?"
+    resp = inline_keyboard(dedent(speech))
+    resp.add_button("Binance", "binance")
+    resp.add_button("Bittrex", "bittrex")
+    resp.add_button("Bitfinex", "bitfinex")
+    resp.add_button("Poloniex", "poloniex")
+    return resp
+
+
+def select_exchange(exchange, existing_strategy):
+    speech = f"You've chosen to run {existing_strategy} on {exchange}. Which asset pair would you like to trade?\n"
+    resp = inline_keyboard(dedent(speech))
+    markets = utils.get_exchange_pairs(exchange)
+    for s in markets:
+        resp.add_button(s, s)
+    return resp
+
+
+def select_asset_pair(asset_pair):
+    speech = """\
+    And please provide the capital base you'd like to allocate to the strategy
+    i.e 200 USD
+    """
+    return ask(dedent(speech))
+
     # TODO determine exchange
     backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
     backtest_dict['name'] = f"{existing_strategy} Backtest"
