@@ -10,7 +10,6 @@ import talib as ta
 import talib.abstract as ab
 
 from app.bot.response import ask, inline_keyboard
-from app import task
 from app.bot import utils
 
 blueprint = Blueprint("bot", __name__, url_prefix="/bot")
@@ -122,9 +121,10 @@ def prompt_quote_currency(exchange):
     context_manager.set("strat-config-data", "exchange", exchange)
     speech = f"""\
     Which currency would you like to use as the quote currency?
-
-    The quote currency refers to the currency you allocate to the strategy as capital base.
-    This means you must have hold the currency on {exchange} for live trading.
+    This is the currency you will sell when making a buy order, and recieve when making a sell order.
+    
+    You must also allocate an amount of this currency to the strategy as capital base 
+    This means you must hold the currency on {exchange}** for live trading.
     """
     return ask(dedent(speech))
 
@@ -156,7 +156,7 @@ def review_config(trade_currency):
     base_currency = context.get("trade_currency").upper()
     quote_currency = context.get("quote_currency").upper()
     capital_base = context.get("capital_base")
-    trade_pair = f"{base_currency}-{quote_currency}".upper()
+    trade_pair = f"{base_currency}_{quote_currency}".lower()
 
     current_app.logger.error(strat)
 
@@ -174,45 +174,39 @@ def review_config(trade_currency):
     return ask(dedent(speech)).with_quick_reply("yes", "no")
 
 
-
-    # TODO determine exchange
-    backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
-    backtest_dict['name'] = f"{existing_strategy} Backtest"
-
-    # Can't use today as the end date bc data bundles are updated daily,
-    # so current market data won't be avialable for backtest until the following day
-    # use past week up to yesterday
-    back_start = datetime.datetime.today() - datetime.timedelta(days=4)
-    back_end = datetime.datetime.today() - datetime.timedelta(days=1)
-
-    backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
-    backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
-    backtest_dict['trading']['DATA_FREQ'] = 'minute'
-    backtest_dict['trading']['HISTORY_FREQ'] = '1T'
+@assist.action("strat-config-confirm-yes")
+def begin_mode_prompt():
+    return event("strat-mode-start")
 
 
+@assist.action("strat-mode", events=["strat-mode-start"])
+def prompt_for_mode():
+    context = context_manager.get("strat-config-data")
+    backtest_id = utils.launch_backtest(context)
 
-    backtest_id, _ = task.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
-    current_app.logger.info(f'Queues Strat {backtest_id}')
-    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/backtest/strategy/', backtest_id)
+    current_app.logger.info(f"Queues Strat {backtest_id}")
+    backtest_url = os.path.join(
+        current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
+    )
 
-
-
-    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days.'
+    speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days."
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View Past Performance', url=backtest_url)
-    resp.add_button('Launch in Paper Mode', 'paper')
-    resp.add_button('Lauch in Live mode', 'live')
-    resp.add_button('Nevermind', 'no')
+    resp.add_button("View Past Performance", url=backtest_url)
+    resp.add_button("Launch in Paper Mode", "paper")
+    resp.add_button("Lauch in Live mode", "live")
+    resp.add_button("Nevermind", "no")
 
     return resp
 
-@assist.action('new-strategy-select-paper')
-def launch_strategy_paper(existing_strategy):
-    job_id = launch_paper(existing_strategy)
 
-    url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
+@assist.context("strat-config-data")
+@assist.action("strat-mode-paper")
+def launch_strategy_paper(existing_strategy):
+    context = context_manager.get("strat-config-data")
+    job_id = utils.launch_paper(context)
+
+    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
     speech = f"""\
     Great! The strategy is now running in paper mode and will run for the next 3 days.
@@ -221,12 +215,14 @@ def launch_strategy_paper(existing_strategy):
     """
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View your Strategy', url=url)
+    resp.add_button("View your Strategy", url=url)
     return resp
 
-@assist.action('new-strategy-select-live')
+
+@assist.action("strat-mode-live")
 def launch_strategy_paper(existing_strategy):
-    job_id = utils.launch_live(existing_strategy)
+    context = context_manager.get("strat-config-data")
+    job_id = utils.launch_live(context)
 
     url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
@@ -237,7 +233,7 @@ def launch_strategy_paper(existing_strategy):
     """
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View your Strategy', url=url)
+    resp.add_button("View your Strategy", url=url)
     return resp
 
 
