@@ -59,14 +59,14 @@ def unlink_telegram_account():
 @assist.action("activity-menu")
 def show_menu():
     user_name = utils.get_first_name()
-    speech = f"""\
-    Hi {user_name}. Let's get started. Please select a number or text me the named
-    1. Launch New Strategy
-    2. Run Performance Report
-    3. Update Goals
-    4. Upgrade SKills
-    5. Adjust Kryptos"""
-    return ask(speech).with_quick_reply("1", "2", "3", "4", "5")
+    resp = inline_keyboard(f"Hi {user_name}. Let's get started")
+    resp.add_button("Launch New Strategy", "new_strat")
+    resp.add_button("Run performance report", "performance_report")
+    resp.add_button("Update Goals", "update_goals")
+    resp.add_button("Upgrade Skills", "upgrade_skills")
+    resp.add_button("Adjust Kryptos", "adjust_keytpos")
+
+    return resp
 
 
 @assist.action("new-strategy-display-momentum")
