@@ -90,18 +90,23 @@ def display_momentum_indicators():
 
 @assist.action("new-strategy")
 def display_available_strats():
+    context_manager.add("strat-config-data")
     resp = inline_keyboard("Which strategy do you wish to try?")
     for i in utils.EXISTING_STRATS:
         resp.add_button(*i)
     return resp
 
+
+@assist.context("strat-config-data")
 @assist.action("new-strategy-select-strat")
 def select_strategy(existing_strategy):
     return event("strat-config-start", existing_strategy=existing_strategy)
 
 
+@assist.context("strat-config-data")
 @assist.action("strat-config", events=["strat-config-start"])
 def prompt_exchange(existing_strategy):
+    context_manager.set("strat-config-data", "existing_strategy", existing_strategy)
     speech = "Which exchange would you like to trade on?"
     resp = inline_keyboard(dedent(speech))
     resp.add_button("Binance", "binance")
@@ -111,21 +116,64 @@ def prompt_exchange(existing_strategy):
     return resp
 
 
-def select_exchange(exchange, existing_strategy):
-    speech = f"You've chosen to run {existing_strategy} on {exchange}. Which asset pair would you like to trade?\n"
-    resp = inline_keyboard(dedent(speech))
-    markets = utils.get_exchange_pairs(exchange)
-    for s in markets:
-        resp.add_button(s, s)
-    return resp
+@assist.context("strat-config-data")
+@assist.action("strat-config-exchange")
+def prompt_quote_currency(exchange):
+    context_manager.set("strat-config-data", "exchange", exchange)
+    speech = f"""\
+    Which currency would you like to use as the quote currency?
 
-
-def select_asset_pair(asset_pair):
-    speech = """\
-    And please provide the capital base you'd like to allocate to the strategy
-    i.e 200 USD
+    The quote currency refers to the currency you allocate to the strategy as capital base.
+    This means you must have hold the currency on {exchange} for live trading.
     """
     return ask(dedent(speech))
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-quote-currency")
+def prompt_capital_base(quote_currency):
+    context_manager.set("strat-config-data", "quote_currency", quote_currency)
+    speech = f"How much {quote_currency.upper()} would you like to allocate as the capital base?"
+    return ask(speech)
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-capital-base")
+def prompt_trade_currency(capital_base):
+    context_manager.set("strat-config-data", "captial_base", capital_base)
+    speech = "Which asset would you like to trade?"
+    return ask(speech)
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-trade-currency")
+def review_config(trade_currency):
+    context_manager.set("strat-config-data", "trade_currency", trade_currency)
+    context = context_manager.get("strat-config-data")
+
+    strat = context.get("existing_strategy")
+    exchange = context.get("exchange").title()
+    base_currency = context.get("trade_currency").upper()
+    quote_currency = context.get("quote_currency").upper()
+    capital_base = context.get("capital_base")
+    trade_pair = f"{base_currency}-{quote_currency}".upper()
+
+    current_app.logger.error(strat)
+
+    speech = """\
+        Great, does this look right?
+
+        Strategy: {}
+        Exchange: {}
+        Trade Pair: {}
+        Capital Base: {} ({})
+    """.format(
+        strat, exchange, trade_pair, capital_base, quote_currency
+    )
+
+    return ask(dedent(speech)).with_quick_reply("yes", "no")
+
+
 
     # TODO determine exchange
     backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
