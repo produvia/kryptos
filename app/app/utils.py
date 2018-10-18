@@ -52,6 +52,7 @@ def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
     try:
         version_name = key.primary.name
         key_client.destroy_crypto_key_version(version_name)
+        current_app.logger.info(f"Scheduled key version destroy")
     except FailedPrecondition:
         current_app.logger.info(f"{user_id} {exchange_name} already scheduled for destroy")
 
@@ -98,6 +99,20 @@ def upload_encrypted_auth(encrypted_text: bytes, user_id: int, exchange: str) ->
     return blob_name, auth_bucket.name
 
 
+def delete_auth_from_storage(user_id: str, exchange_name: str) -> None:
+    blob_name = f"auth_{exchange_name}_{user_id}_json"
+    auth_bucket = storage_client.get_bucket("catalyst_auth")
+    blob = auth_bucket.blob(blob_name)
+    blob.delete()
+    current_app.logger.info(f"Deleted user {user_id} {exchange_name} storage blob")
+
+
 def upload_user_auth(exchange_dict: Dict[str, str], user_id: int) -> Tuple[str, str]:
     encrypted = encrypt_user_auth(exchange_dict, user_id)
     return upload_encrypted_auth(encrypted, user_id, exchange_dict["name"])
+
+
+def delete_user_auth(user_id: int, exchange_name: str):
+    destroy_user_exchange_key(user_id, exchange_name)
+    delete_auth_from_storage(user_id, exchange_name)
+    current_app.logger.info(f'Successfully removed user {user_id} {exchange_name} auth from kryptos')

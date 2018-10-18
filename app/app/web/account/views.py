@@ -8,7 +8,7 @@ from google.cloud import storage
 from app.extensions import db
 from app.forms import forms
 from app.models import User, UserExchangeAuth
-from app.utils import upload_user_auth, destroy_user_exchange_key
+from app.utils import upload_user_auth, delete_user_auth
 
 
 blueprint = Blueprint("account", __name__, url_prefix="/account")
@@ -98,11 +98,9 @@ def remove_exchange_auth():
     if remove_form.validate():
         exchange_name = remove_form.exchange_name.data
         current_app.logger.info(f"Removing new auth key for {current_user} {exchange_name}")
-        try:
-            destroy_user_exchange_key(current_user.id, exchange_name)
 
-        except Exception as e:
-            flash(e.message)
+        # destroy_user_exchange_key(current_user.id, exchange_name)
+        delete_user_auth(current_user.id, exchange_name)
 
         auth_ref = UserExchangeAuth.query.filter_by(
             user=current_user, exchange=exchange_name
