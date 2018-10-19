@@ -126,7 +126,12 @@ def prompt_quote_currency(exchange):
     You must also allocate an amount of this currency to the strategy as capital base 
     This means you must hold the currency on {exchange} for live trading.
     """
-    return ask(dedent(speech))
+    resp = inline_keyboard(dedent(speech))
+    quotes = utils.get_exchange_quote_currencies(exchange)
+
+    for q in quotes:
+        resp.add_button(q, q)
+    return resp
 
 
 @assist.context("strat-config-data")
@@ -141,8 +146,18 @@ def prompt_capital_base(quote_currency):
 @assist.action("strat-config-capital-base")
 def prompt_trade_currency(capital_base):
     context_manager.set("strat-config-data", "captial_base", capital_base)
+
     speech = "Which asset would you like to trade?"
-    return ask(speech)
+    resp = inline_keyboard(speech)
+
+    exchange = context_manager.get("strat-config-data").get("exchange")
+    quote_currency = context_manager.get("strat-config-data").get("quote_currency")
+
+    options = utils.get_available_base_currencies(exchange, quote_currency)
+
+    for o in options:
+        resp.add_button(o, o)
+    return resp
 
 
 @assist.context("strat-config-data")

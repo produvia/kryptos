@@ -1,10 +1,12 @@
 import datetime
+from typing import List, Dict, Set
 import json
 from flask import request, current_app
 import ccxt
 
 from app.models import User
 from app import task
+
 
 EXISTING_STRATS = [
     # display, callback
@@ -18,21 +20,21 @@ EXISTING_STRATS = [
 ]
 
 # TODO possibly use telegram chat_id
-def get_user():
+def get_user() -> User:
     telegram_id = get_message_payload()["id"]
     user = User.query.filter_by(telegram_id=telegram_id).first()
     current_app.logger.debug(f"Got user {user}")
     return user
 
 
-def get_first_name():
+def get_first_name() -> str:
     name = get_message_payload().get("first_name", None)
     if name is not None:
         return name
     return ""
 
 
-def get_message_payload():
+def get_message_payload() -> Dict:
     platform_data = request.json.get("originalRequest", {}).get("data", {})
     current_app.logger.info(platform_data)
     if not platform_data:
@@ -45,7 +47,7 @@ def get_message_payload():
         return platform_data["callback_query"]["from"]
 
 
-def get_exchange_pairs(exchange_name: str):
+def get_exchange_pairs(exchange_name: str) -> List[str]:
     current_app.logger.debug(f"Fetching {exchange_name} markets with ccxt")
     exchange_class = getattr(ccxt, exchange_name)
     markets = exchange_class().load_markets()
@@ -54,6 +56,26 @@ def get_exchange_pairs(exchange_name: str):
         s = pair.replace("/", "_").lower()
         symbols.append(s)
     return symbols
+
+
+def get_exchange_quote_currencies(exchange: str) -> Set[str]:
+    symbols = get_exchange_pairs(exchange)
+    quotes = set()
+    for s in symbols:
+        _, quote = s.split("_")
+        quotes.add(quote)
+    return quotes
+
+
+def get_available_base_currencies(exchange: str, quote_currency: str) -> Set[str]:
+    symbols = get_exchange_pairs(exchange)
+    base_currencies = set()
+    for s in [s for s in symbols if quote_currency in s]:
+        base, quote = s.split("_")
+        if quote == quote_currency:
+            base_currencies.add(base)
+
+    return base_currencies
 
 
 def build_strat_dict_from_context(context, mode):
