@@ -24,7 +24,7 @@ def welcome_message():
     user_name = utils.get_first_name()
     msg = f"Hello {user_name}! I’m Kryptos AI, your virtual investment assistant that manages your cryptocurrency portfolio and automates your cryptocurrency trading"
 
-    if get_user() is None:
+    if utils.get_user() is None:
         current_app.logger.info("Prompting user to login")
         msg += f"\n\nBefore we can get started, you'll need to create a free Kryptos account and authentiate with Telegram"
         resp = inline_keyboard(msg)
@@ -124,7 +124,7 @@ def prompt_quote_currency(exchange):
     This is the currency you will sell when making a buy order, and recieve when making a sell order.
     
     You must also allocate an amount of this currency to the strategy as capital base 
-    This means you must hold the currency on {exchange}** for live trading.
+    This means you must hold the currency on {exchange} for live trading.
     """
     return ask(dedent(speech))
 
