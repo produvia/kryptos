@@ -44,6 +44,7 @@ def public_backtest_status(strat_id):
 
 @blueprint.route("/build", methods=['GET', 'POST'])
 def build_strategy():
+    task.queue_all_ta()
     form = forms.TradeInfoForm()
     if form.validate_on_submit():
 

@@ -177,7 +177,9 @@ def queue_all_ta():
     current_app.logger.info("Queuing all ta-lib utils")
     groups = indicator_group_name_selectors()
     for g in groups:
-        indicators = get_indicators_by_group(g[0])
+        # dont block to wait for job complete,
+        # will be ready when recalled to build strat
+        indicators = get_indicators_by_group(g[0]) or []
         for i in indicators:
             _get_indicator_params(i[0])
     all_indicator_selectors()
