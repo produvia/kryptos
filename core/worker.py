@@ -8,6 +8,8 @@ import click
 import multiprocessing
 import time
 import logbook
+import talib as ta
+from talib import abstract as ab
 
 import datetime
 
@@ -51,6 +53,49 @@ def run_strat(
         return
 
     return result_df.to_json()
+
+
+## TA-LIB utils ##
+def indicator_group_name_selectors() -> [(str, str)]:
+    """Returns list of select options of indicator group names"""
+    selectors = []
+    for k in ta.get_function_groups().keys():
+        selectors.append((k, k))
+    return selectors
+
+
+def all_indicator_selectors() -> [(str, str)]:
+    """Returns the entire list of possible indicator abbreviation select options"""
+    selectors = []
+    for i in ta.get_functions():
+        selectors.append((i, i))
+    return selectors
+
+
+def _get_indicator_params(indicator_abbrev):
+    func = getattr(ab, indicator_abbrev)
+    return func.parameters
+
+
+def get_indicators_by_group(group: str) -> [(str, str)]:
+    """Returns list of select options containing abbreviations of the groups indicators"""
+    indicator_selects = []
+    group_indicators = ta.get_function_groups()[group]
+    for i in range(len(group_indicators)):
+        abbrev = group_indicators[i]
+        func = getattr(ab, abbrev)
+        name = func.info["display_name"]
+        indicator_selects.append((abbrev, abbrev))
+    return indicator_selects
+
+
+def get_all_ta():
+    groups = indicator_group_name_selectors()
+    for g in groups:
+        indicators = get_indicators_by_group(g[0])
+        for i in indicators:
+            _get_indicator_params(i[0])
+    all_indicator_selectors()
 
 
 def workers_required(queue_name):
@@ -115,6 +160,11 @@ def manage_workers():
         live_worker = Worker(["live"], exception_handlers=[retry_handler])
         # register_sentry(client, live_worker)
         multiprocessing.Process(target=live_worker.work).start()
+
+        log.info("Starting worker for TA queue")
+        ta_worker = Worker(["ta"])
+        # register_sentry(client, ta_worker)
+        multiprocessing.Process(target=ta_worker.work).start()
 
         # create paper/live queues when needed
         while True:

@@ -9,7 +9,7 @@ attrs==18.2.0
 bcrypt==3.1.4
 blinker==1.4
 cachetools==2.1.0
-ccxt==1.17.392
+ccxt==1.17.394
 certifi==2018.10.15
 cffi==1.11.5
 chardet==3.0.4
@@ -25,7 +25,7 @@ flask-user==1.0.1.5
 flask-wtf==0.14.2
 flask==1.0.2
 future==0.16.0
-google-api-core==1.5.0
+google-api-core==1.6.0a1
 google-auth==1.5.1
 google-cloud-core==0.28.1
 google-cloud-datastore==1.7.0
@@ -39,7 +39,7 @@ gunicorn==19.9.0
 honcho==1.0.1
 idna-ssl==1.1.0; python_version < '3.7'
 idna==2.7
-itsdangerous==0.24
+itsdangerous==1.0.0
 jinja2==2.10
 logbook==1.4.1
 mako==1.0.7
@@ -59,7 +59,7 @@ python-telegram-bot==11.1.0
 pytz==2018.5
 raven==6.9.0
 redis==2.10.6
-requests==2.19.1
+requests==2.20.0
 rq-dashboard==0.3.12
 rq==0.12.0
 rsa==4.0
@@ -67,8 +67,7 @@ ruamel.yaml==0.15.74
 shortuuid==0.5.0
 six==1.11.0
 sqlalchemy==1.2.12
-ta-lib==0.4.17
-urllib3==1.23
+urllib3==1.24
 werkzeug==0.14.1
 wtforms==2.2.1
 yarl==1.1.0

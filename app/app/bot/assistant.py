@@ -6,8 +6,6 @@ import datetime
 
 from flask import Blueprint, current_app
 from flask_assistant import Assistant, tell, event, context_manager
-import talib as ta
-import talib.abstract as ab
 
 from app.bot.response import ask, inline_keyboard
 from app.bot import utils
@@ -69,17 +67,18 @@ def show_menu():
     return resp
 
 
-@assist.action("new-strategy-display-momentum")
-def display_momentum_indicators():
-    momentum_indicators = ta.get_function_groups()["Momentum Indicators"]
-    speech = "Here are all the possible Momentum Indicators you can use:"
-    for i in range(len(momentum_indicators)):
-        abbrev = momentum_indicators[i]
+# TODO get group indicators from rq
+# @assist.action("new-strategy-display-momentum")
+# def display_momentum_indicators():
+#     momentum_indicators = ta.get_function_groups()["Momentum Indicators"]
+#     speech = "Here are all the possible Momentum Indicators you can use:"
+#     for i in range(len(momentum_indicators)):
+#         abbrev = momentum_indicators[i]
 
-        func = getattr(ab, abbrev)
-        name = func.info["display_name"]
-        speech += f"\n{i+1}. {abbrev} - {name}"
-    return ask(speech)
+#         func = getattr(ab, abbrev)
+#         name = func.info["display_name"]
+#         speech += f"\n{i+1}. {abbrev} - {name}"
+#     return ask(speech)
 
 
 #########################
@@ -122,7 +121,7 @@ def prompt_quote_currency(exchange):
     speech = f"""\
     Which currency would you like to use as the quote currency?
     This is the currency you will sell when making a buy order, and recieve when making a sell order.
-    
+
     You must also allocate an amount of this currency to the strategy as capital base 
     This means you must hold the currency on {exchange} for live trading.
     """
