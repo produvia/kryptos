@@ -24,6 +24,7 @@ logbook = "*"
 raven = {extras = ["flask"]}
 google-cloud-storage = "*"
 google-cloud-kms = "*"
+ccxt = "*"
 
 [dev-packages]
 black = "==18.4a4"
