@@ -23,7 +23,7 @@ from kryptos.utils import tasks
 from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, SENTRY_DSN
 
 
-# client = Client(SENTRY_DSN, transport=HTTPTransport)
+client = Client(SENTRY_DSN, transport=HTTPTransport)
 
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
@@ -89,15 +89,6 @@ def get_indicators_by_group(group: str) -> [(str, str)]:
     return indicator_selects
 
 
-def get_all_ta():
-    groups = indicator_group_name_selectors()
-    for g in groups:
-        indicators = get_indicators_by_group(g[0])
-        for i in indicators:
-            _get_indicator_params(i[0])
-    all_indicator_selectors()
-
-
 def workers_required(queue_name):
     q = get_queue(queue_name)
     return len(q)
@@ -148,22 +139,22 @@ def manage_workers():
 
         log.info("Starting worker for BACKTEST queue")
         backtest_worker = Worker(["backtest"])
-        # register_sentry(client, backtest_worker)
+        register_sentry(client, backtest_worker)
         multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info("Starting worker for PAPER queues")
         paper_worker = Worker(["paper"], exception_handlers=[retry_handler])
-        # register_sentry(client, paper_worker)
+        register_sentry(client, paper_worker)
         multiprocessing.Process(target=paper_worker.work).start()
 
         log.info("Starting worker for LIVE queues")
         live_worker = Worker(["live"], exception_handlers=[retry_handler])
-        # register_sentry(client, live_worker)
+        register_sentry(client, live_worker)
         multiprocessing.Process(target=live_worker.work).start()
 
         log.info("Starting worker for TA queue")
         ta_worker = Worker(["ta"])
-        # register_sentry(client, ta_worker)
+        register_sentry(client, ta_worker)
         multiprocessing.Process(target=ta_worker.work).start()
 
         # create paper/live queues when needed
@@ -173,7 +164,7 @@ def manage_workers():
                 for i in range(required):
                     log.info(f"Creating {q} worker")
                     worker = Worker([q], exception_handlers=[retry_handler])
-                    register_sentry(client, live_worker)
+                    register_sentry(client, worker)
                     multiprocessing.Process(target=worker.work, kwargs={"burst": True}).start()
 
             time.sleep(5)
