@@ -1016,6 +1016,9 @@ class Strategy(object):
             self.notify(f'You do not have enough cash on the exchange account to run the strategy.\n\n{str(e)}')
             return pd.DataFrame()
 
+        finally:
+            auth.delete_alias_file(self.user_id, self.trading_info['EXCHANGE'])
+
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
 
         self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))

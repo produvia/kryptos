@@ -16,6 +16,15 @@ storage_client = storage.Client()
 log = logbook.Logger("ExchangeAuth")
 
 
+def get_auth_alias_path(user_id: str, exchange_name: str) -> str:
+    home_dir = str(Path.home())
+    exchange_dir = os.path.join(home_dir, ".catalyst/data/exchanges/", exchange_name.lower())
+    os.makedirs(exchange_dir, exist_ok=True)
+    user_file = f"auth{user_id}.json"
+    file_name = os.path.join(exchange_dir, user_file)
+    return file_name
+
+
 def decrypt_auth_key(user_id: int, exchange_name: str, ciphertext: bytes) -> Dict[str, str]:
     """Decrypts auth data using google cloud KMS
 
@@ -27,13 +36,13 @@ def decrypt_auth_key(user_id: int, exchange_name: str, ciphertext: bytes) -> Dic
     Returns:
         Dict[str, str]: Description
     """
-    log.debug('decrypting exchange auth')
+    log.debug("decrypting exchange auth")
     key_path = key_client.crypto_key_path_path(
         PROJECT_ID, "global", "exchange_auth", f"{exchange_name}_{user_id}_key"
     )
 
     response = key_client.decrypt(key_path, ciphertext)
-    log.info(f'successfully decrypted user {user_id} {exchange_name} auth')
+    log.info(f"successfully decrypted user {user_id} {exchange_name} auth")
     return json.loads(response.plaintext)
 
 
@@ -58,11 +67,7 @@ def get_encrypted_auth(user_id: int, exchange_name: str) -> bytes:
 
 def save_to_catalyst(user_id: int, exchange_name: str, auth_dict: Dict[str, str]) -> None:
     """Saves decrypted auth data to catalyst dir"""
-    home_dir = str(Path.home())
-    exchange_dir = os.path.join(home_dir, ".catalyst/data/exchanges/", exchange_name)
-    user_file = f"auth{user_id}.json"
-    file_name = os.path.join(exchange_dir, user_file)
-    os.makedirs(exchange_dir, exist_ok=True)
+    file_name = get_auth_alias_path(user_id, exchange_name)
 
     with open(file_name, "w") as f:
         log.warn(f"Writing auth_json_str to {file_name}")
@@ -88,3 +93,9 @@ def get_user_auth_alias(user_id: int, exchange_name: str) -> Dict[str, str]:
     auth_alias = {exchange_name: f"auth{user_id}"}
 
     return auth_alias
+
+
+def delete_alias_file(user_id: int, exchange_name: str) -> None:
+    log.debug(f"Deleting user {user_id}'s {exchange_name} auth alias file")
+    file_name = get_auth_alias_path(user_id, exchange_name)
+    os.remove(file_name)
