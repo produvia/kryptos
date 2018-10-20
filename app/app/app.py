@@ -8,7 +8,7 @@ import logging
 from flask_user import UserManager
 import rq_dashboard
 
-from app import api, bot, models
+from app import api, bot, models, task
 from app.web import account, strategy, public
 from app.extensions import cors, db, migrate, sentry
 from app.settings import DockerDevConfig, ProdConfig
@@ -58,6 +58,9 @@ def create_app(config_object=None):
     register_extensions(app)
     register_blueprints(app)
     app.logger.warn("USING DB {}".format(app.config["SQLALCHEMY_DATABASE_URI"]))
+
+    with app.app_context():
+        task.queue_all_ta()
 
     return app
 

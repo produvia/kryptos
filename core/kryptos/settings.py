@@ -33,7 +33,7 @@ DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
 TAKE_PROFIT = 0.04  # Take-Profit
 STOP_LOSS = 0.02  # Stop-Loss
 
-QUEUE_NAMES = ['paper', 'live', 'backtest']
+QUEUE_NAMES = ['paper', 'live', 'backtest', 'ta']
 
 with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = json.load(f)

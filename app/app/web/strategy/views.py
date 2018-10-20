@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-import os
 import json
-from flask import send_file, Blueprint, redirect, current_app, render_template, request, url_for, flash, jsonify, session
+from flask import Blueprint, redirect, current_app, render_template, request, url_for, flash, jsonify, session
 from flask_user import current_user, login_required
 
-from app.extensions import db
 from app.forms import forms, utils
-from app.models import User, StrategyModel
+from app.models import StrategyModel
 from app import task
 
 blueprint = Blueprint('strategy', __name__, url_prefix='/strategy')
@@ -15,14 +13,14 @@ blueprint = Blueprint('strategy', __name__, url_prefix='/strategy')
 @blueprint.route('/_get_group_indicators/')
 def _get_group_indicators():
     group = request.args.get('group', '01', type=str)
-    indicators = utils.get_indicators_by_group(group)
+    indicators = task.get_indicators_by_group(group)
     return jsonify(indicators)
 
 @blueprint.route('/_get_indicator_params/')
 def _get_indicator_params():
     indicator_abbrev = request.args.get('indicator', '01', type=str)
-    params_obj = utils._get_indicator_params(indicator_abbrev)
-    return  jsonify(params_obj)
+    params_obj = task._get_indicator_params(indicator_abbrev)
+    return jsonify(params_obj)
 
 
 @blueprint.route('/strategy/<strat_id>', methods=['GET'])
@@ -46,6 +44,7 @@ def public_backtest_status(strat_id):
 
 @blueprint.route("/build", methods=['GET', 'POST'])
 def build_strategy():
+    task.queue_all_ta()
     form = forms.TradeInfoForm()
     if form.validate_on_submit():
 
@@ -73,8 +72,8 @@ def build_indicators():
     if not strat_dict.get('trading', {}):
         return redirect(url_for('strategy.build_strategy'))
     indicator_form = forms.IndicatorInfoForm()
-    indicator_form.group.choices = utils.indicator_group_name_selectors()
-    indicator_form.indicator_name.choices = utils.all_indicator_selectors()
+    indicator_form.group.choices = task.indicator_group_name_selectors()
+    indicator_form.indicator_name.choices = task.all_indicator_selectors()
 
     if request.method == 'POST' and indicator_form.validate_on_submit():
 

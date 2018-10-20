@@ -239,6 +239,8 @@ class Strategy(object):
         indicators = strat_dict.get("indicators", {})
         for i in indicators:
             if i.get("dataset") in [None, "market"]:
+                if not i.get("symbol"):
+                    i["symbol"] = self.trading_info["ASSET"]
                 ind = technical.get_indicator(**i)
                 if ind not in self._market_indicators:
                     self.add_market_indicator(ind)
@@ -246,6 +248,8 @@ class Strategy(object):
     def _load_ml_models(self, strat_dict):
         models = strat_dict.get("models", {})
         for m in models:
+            if not m.get("symbol"):
+                m["symbol"] = self.trading_info["ASSET"]
             model = ml.get_indicator(**m)
             self.add_ml_models(model)
 
@@ -627,8 +631,10 @@ class Strategy(object):
         """Registers an indicator to be applied to standard OHLCV exchange data"""
         if isinstance(indicator, str):
             indicator = technical.get_indicator(indicator, **params)
-        # ind_class = getattr(technical, indicator)
-        # indicator = ind_class(**kw)
+
+        if "symbol" not in params:
+            params["symbol"] = self.trading_info["ASSET"]
+            self.log.debug(f'Setting new indicator symbol as {self.trading_info["ASSET"]}')
         self._market_indicators.insert(priority, indicator)
 
     def add_data_indicator(self, dataset, indicator, col=None):
@@ -645,6 +651,10 @@ class Strategy(object):
         """Use ML models to take decissions"""
         if isinstance(indicator, str):
             indicator = ml.get_indicator(indicator)
+
+        if "symbol" not in params:
+            params["symbol"] = self.trading_info["ASSET"]
+            self.log.debug(f'Setting new indicator symbol as {self.trading_info["ASSET"]}')
         self._ml_models.append(indicator)
 
     def use_dataset(self, dataset_name, columns):
@@ -1005,6 +1015,9 @@ class Strategy(object):
             self.log.critical(str(e))
             self.notify(f'You do not have enough cash on the exchange account to run the strategy.\n\n{str(e)}')
             return pd.DataFrame()
+
+        finally:
+            auth.delete_alias_file(self.user_id, self.trading_info['EXCHANGE'])
 
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
 
