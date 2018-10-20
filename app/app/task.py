@@ -55,7 +55,7 @@ def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depe
             "user_id": user_id,
             "simulate_orders": simulate_orders,
         },
-        timeout=-1,
+        timeout=86400,
         depends_on=depends_on,
     )
 
@@ -128,7 +128,7 @@ def indicator_group_name_selectors() -> [(str, str)]:
     job_id = "ta-group-selects"
     job = q.fetch_job(job_id)
     if job is None:
-        job = q.enqueue("worker.indicator_group_name_selectors", job_id=job_id, result_ttl=-1)
+        job = q.enqueue("worker.indicator_group_name_selectors", job_id=job_id, result_ttl=86400)
     return job.result
 
 
@@ -140,7 +140,7 @@ def all_indicator_selectors() -> [(str, str)]:
     job_id = "ta-indicator-selects"
     job = q.fetch_job(job_id)
     if job is None:
-        job = q.enqueue("worker.all_indicator_selectors", job_id=job_id, result_ttl=-1)
+        job = q.enqueue("worker.all_indicator_selectors", job_id=job_id, result_ttl=86400)
     return job.result
 
 
@@ -155,7 +155,7 @@ def _get_indicator_params(indicator_abbrev):
             "worker._get_indicator_params",
             job_id=job_id,
             kwargs={"indicator_abbrev": indicator_abbrev},
-            result_ttl=-1,
+            result_ttl=86400,
         )
     return job.result
 
@@ -168,6 +168,6 @@ def get_indicators_by_group(group: str) -> [(str, str)]:
     job = q.fetch_job(job_id)
     if job is None:
         job = q.enqueue(
-            "worker.get_indicators_by_group", job_id=job_id, kwargs={"group": group}, result_ttl=-1
+            "worker.get_indicators_by_group", job_id=job_id, kwargs={"group": group}, result_ttl=86400
         )
     return job.result
