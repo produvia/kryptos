@@ -59,9 +59,6 @@ def create_app(config_object=None):
     register_blueprints(app)
     app.logger.warn("USING DB {}".format(app.config["SQLALCHEMY_DATABASE_URI"]))
 
-    with app.app_context():
-        task.queue_all_ta()
-
     return app
 
 

@@ -47,40 +47,59 @@ $(document).ready(function() {
     };
 
     // call to update on load
-    updateIndicatorList();
+    requestGroupIndicators();
 
-    // function to call XHR and update indicator dropdown
-    function updateIndicatorList() {
+
+    function requestGroupIndicators () {
         var send = {
             group: dropdown.group.val()
         };
         dropdown.indicator.attr('disabled', 'disabled');
         dropdown.indicator.empty();
         $.getJSON("{{ url_for('strategy._get_group_indicators') }}", send, function(data) {
-            data.forEach(function(item) {
-                dropdown.indicator.append(
-                    $('<option>', {
-                        value: item[0],
-                        text: item[1]
-                    })
-                );
-            });
-            dropdown.indicator.removeAttr('disabled');
+
+            if (data) {
+                updateIndicatorList(data)
+            } else{
+                setTimeout(function(){
+                    requestGroupIndicators();
+                }, 1000);
+            }
         });
     }
 
-    function updateInidicatorParams (sel) {
-        let indicatorAbbrev = sel.options[sel.selectedIndex].text
+    function requestInidicatorParams (self) {
+        let indicatorAbbrev = self.options[self.selectedIndex].text
         var send = {
             indicator: indicatorAbbrev,
         };
         params.attr('disabled', 'disabled');
         params.empty();
         $.getJSON("{{ url_for('strategy._get_indicator_params') }}", send, function(data) {
-            console.log(data);
-            addParameterFields(data)
-            params.removeAttr('disabled');
+            if (data) {
+              console.log(data);
+              addParameterFields(data)
+              params.removeAttr('disabled');
+            } else {
+              setTimeout(function(){
+                requestInidicatorParams(self);
+              }, 1000);
+            }
         });
+    }
+
+
+    // update indicator dropdown
+    function updateIndicatorList (data) {
+        data.forEach(function(item) {
+            dropdown.indicator.append(
+                $('<option>', {
+                    value: item[0],
+                    text: item[1]
+                })
+            );
+        });
+        dropdown.indicator.removeAttr('disabled');
     }
 
     function addParameterFields(new_params){
@@ -113,12 +132,12 @@ $(document).ready(function() {
 
     // event listener to group dropdown change
     dropdown.group.on('change', function() {
-        updateIndicatorList();
+        requestGroupIndicators();
     });
 
     dropdown.indicator.on('change', function() {
         // update params based on the selected indicator
-        updateInidicatorParams(this);
+        requestInidicatorParams(this);
     });
 });
 
