@@ -167,6 +167,14 @@ class Strategy(object):
             models.append(m.serialize())
         return models
 
+    @property
+    def exchange(self):
+        return self.trading_info.get('EXCHANGE')
+
+    @exchange.setter
+    def exchange(self, val):
+        self.trading_info['EXCHANGE'] = val
+
     def indicator(self, label):
         for i in self._market_indicators:
             if i.label == label.upper():
@@ -372,6 +380,8 @@ class Strategy(object):
             if context.HISTORY_FREQ[-1] != "d":
                 raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
 
+
+
     def _fetch_history(self, context, data):
         # Get price, open, high, low, close
         # The frequency attribute determine the bar size. We use this convention
@@ -457,7 +467,7 @@ class Strategy(object):
                   cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
 
         except ccxt_errors.ExchangeNotAvailable:
-            self.log.error('Exchange API is currently unavailable, skipping trading step')
+            self.log.error(f"{self.exchange} API is currently unavailable, skipping trading step")
             return
 
         except ccxt_errors.DDoSProtection:
@@ -966,7 +976,7 @@ class Strategy(object):
             self.log.critical('Failed to run stratey Requires data ingestion')
             raise e
             # from kryptos.worker import ingester
-            # ingester.run_ingest(self.trading_info['EXCHANGE'], symbol=self.trading_info['ASSET'])
+            # ingester.run_ingest(self.exchange, symbol=self.trading_info['ASSET'])
             # load.ingest_exchange(self.trading_info)
             # self.log.warn("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)
@@ -993,7 +1003,7 @@ class Strategy(object):
         self.user_id = user_id
 
         try:
-            auth_alias = auth.get_user_auth_alias(self.user_id, self.trading_info['EXCHANGE'].lower())
+            auth_alias = auth.get_user_auth_alias(self.user_id, self.exchange.lower())
         except NotFound:
             self.log.error('Missing user exchange auth')
             self.notify('Before running a live strategy, you will need to authorize with your API key')
@@ -1017,7 +1027,7 @@ class Strategy(object):
             return pd.DataFrame()
 
         finally:
-            auth.delete_alias_file(self.user_id, self.trading_info['EXCHANGE'])
+            auth.delete_alias_file(self.user_id, self.exchange)
 
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
 
