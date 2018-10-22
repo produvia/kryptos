@@ -295,11 +295,7 @@ class Strategy(object):
     def _load_trading(self, strat_dict):
         trade_config = strat_dict.get("trading", {})
         self.trading_info.update(trade_config)
-        # For all trading pairs in the poloniex bundle, the default denomination
-        # currently supported by Catalyst is 1/1000th of a full coin. Use this
-        # constant to scale the price of up to that of a full coin if desired.
-        if self.trading_info["EXCHANGE"] == "poloniex":
-            self.trading_info["TICK_SIZE"] = 1000.0
+       
 
     def load_dict(self, strat_dict):
         self.name = strat_dict.get('name')
@@ -385,6 +381,22 @@ class Strategy(object):
             if context.HISTORY_FREQ[-1] != "d":
                 raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
 
+        if self.trading_info["EXCHANGE"] == "poloniex":
+            # For all trading pairs in the poloniex bundle, the default denomination
+            # currently supported by Catalyst is 1/1000th of a full coin. Use this
+            # constant to scale the price of up to that of a full coin if desired.    
+            self.trading_info["TICK_SIZE"] = 1000.0
+
+            if self.trading_info['HISTORY_FREQ'] == '1T':
+                self.log.warning('Poloniex does not support candle frequency 1T, setting as 5T')
+                self.trading_info['HISTORY_FREQ'] = '5T'
+                minute_freq = self.trading_info['MINUTE_FREQ']
+                self.trading_info['MINUTE_FREQ'] = int(minute_freq) - (int(minute_freq) % int(self.trading_info['HISTORY_FREQ'][0]))
+                self.log.warning(f'Adjusted MINUTE_FREQ from {minute_freq} to {self.trading_info["MINUTE_FREQ"]}')
+
+                # set new context and re-check config
+                context = self._copy_config_to_context(context)
+                self._check_configuration(context)
 
 
     def _fetch_history(self, context, data):
