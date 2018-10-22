@@ -42,8 +42,8 @@ handler.push_application()
 
 SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 client = Client(SENTRY_DSN, transport=HTTPTransport)
-REDIS_HOST = os.getenv("REDIS_HOST", "redis-19779.c1.us-central1-2.gce.cloud.redislabs.com")
-REDIS_PORT = os.getenv("REDIS_PORT", 19779)
+REDIS_HOST = os.getenv("REDIS_HOST", "10.0.0.3")
+REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 

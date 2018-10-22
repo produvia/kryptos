@@ -19,8 +19,8 @@ BASE_DIR = os.path.dirname(PLATFORM_DIR)
 PERF_DIR = os.path.join(BASE_DIR, "performance_results")
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
-REDIS_HOST = os.getenv("REDIS_HOST", "redis-19779.c1.us-central1-2.gce.cloud.redislabs.com")
-REDIS_PORT = os.getenv("REDIS_PORT", 19779)
+REDIS_HOST = os.getenv("REDIS_HOST", "10.0.0.3")
+REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
 SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
