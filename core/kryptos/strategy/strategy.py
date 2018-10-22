@@ -331,6 +331,12 @@ class Strategy(object):
         if self.telegram_id:
             tasks.queue_notification(msg, self.telegram_id)
 
+    def _copy_config_to_context(self, context):
+        for k, v in self.trading_info.items():
+            if "__" not in k:
+                setattr(context, k, v)
+
+        return context
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
@@ -340,9 +346,8 @@ class Strategy(object):
             set_benchmark(context.asset)
         context.i = 0
         context.errors = []
-        for k, v in self.trading_info.items():
-            if "__" not in k:
-                setattr(context, k, v)
+        context = self._copy_config_to_context(context)
+        self._check_configuration(context)
 
         if self._datasets.items():
             if context.DATA_FREQ == 'daily':
@@ -351,12 +356,6 @@ class Strategy(object):
             else:
                 raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
 
-        self._extra_init(context)
-        self.log.info("Initilized Strategy")
-        self.notify('Your strategy has started!')
-
-
-        self._check_configuration(context)
 
         # Set context.BARS size to work with custom minute frequency
         if context.DATA_FREQ == 'minute':
@@ -366,6 +365,11 @@ class Strategy(object):
 
         # Set commissions
         context.set_commission(maker=context.MAKER_COMMISSION, taker=context.TAKER_COMMISSION)
+
+        self._extra_init(context)
+        self.log.info("Initilized Strategy")
+        self.notify('Your strategy has started!')
+
 
     def _check_configuration(self, context):
         """Checking config.json valid values"""
