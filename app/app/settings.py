@@ -88,7 +88,7 @@ class ProdConfig(Config):
     REDIS_HOST = os.getenv('REDIS_HOST', '10.138.0.4')
     REDIS_PORT = os.getenv('REDIS_PORT', 6379)
     REDIS_PASSWORD = get_from_datastore('REDIS_PASSWORD', 'production')
-
+    REDIS_PASSWORD = None
 
 
 class DockerDevConfig(Config):
@@ -109,6 +109,7 @@ class DockerDevConfig(Config):
     REDIS_HOST = os.getenv("REDIS_HOST")
     REDIS_PORT = os.getenv('REDIS_PORT')
     REDIS_PASSWORD = os.getenv('REDIS_PASSWORD') or get_from_datastore('REDIS_PASSWORD', 'dev')
+    REDIS_PASSWORD = None
 
     USER_ENABLE_CONFIRM_EMAIL = False
     USER_SEND_REGISTERED_EMAIL = True
@@ -127,6 +128,7 @@ class DevConfig(Config):
     SQLALCHEMY_DATABASE_URI = get_from_datastore('SQLALCHEMY_DATABASE_URI', 'dev')
     REDIS_HOST = 'localhost'
     REDIS_PORT = os.getenv('REDIS_PORT')
+    REDIS_PASSWORD = None
 
 
     USER_ENABLE_CONFIRM_EMAIL = False

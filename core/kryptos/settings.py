@@ -21,6 +21,7 @@ LOG_DIR = os.path.join(BASE_DIR, "logs")
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
 REDIS_PORT = os.getenv('REDIS_PORT', 19779)
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
+REDIS_PASSWORD = None
 
 SENTRY_DSN = os.getenv('SENTRY_DSN', None)
 

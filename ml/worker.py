@@ -41,6 +41,7 @@ client = Client(SENTRY_DSN, transport=HTTPTransport)
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
 REDIS_PORT = os.getenv('REDIS_PORT', 19779)
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
+REDIS_PASSWORD = None
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
 
 def _prepare_data(df, data_freq):
