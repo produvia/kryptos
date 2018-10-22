@@ -359,7 +359,8 @@ class Strategy(object):
 
         # Set context.BARS size to work with custom minute frequency
         if context.DATA_FREQ == 'minute':
-            context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
+            self.trading_info['BARS'] = int(context.BARS * 24 * 60 / int(24 * 60 / int(context.MINUTE_FREQ)))
+            context = self._copy_config_to_context(context)
 
         self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(context.MINUTE_TO_OPERATE))
 
