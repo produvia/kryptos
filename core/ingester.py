@@ -7,50 +7,50 @@ import pandas as pd
 import redis
 
 from kryptos import logger_group
-from kryptos.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+from kryptos.settings import REDIS_HOST, REDIS_PORT
 
 
-CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 log = Logger("INGESTER")
 logger_group.add_logger(log)
-log.warn(f'Using Redis connection {REDIS_HOST}:{REDIS_PORT}')
+log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 
 
 def ingest_exchange(exchange, symbol=None, start=None, end=None):
     exchange_bundle = ExchangeBundle(exchange)
     if symbol is None:
-        log.warn(f'Queuing ingest {exchange} for all symbols')
+        log.warn(f"Queuing ingest {exchange} for all symbols")
     else:
-        log.warn(f'Queuing ingest {exchange} for {symbol}')
+        log.warn(f"Queuing ingest {exchange} for {symbol}")
 
-    log.warn(f'Will ingest timeframe {start} - {end}')
+    log.warn(f"Will ingest timeframe {start} - {end}")
 
-    log.info(f'Ingesting {exchange} daily data')
+    log.info(f"Ingesting {exchange} daily data")
     exchange_bundle.ingest(
-        'daily',
+        "daily",
         start=pd.to_datetime(start, utc=True),
         end=pd.to_datetime(end, utc=True),
         include_symbols=symbol,
         show_progress=True,
         show_breakdown=True,
-        show_report=True
+        show_report=True,
     )
-    log.info(f'Done ingesting daily {exchange} data')
+    log.info(f"Done ingesting daily {exchange} data")
 
-    log.info(f'Ingesting {exchange} minute data')
+    log.info(f"Ingesting {exchange} minute data")
     exchange_bundle.ingest(
-        'minute',
+        "minute",
         start=pd.to_datetime(start, utc=True),
         end=pd.to_datetime(end, utc=True),
         include_symbols=symbol,
         show_progress=True,
         show_breakdown=True,
-        show_report=True
+        show_report=True,
     )
-    log.info(f'Done ingesting minute {exchange} data')
-    log.info('Ingest completed')
+    log.info(f"Done ingesting minute {exchange} data")
+    log.info("Ingest completed")
 
 
 def ingest_from_trade_config(config):
@@ -89,17 +89,17 @@ def ingest_from_trade_config(config):
 #     return q.enqueue(load.ingest_exchange, args=(exchange, symbol, start, end))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     with Connection(CONN):
-        log.info('Starting ingest worker')
-        multiprocessing.Process(target=Worker(['ingest']).work).start()
+        log.info("Starting ingest worker")
+        multiprocessing.Process(target=Worker(["ingest"]).work).start()
 
     # allow worker to start up
     time.sleep(5)
 
     while True:
-        for ex in ['bitfinex', 'bittrex', 'poloniex']:
+        for ex in ["bitfinex", "bittrex", "poloniex"]:
             ingest_exchange(ex)
 
         # re-ingest every 12 hours

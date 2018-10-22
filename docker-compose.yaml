@@ -16,7 +16,6 @@ services:
       # uses docker redis and db, but fetches other credentials from datastore
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=None
       - FLASK_APP=autoapp.py
       - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
       - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
@@ -43,7 +42,6 @@ services:
     environment:
      - REDIS_HOST=redis
      - REDIS_PORT=6379
-     - REDIS_PASSWORD=None
      - CONFIG_ENV=dev
      - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
     depends_on:
@@ -63,7 +61,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=None
       - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
       - PYTHONUNBUFFERED=1
 
@@ -83,7 +80,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=None
       - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
 
     depends_on:

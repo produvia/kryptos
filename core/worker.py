@@ -1,4 +1,3 @@
-import os
 import json
 import redis
 from rq import Queue, Connection, get_failed_queue
@@ -20,12 +19,12 @@ from rq.contrib.sentry import register_sentry
 from kryptos import logger_group
 from kryptos.strategy import Strategy
 from kryptos.utils import tasks
-from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, SENTRY_DSN
+from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, SENTRY_DSN
 
 
 client = Client(SENTRY_DSN, transport=HTTPTransport)
 
-CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 log = logbook.Logger("WorkerManager")
