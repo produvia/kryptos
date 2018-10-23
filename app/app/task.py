@@ -1,22 +1,17 @@
 import os
 import json
 import redis
-from rq import Queue, Connection, Worker
-import click
-import time
+from rq import Queue
 from flask import current_app
 
 from app.models.user import StrategyModel, User
 from app.extensions import db
-from app.settings import get_from_datastore
 
 
 QUEUE_NAMES = ["paper", "live", "backtest"]
 REDIS_HOST, REDIS_PORT = os.getenv("REDIS_HOST"), os.getenv("REDIS_PORT")
 
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD") or get_from_datastore("REDIS_PASSWORD", "production")
-
-CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 def get_queue(queue_name):
