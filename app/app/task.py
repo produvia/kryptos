@@ -70,19 +70,19 @@ def kill_strat(strat_id):
     job = job_by_strat_id(strat_id)
 
     if job is None:
-        return f"Strat {strat_id} Not Found", 404
+        return None
 
     # set redis key directly
     # bc returned job will be Job not StratJob
     if job.is_started:
         current_app.logger.info(f"Killing strat {strat_id}")
         job.connection.sadd(kill_key, job.get_id())
-        return "Strat shutdown started", 200
+        return True
 
     else:
         msg = f"Strat status is {job.get_status()}, can't kill"
         current_app.logger.info(msg)
-        return msg, 409
+        return None
 
 
 def pretty_result(result_json):

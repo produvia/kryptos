@@ -44,5 +44,7 @@ def run_strat():
 def delete_strat():
     data = request.json
     strat_id = data.get("strat_id")
-    return task.kill_strat(strat_id)
-    return "Shutdown initiated", 200
+    if task.kill_strat(strat_id):
+        return "Shutdown initiated", 200
+    else:
+        return "Could not shutdown", 409
