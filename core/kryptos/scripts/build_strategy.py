@@ -180,7 +180,7 @@ def run_in_worker(strat, paper=False, live=False):
     #
     # # note that the strat.id will look different from app-created strategies
     job = q.enqueue(
-        'worker.run_strat',
+        'kryptos.worker.run_strat',
         job_id=strat.id,
         kwargs={
             'strat_json': json.dumps(strat.to_dict()),

@@ -2,17 +2,13 @@ import os
 import signal
 import json
 import redis
-from rq import Queue, Connection, get_failed_queue
-from rq.worker import HerokuWorker as Worker
-from rq.job import Job
+from rq import Connection, get_failed_queue
+# from rq.worker import HerokuWorker as Worker
 from rq.exceptions import ShutDownImminentException
 import click
 import multiprocessing
-from threading import Thread
 import time
 import logbook
-import talib as ta
-from talib import abstract as ab
 
 import datetime
 
@@ -21,9 +17,11 @@ from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
 
 from kryptos import logger_group
-from kryptos.strategy import Strategy
+
 from kryptos.utils import tasks
 from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, SENTRY_DSN
+
+from kryptos.worker.worker import StratQueue, StratWorker as Worker
 
 
 client = Client(SENTRY_DSN, transport=HTTPTransport)
@@ -37,59 +35,7 @@ log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 
 
 def get_queue(queue_name):
-    return KillQueue(queue_name, connection=CONN)
-
-
-def run_strat(
-    strat_json, strat_id, user_id=None, telegram_id=None, live=False, simulate_orders=True
-):
-    log.info(f"Worker received job for strat {strat_id}")
-    strat_dict = json.loads(strat_json)
-    strat = Strategy.from_dict(strat_dict)
-    strat.id = strat_id
-    strat.telegram_id = telegram_id
-
-    strat.run(viz=False, live=live, simulate_orders=simulate_orders, user_id=user_id, as_job=True)
-    result_df = strat.quant_results
-    if result_df is None:
-        log.warning("No results from strategy")
-        return
-
-    return result_df.to_json()
-
-
-## TA-LIB utils ##
-def indicator_group_name_selectors() -> [(str, str)]:
-    """Returns list of select options of indicator group names"""
-    selectors = []
-    for k in ta.get_function_groups().keys():
-        selectors.append((k, k))
-    return selectors
-
-
-def all_indicator_selectors() -> [(str, str)]:
-    """Returns the entire list of possible indicator abbreviation select options"""
-    selectors = []
-    for i in ta.get_functions():
-        selectors.append((i, i))
-    return selectors
-
-
-def _get_indicator_params(indicator_abbrev):
-    func = getattr(ab, indicator_abbrev)
-    return func.parameters
-
-
-def get_indicators_by_group(group: str) -> [(str, str)]:
-    """Returns list of select options containing abbreviations of the groups indicators"""
-    indicator_selects = []
-    group_indicators = ta.get_function_groups()[group]
-    for i in range(len(group_indicators)):
-        abbrev = group_indicators[i]
-        func = getattr(ab, abbrev)
-        name = func.info["display_name"]
-        indicator_selects.append((abbrev, abbrev))
-    return indicator_selects
+    return StratQueue(queue_name, connection=CONN)
 
 
 def workers_required(queue_name):
@@ -127,36 +73,22 @@ def remove_stale_workers():
                 worker.register_death()
 
 
-kill_key = "rq:jobs:kill"
+def kill_marked_jobs():
+    workers = Worker.all()
+    log.debug(f"Checking {len(workers)} workers for jobs marked to kill")
+    for w in workers:
+        if w.get_current_job():
+            log.debug(f"Checking {w.name} job")
+            meta = w.get_current_job().meta
+            if meta.get("MARK_KILL"):
+                log.warning(f"Killing job by sending kill signal to worker pid {w.pid}")
+                # ok.kill_horse()
+                # os.kill(w.pid, signal.SIGTERM)
+                # raise Exception('Shutting down worker marked to kill job')
+                # w.handle_warm_shutdown_request()
 
-
-class KillJob(Job):
-    def kill(self):
-        """ Force kills the current job causing it to fail """
-        if self.is_started:
-            self.connection.sadd(kill_key, self.get_id())
-
-    def _execute(self):
-        def check_kill(conn, id, interval=1):
-            while True:
-                res = conn.srem(kill_key, id)
-                if res > 0:
-                    os.kill(os.getpid(), signal.SIGINT)
-                time.sleep(interval)
-
-        t = Thread(target=check_kill, args=(self.connection, self.get_id()))
-        t.start()
-        log.warning("EXECUTING KILL JOB")
-        return super()._execute()
-
-
-class KillQueue(Queue):
-    job_class = KillJob
-
-
-class KillWorker(Worker):
-    queue_class = KillQueue
-    job_class = KillJob
+                # w.request_stop_sigrtmin()
+                # raise ShutDownImminentException
 
 
 @click.command()
@@ -173,22 +105,22 @@ def manage_workers():
         log.info("Starting initial workers")
 
         log.info("Starting worker for BACKTEST queue")
-        backtest_worker = KillWorker(["backtest"])
+        backtest_worker = Worker(["backtest"])
         register_sentry(client, backtest_worker)
         multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info("Starting worker for PAPER queues")
-        paper_worker = KillWorker(["paper"], exception_handlers=[retry_handler])
+        paper_worker = Worker(["paper"], exception_handlers=[retry_handler])
         register_sentry(client, paper_worker)
         multiprocessing.Process(target=paper_worker.work).start()
 
         log.info("Starting worker for LIVE queues")
-        live_worker = KillWorker(["live"], exception_handlers=[retry_handler])
+        live_worker = Worker(["live"], exception_handlers=[retry_handler])
         register_sentry(client, live_worker)
         multiprocessing.Process(target=live_worker.work).start()
 
         log.info("Starting worker for TA queue")
-        ta_worker = KillWorker(["ta"])
+        ta_worker = Worker(["ta"])
         register_sentry(client, ta_worker)
         multiprocessing.Process(target=ta_worker.work).start()
 
@@ -203,6 +135,7 @@ def manage_workers():
                     multiprocessing.Process(target=worker.work, kwargs={"burst": True}).start()
 
             time.sleep(5)
+            # kill_marked_jobs()
 
 
 def retry_handler(job, exc_type, exc_value, traceback):

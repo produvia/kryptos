@@ -40,7 +40,7 @@ def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depe
         q = get_queue("backtest")
 
     job = q.enqueue(
-        "worker.run_strat",
+        "kryptos.worker.run_strat",
         job_id=strat_model.uuid,
         kwargs={
             "strat_json": strat_json,
@@ -147,7 +147,7 @@ def _get_indicator_params(indicator_abbrev):
     job = q.fetch_job(job_id)
     if job is None:
         job = q.enqueue(
-            "worker._get_indicator_params",
+            "kryptos.worker._get_indicator_params",
             job_id=job_id,
             kwargs={"indicator_abbrev": indicator_abbrev},
             result_ttl=86400,
@@ -163,6 +163,6 @@ def get_indicators_by_group(group: str) -> [(str, str)]:
     job = q.fetch_job(job_id)
     if job is None:
         job = q.enqueue(
-            "worker.get_indicators_by_group", job_id=job_id, kwargs={"group": group}, result_ttl=86400
+            "kryptos.worker.get_indicators_by_group", job_id=job_id, kwargs={"group": group}, result_ttl=86400
         )
     return job.result
