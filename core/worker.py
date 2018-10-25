@@ -1,10 +1,14 @@
+import os
+import signal
 import json
 import redis
 from rq import Queue, Connection, get_failed_queue
 from rq.worker import HerokuWorker as Worker
+from rq.job import Job
 from rq.exceptions import ShutDownImminentException
 import click
 import multiprocessing
+from threading import Thread
 import time
 import logbook
 import talib as ta
@@ -33,7 +37,7 @@ log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 
 
 def get_queue(queue_name):
-    return Queue(queue_name, connection=CONN)
+    return KillQueue(queue_name, connection=CONN)
 
 
 def run_strat(
@@ -123,6 +127,38 @@ def remove_stale_workers():
                 worker.register_death()
 
 
+kill_key = "rq:jobs:kill"
+
+
+class KillJob(Job):
+    def kill(self):
+        """ Force kills the current job causing it to fail """
+        if self.is_started:
+            self.connection.sadd(kill_key, self.get_id())
+
+    def _execute(self):
+        def check_kill(conn, id, interval=1):
+            while True:
+                res = conn.srem(kill_key, id)
+                if res > 0:
+                    os.kill(os.getpid(), signal.SIGINT)
+                time.sleep(interval)
+
+        t = Thread(target=check_kill, args=(self.connection, self.get_id()))
+        t.start()
+        log.warning("EXECUTING KILL JOB")
+        return super()._execute()
+
+
+class KillQueue(Queue):
+    job_class = KillJob
+
+
+class KillWorker(Worker):
+    queue_class = KillQueue
+    job_class = KillJob
+
+
 @click.command()
 def manage_workers():
     # import before starting worker to loading during worker process
@@ -137,22 +173,22 @@ def manage_workers():
         log.info("Starting initial workers")
 
         log.info("Starting worker for BACKTEST queue")
-        backtest_worker = Worker(["backtest"])
+        backtest_worker = KillWorker(["backtest"])
         register_sentry(client, backtest_worker)
         multiprocessing.Process(target=backtest_worker.work).start()
 
         log.info("Starting worker for PAPER queues")
-        paper_worker = Worker(["paper"], exception_handlers=[retry_handler])
+        paper_worker = KillWorker(["paper"], exception_handlers=[retry_handler])
         register_sentry(client, paper_worker)
         multiprocessing.Process(target=paper_worker.work).start()
 
         log.info("Starting worker for LIVE queues")
-        live_worker = Worker(["live"], exception_handlers=[retry_handler])
+        live_worker = KillWorker(["live"], exception_handlers=[retry_handler])
         register_sentry(client, live_worker)
         multiprocessing.Process(target=live_worker.work).start()
 
         log.info("Starting worker for TA queue")
-        ta_worker = Worker(["ta"])
+        ta_worker = KillWorker(["ta"])
         register_sentry(client, ta_worker)
         multiprocessing.Process(target=ta_worker.work).start()
 
