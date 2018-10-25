@@ -73,10 +73,10 @@ def run(
         strat_id = start_from_api(strat, api_url, paper=paper, live=False, hosted=hosted)
         strat_ids.append(strat_id)
 
-    monitor_strats(strat_ids)
-        # run_in_worker(strat, paper)
-
-
+    try:
+        monitor_strats(strat_ids, api_url)
+    finally:
+        clean_up(strat_ids, hosted)
 
 
 def display_summary(result_json):
@@ -93,6 +93,10 @@ def get_strat_url(strat_id, base_url, paper):
         return os.path.join(base_url, "strategy/strategy", strat_id)
     return os.path.join(base_url, "strategy/backtest/strategy", strat_id)
 
+
+def clean_up(strat_ids, hosted):
+    for i in strat_ids:
+        kill_from_api(i, hosted)
 
 
 def start_from_api(strat, api_url, paper=False, live=False, hosted=False):

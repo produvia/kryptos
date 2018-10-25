@@ -17,10 +17,7 @@ LOCAL_BASE_URL = "http://web:8080"
 @click.command()
 @click.argument("strat_id", type=str)
 @click.option("--api", "-a", is_flag=True, help="Run the strategy via API")
-@click.option("--hosted", "-h", is_flag=True, help="Run on a GCP instance via the API")
-# @click.option("--hosted", "-h", is_flag=True, help="Kill on a GCP instance via the API")
-
-
+@click.option("--hosted", "-h", is_flag=True, help="Kill on a GCP instance via the API")
 def run(strat_id, api, hosted):
     click.secho(f"Killing strat {strat_id}", fg="yellow")
 
