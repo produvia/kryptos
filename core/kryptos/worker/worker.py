@@ -11,6 +11,10 @@ from rq.job import Job
 # calling worker methods such handle_warm_shutdown_request() and request_stop_sigrtmin()
 # cause the shutdown of the main process instead of an individual worker
 
+# here we are setting a job to be killed via redis key,
+# and then sending SIGINT from within the job process
+# to allow for graceful shutdown and analyze() of strategy
+
 # another solution would be setting a flag in the job's meta for the strategy to quit
 # but this seems to not work correctly from outside the job
 # https://github.com/rq/rq/issues/684

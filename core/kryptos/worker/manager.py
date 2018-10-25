@@ -1,9 +1,5 @@
-import os
-import signal
-import json
 import redis
 from rq import Connection, get_failed_queue
-# from rq.worker import HerokuWorker as Worker
 from rq.exceptions import ShutDownImminentException
 import click
 import multiprocessing
@@ -143,6 +139,8 @@ def retry_handler(job, exc_type, exc_value, traceback):
     job.meta.setdefault("failures", 0)
     job.meta["failures"] += 1
 
+    log.error(f"Job raised {exc_type}")
+
     from ccxt.base.errors import AuthenticationError
     from catalyst.exchange.exchange_errors import ExchangeRequestError
 
@@ -152,6 +150,10 @@ def retry_handler(job, exc_type, exc_value, traceback):
         log.critical(exc_value)
         job.save()
         tasks.queue_notification(f"Auth error: {exc_value}", job.meta["telegram_id"])
+        return True
+
+    if exc_type == SystemExit:
+        log.notice("Signaled shutdown, not retrying")
         return True
 
     #
