@@ -590,16 +590,24 @@ class Strategy(object):
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
+        self.log.warning('Calling analyze function and completing algorithm')
         ending_cash = results.cash[-1]
         self.log.notice('Ending cash: ${}'.format(ending_cash))
         self.log.notice('Completed for {} trading periods'.format(context.i))
         self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
 
-        self._make_plots(context, results)
-        # TODO - fix KeyError in quant analysis
-        # quant.dump_plots_to_file(self.name, results)
+        try:
+            self._make_plots(context, results)
+            # TODO - fix KeyError in quant analysis
+            # quant.dump_plots_to_file(self.name, results)
+            self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
-        self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
+        except (ValueError, ZeroDivisionError):
+            self.log.warning('Not enough data to make plots', exc_info=True)
+
+        # need to catch all exceptions because algo will end either way
+        except Exception as e:
+            self.log.error('Error during shutdown/analyze()', exc_info=True)
 
         extra_results = self.get_extra_results(context, results)
 
