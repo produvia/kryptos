@@ -65,6 +65,26 @@ def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depe
     return job.id, q.name
 
 
+def kill_strat(strat_id):
+    kill_key = "rq:jobs:kill"
+    job = job_by_strat_id(strat_id)
+
+    if job is None:
+        return f"Strat {strat_id} Not Found", 404
+
+    # set redis key directly
+    # bc returned job will be Job not StratJob
+    if job.is_started:
+        current_app.logger.info(f"Killing strat {strat_id}")
+        job.connection.sadd(kill_key, job.get_id())
+        return "Strat shutdown started", 200
+
+    else:
+        msg = f"Strat status is {job.get_status()}, can't kill"
+        current_app.logger.info(msg)
+        return msg, 409
+
+
 def pretty_result(result_json):
     string = ""
     if result_json is None:
@@ -123,7 +143,9 @@ def indicator_group_name_selectors() -> [(str, str)]:
     job_id = "ta-group-selects"
     job = q.fetch_job(job_id)
     if job is None:
-        job = q.enqueue("kryptos.worker.jobs.indicator_group_name_selectors", job_id=job_id, result_ttl=86400)
+        job = q.enqueue(
+            "kryptos.worker.jobs.indicator_group_name_selectors", job_id=job_id, result_ttl=86400
+        )
     return job.result
 
 
@@ -135,7 +157,9 @@ def all_indicator_selectors() -> [(str, str)]:
     job_id = "ta-indicator-selects"
     job = q.fetch_job(job_id)
     if job is None:
-        job = q.enqueue("kryptos.worker.jobs.all_indicator_selectors", job_id=job_id, result_ttl=86400)
+        job = q.enqueue(
+            "kryptos.worker.jobs.all_indicator_selectors", job_id=job_id, result_ttl=86400
+        )
     return job.result
 
 
@@ -163,6 +187,9 @@ def get_indicators_by_group(group: str) -> [(str, str)]:
     job = q.fetch_job(job_id)
     if job is None:
         job = q.enqueue(
-            "kryptos.worker.jobs.get_indicators_by_group", job_id=job_id, kwargs={"group": group}, result_ttl=86400
+            "kryptos.worker.jobs.get_indicators_by_group",
+            job_id=job_id,
+            kwargs={"group": group},
+            result_ttl=86400,
         )
     return job.result
