@@ -54,30 +54,23 @@ def save_stats_to_storage(strat):
     # the following file was written to disk via catalyst
     # during it's repeated _save_stats_csv() method
     # after every handle_data
-    # simply upload the same file/stats to storage
 
     # However this file won't be written until the end of the iteration,
     # so upload occurs the followign iteration
     strat.log.info('Uploading previous iteration stats')
-    home_dir = str(Path.home())
-    algo_folder = os.path.join(home_dir, '.catalyst/data/live_algos', strat.name)
-
-    # folder = get_algo_folder(strat.name)
-
-    stats_folder_name = 'stats_{}'.format(strat.mode)
-    stats_folder = os.path.join(algo_folder, stats_folder_name)
+    stats_folder = get_stats_dir(strat)
 
     timestr = time.strftime('%Y%m%d')
     filename = os.path.join(stats_folder, '{}.csv'.format(timestr))
 
-    # blob_name = filename
     try:
         auth_bucket = storage_client.get_bucket("strat_stats")
     except NotFound:
         auth_bucket = storage_client.create_bucket('strat_stats')
 
-    blob = auth_bucket.blob(filename)
+    blob_name = f"{strat.id}/stats_{strat.mode}/{timestr}.csv".format(timestr)
+    blob = auth_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
-    strat.log.info(f"Uploaded strat stats to {filename}")
+    strat.log.info(f"Uploaded strat stats to {blob_name}")
     return blob_name, auth_bucket.name
 
