@@ -6,12 +6,13 @@ from pathlib import Path
 import logbook
 
 from kryptos.settings import PROJECT_ID
+from kryptos.utils import storage_client
 
 
-from google.cloud import storage, kms_v1
+from google.cloud import kms_v1
 
 key_client = kms_v1.KeyManagementServiceClient()
-storage_client = storage.Client()
+
 
 log = logbook.Logger("ExchangeAuth")
 
@@ -56,8 +57,8 @@ def get_encrypted_auth(user_id: int, exchange_name: str) -> bytes:
     Returns:
         bytes: ciphertext - encrypted auth json
     """
+
     log.debug("Fetching encrypted user exchange auth from storage")
-    storage_client = storage.Client()
     bucket = storage_client.get_bucket("catalyst_auth")
     blob = bucket.blob(f"auth_{exchange_name}_{user_id}_json")
     encrypted_text = blob.download_as_string()
@@ -99,3 +100,5 @@ def delete_alias_file(user_id: int, exchange_name: str) -> None:
     log.debug(f"Deleting user {user_id}'s {exchange_name} auth alias file")
     file_name = get_auth_alias_path(user_id, exchange_name)
     os.remove(file_name)
+
+
