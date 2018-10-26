@@ -54,7 +54,7 @@ def get_output_file_str(str, config):
 def get_algo_dir(strat):
     """Modifed version of catalyst get_algo_folder"""
     home_dir = str(Path.home())
-    algo_folder = os.path.join(home_dir, ".catalyst/data/live_algos", strat.name)
+    algo_folder = os.path.join(home_dir, ".catalyst/data/live_algos", strat.id)
     return algo_folder
 
 
