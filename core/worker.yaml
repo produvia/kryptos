@@ -10,6 +10,7 @@ env_variables:
     REDIS_HOST: 10.0.0.3
     REDIS_PORT: 6379
     PROJECT_ID:  kryptos-205115 
+    CONFIG_ENV: 'production'
 network:
   name: default
 

@@ -15,7 +15,7 @@ from rq.contrib.sentry import register_sentry
 from kryptos import logger_group
 
 from kryptos.utils import tasks
-from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, SENTRY_DSN
+from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, SENTRY_DSN, CONFIG_ENV
 
 from kryptos.worker.worker import StratQueue, StratWorker as Worker
 
@@ -89,10 +89,7 @@ def kill_marked_jobs():
 
 @click.command()
 def manage_workers():
-    # import before starting worker to loading during worker process
-    # from kryptos.strategy import Strategy
-    # from app.extensions import jsonrpc
-    # from kryptos.utils.outputs import in_docker
+    log.info(f"Starting core service in {CONFIG_ENV} env")
 
     remove_zombie_workers()
     # remove_stale_workers()
@@ -131,7 +128,6 @@ def manage_workers():
                     multiprocessing.Process(target=worker.work, kwargs={"burst": True}).start()
 
             time.sleep(5)
-            # kill_marked_jobs()
 
 
 def retry_handler(job, exc_type, exc_value, traceback):

@@ -1,10 +1,9 @@
 import os
 import time
 from pathlib import Path
-from catalyst.exchange.utils.exchange_utils import get_algo_folder
 from google.api_core.exceptions import NotFound
 
-from kryptos.settings import PERF_DIR, DEFAULT_CONFIG as CONFIG
+from kryptos.settings import CONFIG_ENV, PERF_DIR, DEFAULT_CONFIG as CONFIG
 from kryptos.utils import storage_client
 
 
@@ -65,6 +64,21 @@ def get_stats_dir(strat):
     return stats_folder
 
 
+def get_stats_bucket():
+
+    if CONFIG_ENV == "dev":
+        bucket_name = "dev_strat_stats"
+    else:
+        bucket_name = "strat_stats"
+
+    try:
+        stats_bucket = storage_client.get_bucket(bucket_name)
+    except NotFound:
+        stats_bucket = storage_client.create_bucket(bucket_name)
+
+    return stats_bucket
+
+
 def save_analysis_to_storage(strat, results):
 
     strat.log.info("saving final analysis to disk")
@@ -77,13 +91,10 @@ def save_analysis_to_storage(strat, results):
 
     strat.log.info("Uploading final performance to storage")
 
-    try:
-        auth_bucket = storage_client.get_bucket("strat_stats")
-    except NotFound:
-        auth_bucket = storage_client.create_bucket("strat_stats")
+    stats_bucket = get_stats_bucket()
 
     blob_name = f"{strat.id}/stats_{strat.mode}/final_performance"
-    blob = auth_bucket.blob(blob_name)
+    blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
     strat.log.info(f"Uploaded strat performance to {blob_name}")
 
@@ -91,13 +102,10 @@ def save_analysis_to_storage(strat, results):
 def save_plot_to_storage(strat, plot_file):
     strat.log.info("Uploading summar plot to storage")
 
-    try:
-        auth_bucket = storage_client.get_bucket("strat_stats")
-    except NotFound:
-        auth_bucket = storage_client.create_bucket("strat_stats")
+    stats_bucket = get_stats_bucket()
 
     blob_name = f"{strat.id}/stats_{strat.mode}/summary_plot"
-    blob = auth_bucket.blob(blob_name)
+    blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(plot_file)
     strat.log.info(f"Uploaded strat performance plot to {blob_name}")
 
@@ -115,13 +123,10 @@ def save_stats_to_storage(strat):
     timestr = time.strftime("%Y%m%d")
     filename = os.path.join(stats_folder, "{}.csv".format(timestr))
 
-    try:
-        auth_bucket = storage_client.get_bucket("strat_stats")
-    except NotFound:
-        auth_bucket = storage_client.create_bucket("strat_stats")
+    stats_bucket = get_stats_bucket()
 
     blob_name = f"{strat.id}/stats_{strat.mode}/{timestr}".format(timestr)
-    blob = auth_bucket.blob(blob_name)
+    blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
     strat.log.info(f"Uploaded strat stats to {blob_name}")
-    return blob_name, auth_bucket.name
+    return blob_name, stats_bucket.name
