@@ -51,6 +51,15 @@ class StratLogger(logbook.Logger):
                 job.meta['output'] += record.msg + '\n'
             job.save_meta()
 
+class StratState(object):
+
+    def load_from_context(self, context):
+        for k, v in context.state.items():
+            setattr(self, k, v)
+
+    def dump_to_context(self, context):
+        context.state.update(self.__dict__)
+
 
 class Strategy(object):
 
@@ -124,6 +133,8 @@ class Strategy(object):
         self.last_date = None
         self.filter_dates = None
         self.date_init_reference = None
+        self._context_ref = None
+        self._state = StratState()
 
     @property
     def is_live(self):
@@ -145,6 +156,10 @@ class Strategy(object):
             return 'paper'
         elif self.is_live:
             return 'live'
+
+    @property
+    def state(self):
+        return self._state
 
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
@@ -342,22 +357,24 @@ class Strategy(object):
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
-        context.asset = symbol(self.trading_info["ASSET"])
+        self._context_ref = context
+        self.state.load_from_context(context)
+
+        self.state.asset = symbol(self.trading_info["ASSET"])
         if self.is_backtest:
             self.log.debug('Setting benchmark')
-            set_benchmark(context.asset)
-        context.i = 0
-        context.errors = []
+            set_benchmark(self.state.asset)
+
         for k, v in self.trading_info.items():
             if "__" not in k:
-                setattr(context, k, v)
+                setattr(self.state, k, v)
 
         if self._datasets.items():
-            if context.DATA_FREQ == 'daily':
+            if self.state.DATA_FREQ == 'daily':
                 for dataset, manager in self._datasets.items():
                     manager.fetch_data()
             else:
-                raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
+                raise ValueError('Internal Error: Value of self.state.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
 
         self._extra_init(context)
 
@@ -366,35 +383,47 @@ class Strategy(object):
             if job.meta.get('PAUSED'):
                 self.log.warning(f'Paused strategy {self.id} has been resumed')
                 self.notify('Your strategy has resumed!')
+                self.log.notice(f'resuming on trade iteration {self.state.i}')
+                try:
+                    self.log.info(json.dumps(self.state))
+                    self.notify(self.state.i)
+                except Exception:
+                    pass
             else:
                 self.notify('Your strategy has started!')
+                self.state.i = 0
+                self.state.errors = []
 
         self.log.info("Initilized Strategy")
         self._check_configuration(context)
 
-        # Set context.BARS size to work with custom minute frequency
-        if context.DATA_FREQ == 'minute':
-            context.BARS = int(context.BARS * 24 * 60 / int(24*60/int(context.MINUTE_FREQ)))
+        # Set self.state.BARS size to work with custom minute frequency
+        if self.state.DATA_FREQ == 'minute':
+            self.state.BARS = int(self.state.BARS * 24 * 60 / int(24*60/int(self.state.MINUTE_FREQ)))
 
-        self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(context.MINUTE_TO_OPERATE))
+        self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(self.state.MINUTE_TO_OPERATE))
 
         # Set commissions
-        context.set_commission(maker=context.MAKER_COMMISSION, taker=context.TAKER_COMMISSION)
+        context.set_commission(maker=self.state.MAKER_COMMISSION, taker=self.state.TAKER_COMMISSION)
+        self.state.dump_to_context(context)
 
     def _check_configuration(self, context):
         """Checking config.json valid values"""
-        if context.DATA_FREQ != 'minute' and context.DATA_FREQ != 'daily':
-            raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" or "daily"')
-        if context.DATA_FREQ == 'minute':
-            if context.HISTORY_FREQ[-1] != "T":
-                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"')
-            if int(context.MINUTE_FREQ) % int(context.HISTORY_FREQ[:-1]) != 0:
-                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" context.HISTORY_FREQ shoud be divisible by context.MINUTE_FREQ')
-        elif context.DATA_FREQ == 'daily':
-            if context.HISTORY_FREQ[-1] != "d":
-                raise ValueError('Internal Error: When context.DATA_FREQ=="minute" the value of context.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
+        self._context_ref = context
+        self.state.load_from_context(context)
 
+        if self.state.DATA_FREQ != 'minute' and self.state.DATA_FREQ != 'daily':
+            raise ValueError('Internal Error: Value of self.state.DATA_FREQ should be "minute" or "daily"')
+        if self.state.DATA_FREQ == 'minute':
+            if self.state.HISTORY_FREQ[-1] != "T":
+                raise ValueError('Internal Error: When self.state.DATA_FREQ=="minute" the value of self.state.HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"')
+            if int(self.state.MINUTE_FREQ) % int(self.state.HISTORY_FREQ[:-1]) != 0:
+                raise ValueError('Internal Error: When self.state.DATA_FREQ=="minute" self.state.HISTORY_FREQ shoud be divisible by self.state.MINUTE_FREQ')
+        elif self.state.DATA_FREQ == 'daily':
+            if self.state.HISTORY_FREQ[-1] != "d":
+                raise ValueError('Internal Error: When self.state.DATA_FREQ=="minute" the value of self.state.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
 
+        self.state.dump_to_context(context)
 
 
 
@@ -403,15 +432,15 @@ class Strategy(object):
             # In live mode, "volume", "close" and "price" are the only available fields.
             # In live mode, "volume" returns the last 24 hour trading volume.
 
-            # Update actual context.price
+            # Update actual self.state.price
             if not self.is_backtest:
-                context.current = data.current(assets=context.asset,
+                self.state.current = data.current(assets=self.state.asset,
                             fields=["volume", "close", "price"])
             else:
-                context.current = data.current(assets=context.asset,
+                self.state.current = data.current(assets=self.state.asset,
                             fields=["open", "high", "low", "volume", "close", "price"])
-            context.price = context.current.price
-            record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
+            self.state.price = self.state.current.price
+            record(price=self.state.price, cash=context.portfolio.cash, volume=self.state.current.volume)
             return True
 
         except exchange_errors.NoValueForField as e:
@@ -419,15 +448,20 @@ class Strategy(object):
             self.log.warn(f'Skipping trade period: {e}')
             return False
 
+        except KeyError:
+            self.log.warn('Error when getting current fields')
+
+        self.state.dump_to_context(context)
+
     def _check_minute_freq(self, context, data):
-        if context.DATA_FREQ == 'minute':
+        if self.state.DATA_FREQ == 'minute':
             # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
             if self.last_date is None:
                 last_date = self._get_last_date(context, data)
             else:
                 last_date = self.last_date
             base_minutes = (self.current_date - last_date) / np.timedelta64(1, 'm')
-            if base_minutes != int(context.MINUTE_FREQ):
+            if base_minutes != int(self.state.MINUTE_FREQ):
                 return False
 
             if self.last_date is None:
@@ -441,24 +475,27 @@ class Strategy(object):
         # for the frequency alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
         self.log.debug('Fetching history')
-        context.prices = data.history(
-            context.asset,
-            bar_count=context.BARS,
+        self.state.prices = data.history(
+            self.state.asset,
+            bar_count=self.state.BARS,
             fields=["price", "open", "high", "low", "close", "volume"],
-            frequency=context.HISTORY_FREQ,
+            frequency=self.state.HISTORY_FREQ,
         )
+
+
+        self.state.dump_to_context(context)
 
 
     def _filter_fetched_history(self, context, data):
         # Filter historic data according to minute frequency
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        if context.DATA_FREQ == 'minute':
+        if self.state.DATA_FREQ == 'minute':
             filter_dates = pd.date_range(start=self.date_init_reference,
-                                        end=context.prices.iloc[-1].name,
-                                        freq=str(context.MINUTE_FREQ)+"min")
-            context.prices = context.prices.loc[filter_dates]
-            context.prices = context.prices.dropna()
+                                        end=self.state.prices.iloc[-1].name,
+                                        freq=str(self.state.MINUTE_FREQ)+"min")
+            self.state.prices = self.state.prices.loc[filter_dates]
+            self.state.prices = self.state.prices.dropna()
 
             if self.filter_dates is not None:
                 self.filter_dates = self.filter_dates.append(self.filter_dates.symmetric_difference(filter_dates))
@@ -467,10 +504,10 @@ class Strategy(object):
 
             # Add current values to historic
             self.last_date = get_datetime()
-            context.prices.loc[self.last_date] = context.current
+            self.state.prices.loc[self.last_date] = self.state.current
+            self.state.dump_to_context(context)
 
     def fetch_history(self, context, data):
-
         try:
             retry(self._fetch_history,
                   sleeptime=5,
@@ -486,16 +523,21 @@ class Strategy(object):
             self.log.error('Hit Rate limit, skipping trade step')
             return False
 
+        except Exception:
+            self.log.error('Could not fetch latest history', exec_info=True)
+
         return True
 
     def _enqueue_ml_calcs(self, context, data):
         # Add external datasets (Google Search Volume and Blockchain Info) as features
         for i in self._ml_models:
-            if context.DATA_FREQ == 'daily':
+            if self.state.DATA_FREQ == 'daily':
                 for dataset, manager in self._datasets.items():
-                    context.prices.index.tz = None
-                    context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
-            i.calculate(context.prices, self.name)
+                    self.state.prices.index.tz = None
+                    self.state.prices = pd.concat([self.state.prices, manager.df], axis=1, join_axes=[self.state.prices.index])
+            i.calculate(self.state.prices, self.name)
+
+        self.state.dump_to_context(context)
 
     def _process_data(self, context, data):
         """Called at each algo iteration
@@ -507,7 +549,7 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
-        context.i += 1
+        self.state.i += 1
 
         # the following called methods return:
         # True if the iteration should continued
@@ -556,7 +598,7 @@ class Strategy(object):
 
         for i in self._market_indicators:
             try:
-                i.calculate(context.prices)
+                i.calculate(self.state.prices)
                 i.record()
             except Exception as e:
                 self.log.error(e)
@@ -569,14 +611,12 @@ class Strategy(object):
         self._extra_handle(context, data)
         self._count_signals(context, data)
 
-       
-
         if context.frame_stats:
             pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
             self.log.notice(pretty_output)
             if not self.is_backtest:
                 outputs.save_stats_to_storage(self)
-
+        self.state.dump_to_context(context)
 
     @property
     def total_plots(self):
@@ -599,12 +639,12 @@ class Strategy(object):
 
             # Filter selected dates
             filter_dates = pd.date_range(start=self.date_init_reference,
-                                        end=context.prices.iloc[-1].name,
-                                        freq=str(context.MINUTE_FREQ)+"min")
+                                        end=self.state.prices.iloc[-1].name,
+                                        freq=str(self.state.MINUTE_FREQ)+"min")
 
-            context.prices = context.prices.loc[filter_dates]
+            self.state.prices = self.state.prices.loc[filter_dates]
 
-            return context.prices.iloc[-1].name
+            return self.state.prices.iloc[-1].name
 
     def _make_plots(self, context, results):
         # strat_plots = len(self._market_indicators) + len(self._datasets)
@@ -649,7 +689,7 @@ class Strategy(object):
         self.log.warning('Calling analyze function and completing algorithm')
         ending_cash = results.cash[-1]
         self.log.notice('Ending cash: ${}'.format(ending_cash))
-        self.log.notice('Completed for {} trading periods'.format(context.i))
+        self.log.notice('Completed for {} trading periods'.format(self.state.i))
         self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
 
         try:
@@ -661,7 +701,7 @@ class Strategy(object):
             extra_results = self.get_extra_results(context, results)
 
             for i in self._ml_models:
-                i.analyze(self.name, context.DATA_FREQ, extra_results)
+                i.analyze(self.name, self.state.DATA_FREQ, extra_results)
 
         except (ValueError, ZeroDivisionError, KeyError):
             self.log.warning('Not enough data to make plots')
@@ -675,17 +715,17 @@ class Strategy(object):
         except Exception:
             self.log.error('Failed to upload strat analysis to storage', exec_info=True)
 
-
+        self.state.dump_to_context(context)
     
     # def upload_results(self, context, results):
 
 
     def get_extra_results(self, context, results):
         extra_results = {
-            'start': context.START,
-            'end': context.END,
-            'minute_freq': context.MINUTE_FREQ,
-            'data_freq': context.DATA_FREQ,
+            'start': self.state.START,
+            'end': self.state.END,
+            'minute_freq': self.state.MINUTE_FREQ,
+            'data_freq': self.state.DATA_FREQ,
             'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
             'sharpe_ratio': '',
             'sharpe_ratio_benchmark': '',
@@ -693,7 +733,7 @@ class Strategy(object):
             'sortino_ratio_benchmark': ''
         }
 
-        if context.DATA_FREQ == 'minute':
+        if self.state.DATA_FREQ == 'minute':
             try:
                 self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
                 if results.algorithm_period_return.loc[self.filter_dates].dropna().std() != 0.0:
@@ -716,9 +756,12 @@ class Strategy(object):
         if isinstance(indicator, str):
             indicator = technical.get_indicator(indicator, **params)
 
-        if "symbol" not in params:
-            params["symbol"] = self.trading_info["ASSET"]
-            self.log.debug(f'Setting new indicator symbol as {self.trading_info["ASSET"]}')
+        # TODO: allow other assets for indicators
+        indicator.symbol = self.trading_info["ASSET"]
+
+        # if "symbol" not in params:
+        #     params["symbol"] = self.trading_info["ASSET"]
+        #     self.log.debug(f'Setting new indicator symbol as {self.trading_info["ASSET"]}')
         self._market_indicators.insert(priority, indicator)
 
     def add_data_indicator(self, dataset, indicator, col=None):
@@ -736,9 +779,13 @@ class Strategy(object):
         if isinstance(indicator, str):
             indicator = ml.get_indicator(indicator)
 
-        if "symbol" not in params:
-            params["symbol"] = self.trading_info["ASSET"]
-            self.log.debug(f'Setting new indicator symbol as {self.trading_info["ASSET"]}')
+        indicator.symbol = self.trading_info["ASSET"]
+
+        # indic
+
+        # if "symbol" not in params:
+        #     params["symbol"] = self.trading_info["ASSET"]
+        #     self.log.debug(f'Setting new indicator symbol as {self.trading_info["ASSET"]}')
         self._ml_models.append(indicator)
 
     def use_dataset(self, dataset_name, columns):
@@ -876,10 +923,10 @@ class Strategy(object):
             self.make_sell(context)
 
     def make_buy(self, context):
-        if context.portfolio.cash < context.price * context.ORDER_SIZE:
+        if context.portfolio.cash < self.state.price * self.state.ORDER_SIZE:
             self.log.warn(
                 "Skipping signaled buy due to cash amount: {} < {}".format(
-                    context.portfolio.cash, (context.price * context.ORDER_SIZE)
+                    context.portfolio.cash, (self.state.price * self.state.ORDER_SIZE)
                 )
             )
 
@@ -897,7 +944,7 @@ class Strategy(object):
         self._buy_func(context)
 
     def make_sell(self, context):
-        if context.asset not in context.portfolio.positions:
+        if self.state.asset not in context.portfolio.positions:
             self.log.warn("Skipping signaled sell due b/c no position")
             msg = """\
             A signaled sell order was cancelled, because you currently have no posiiton.\n
@@ -914,56 +961,56 @@ class Strategy(object):
     def check_open_positions(self, context):
         """Check open positions to sell to take profit or to stop loss.
         """
-        if context.asset in context.portfolio.positions:
-            position = context.portfolio.positions.get(context.asset)
+        if self.state.asset in context.portfolio.positions:
+            position = context.portfolio.positions.get(self.state.asset)
             # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
-            if context.price >= position.cost_basis * (1 + TAKE_PROFIT): # Take Profit
+            if self.state.price >= position.cost_basis * (1 + TAKE_PROFIT): # Take Profit
                 self._take_profit_sell(context, position)
 
-            if context.price < position.cost_basis * (1 - STOP_LOSS): # Stop Loss
+            if self.state.price < position.cost_basis * (1 - STOP_LOSS): # Stop Loss
                 self._stop_loss_sell(context, position)
 
     def _take_profit_sell(self, context, position):
         order(
-            asset=context.asset,
+            asset=self.state.asset,
             amount=-position.amount,
-            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+            limit_price=self.state.price * (1 - self.state.SLIPPAGE_ALLOWED),
         )
 
-        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+        profit = (self.state.price * position.amount) - (position.cost_basis * position.amount)
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
-                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
+                amount=position.amount, price=self.state.price, profit=profit, date=get_datetime())
 
         self.log.notice(msg)
         self.notify(dedent(msg))
 
     def _stop_loss_sell(self, context, position):
         order(
-            asset=context.asset,
+            asset=self.state.asset,
             amount=-position.amount,
-            # limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+            # limit_price=self.state.price * (1 - self.state.SLIPPAGE_ALLOWED),
         )
 
-        profit = (context.price * position.amount) - (position.cost_basis * position.amount)
+        profit = (self.state.price * position.amount) - (position.cost_basis * position.amount)
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-                amount=position.amount, price=context.price, profit=profit, date=get_datetime())
+                amount=position.amount, price=self.state.price, profit=profit, date=get_datetime())
 
         self.log.notice(msg)
         self.notify(dedent(msg))
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
-        position = context.portfolio.positions.get(context.asset)
+        position = context.portfolio.positions.get(self.state.asset)
         if position is None:
             self.log.info('Using default buy function')
             order(
-                asset=context.asset,
-                amount=context.ORDER_SIZE,
-                limit_price=context.price * (1 + context.SLIPPAGE_ALLOWED)
+                asset=self.state.asset,
+                amount=self.state.ORDER_SIZE,
+                limit_price=self.state.price * (1 + self.state.SLIPPAGE_ALLOWED)
             )
-            msg = "Bought {amount} @ {price}".format(amount=context.ORDER_SIZE, price=context.price)
+            msg = "Bought {amount} @ {price}".format(amount=self.state.ORDER_SIZE, price=self.state.price)
             self.log.notice(msg)
             self.notify(msg)
         else:
@@ -974,7 +1021,7 @@ class Strategy(object):
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         self.log.info('Using default sell function')
-        position = context.portfolio.positions.get(context.asset)
+        position = context.portfolio.positions.get(self.state.asset)
         if position == 0:
             self.log.warn("Position Zero, skipping sell")
             return
@@ -987,14 +1034,14 @@ class Strategy(object):
             )
         )
         # Sell when holding and got sell singnal
-        profit = (context.price * position.amount) - (cost_basis * position.amount)
+        profit = (self.state.price * position.amount) - (cost_basis * position.amount)
         order_target_percent(
-            asset=context.asset,
+            asset=self.state.asset,
             target=0,
-            limit_price=context.price * (1 - context.SLIPPAGE_ALLOWED),
+            limit_price=self.state.price * (1 - self.state.SLIPPAGE_ALLOWED),
         )
         msg = "Sold {amount} @ {price} Profit: {profit}".format(
-            amount=position.amount, price=context.price, profit=profit
+            amount=position.amount, price=self.state.price, profit=profit
         )
         self.log.notice(msg)
         self.notify(msg)
@@ -1136,7 +1183,7 @@ class Strategy(object):
             analyze=self._analyze,
             exchange_name=self.trading_info["EXCHANGE"],
             live=True,
-            algo_namespace=self.name,
+            algo_namespace=self.id,
             quote_currency=self.trading_info["BASE_CURRENCY"],
             live_graph=False,
             simulate_orders=simulate_orders,
