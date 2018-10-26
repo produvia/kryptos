@@ -650,14 +650,23 @@ class Strategy(object):
             # quant.dump_plots_to_file(self.name, results)
             self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
 
-        except (ValueError, ZeroDivisionError):
-            self.log.warning('Not enough data to make plots', exc_info=True)
+            extra_results = self.get_extra_results(context, results)
+
+            for i in self._ml_models:
+                i.analyze(self.name, context.DATA_FREQ, extra_results)
+
+        except (ValueError, ZeroDivisionError, KeyError):
+            self.log.warning('Not enough data to make plots')
 
         # need to catch all exceptions because algo will end either way
         except Exception as e:
-            self.log.error('Error during shutdown/analyze()', exc_info=True)
+            self.log.error('Error during shutdown/analyze()')
 
-        extra_results = self.get_extra_results(context, results)
+        try:
+           outputs.save_analysis_to_storage(self, results)
+        except Exception:
+            self.log.error('Failed to upload strat analysis to storage', exec_info=True)
+
 
         for i in self._ml_models:
             i.analyze(self.name, context.DATA_FREQ, extra_results)
@@ -669,7 +678,7 @@ class Strategy(object):
             'minute_freq': context.MINUTE_FREQ,
             'data_freq': context.DATA_FREQ,
             'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
-            'sharpe_ratio' : '',
+            'sharpe_ratio': '',
             'sharpe_ratio_benchmark': '',
             'sortino_ratio': '',
             'sortino_ratio_benchmark': ''

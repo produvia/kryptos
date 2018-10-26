@@ -44,11 +44,48 @@ def get_output_file_str(str, config):
     return os.path.join(algo_dir, file_specs)
 
 
-def get_algo_dir(namespace):
-    algo_dir = os.path.join(os.path.abspath(PERF_DIR), namespace)
-    if not os.path.exists(algo_dir):
-        os.makedirs(algo_dir)
-    return algo_dir
+# def get_algo_dir(namespace):
+#     algo_dir = os.path.join(os.path.abspath(PERF_DIR), namespace)
+#     if not os.path.exists(algo_dir):
+#         os.makedirs(algo_dir)
+#     return algo_dir
+
+def get_algo_dir(strat):
+    """Modifed version of catalyst get_algo_folder"""
+    home_dir = str(Path.home())
+    algo_folder = os.path.join(home_dir, '.catalyst/data/live_algos', strat.name)
+    return algo_folder
+
+
+def get_stats_dir(strat):
+    mode_dir = f"stats_{strat.mode}"
+    algo_folder = get_algo_dir(strat)
+    stats_folder = os.path.join(algo_folder, mode_dir)
+    return stats_folder
+
+
+def save_analysis_to_storage(strat, results):
+
+    strat.log.info("saving final analysis to disk")
+    folder = get_stats_dir(strat)
+    filename = os.path.join(folder, 'final_performance.csv')
+
+    os.makedirs(folder, exist_ok=True)
+    with open(filename, "w") as f:
+        results.to_csv(f)
+
+    strat.log.info('Uploading final performance to storage')
+
+    try:
+        auth_bucket = storage_client.get_bucket("strat_stats")
+    except NotFound:
+        auth_bucket = storage_client.create_bucket('strat_stats')
+
+    blob_name = f"{strat.id}/stats_{strat.mode}/final_performance.csv"
+    blob = auth_bucket.blob(blob_name)
+    blob.upload_from_filename(filename)
+    strat.log.info(f"Uploaded strat performance to {blob_name}")
+
 
 def save_stats_to_storage(strat):
     # the following file was written to disk via catalyst
