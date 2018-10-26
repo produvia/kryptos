@@ -9,13 +9,13 @@ from kryptos.utils import storage_client
 
 
 def in_docker():
-    if not os.path.exists('/proc/self/cgroup'):
+    if not os.path.exists("/proc/self/cgroup"):
         return False
-    with open('/proc/self/cgroup', 'r') as procfile:
+    with open("/proc/self/cgroup", "r") as procfile:
         for line in procfile:
-            fields = line.strip().split('/')
-            if 'docker' in fields:
-                print('**Inside Docker container, will disable visualization**')
+            fields = line.strip().split("/")
+            if "docker" in fields:
+                print("**Inside Docker container, will disable visualization**")
                 return True
 
     return False
@@ -50,10 +50,11 @@ def get_output_file_str(str, config):
 #         os.makedirs(algo_dir)
 #     return algo_dir
 
+
 def get_algo_dir(strat):
     """Modifed version of catalyst get_algo_folder"""
     home_dir = str(Path.home())
-    algo_folder = os.path.join(home_dir, '.catalyst/data/live_algos', strat.name)
+    algo_folder = os.path.join(home_dir, ".catalyst/data/live_algos", strat.name)
     return algo_folder
 
 
@@ -68,23 +69,37 @@ def save_analysis_to_storage(strat, results):
 
     strat.log.info("saving final analysis to disk")
     folder = get_stats_dir(strat)
-    filename = os.path.join(folder, 'final_performance.csv')
+    filename = os.path.join(folder, "final_performance.csv")
 
     os.makedirs(folder, exist_ok=True)
     with open(filename, "w") as f:
         results.to_csv(f)
 
-    strat.log.info('Uploading final performance to storage')
+    strat.log.info("Uploading final performance to storage")
 
     try:
         auth_bucket = storage_client.get_bucket("strat_stats")
     except NotFound:
-        auth_bucket = storage_client.create_bucket('strat_stats')
+        auth_bucket = storage_client.create_bucket("strat_stats")
 
-    blob_name = f"{strat.id}/stats_{strat.mode}/final_performance.csv"
+    blob_name = f"{strat.id}/stats_{strat.mode}/final_performance"
     blob = auth_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
     strat.log.info(f"Uploaded strat performance to {blob_name}")
+
+
+def save_plot_to_storage(strat, plot_file):
+    strat.log.info("Uploading summar plot to storage")
+
+    try:
+        auth_bucket = storage_client.get_bucket("strat_stats")
+    except NotFound:
+        auth_bucket = storage_client.create_bucket("strat_stats")
+
+    blob_name = f"{strat.id}/stats_{strat.mode}/summary_plot"
+    blob = auth_bucket.blob(blob_name)
+    blob.upload_from_filename(plot_file)
+    strat.log.info(f"Uploaded strat performance plot to {blob_name}")
 
 
 def save_stats_to_storage(strat):
@@ -94,20 +109,19 @@ def save_stats_to_storage(strat):
 
     # However this file won't be written until the end of the iteration,
     # so upload occurs the followign iteration
-    strat.log.info('Uploading previous iteration stats')
+    strat.log.info("Uploading previous iteration stats")
     stats_folder = get_stats_dir(strat)
 
-    timestr = time.strftime('%Y%m%d')
-    filename = os.path.join(stats_folder, '{}.csv'.format(timestr))
+    timestr = time.strftime("%Y%m%d")
+    filename = os.path.join(stats_folder, "{}.csv".format(timestr))
 
     try:
         auth_bucket = storage_client.get_bucket("strat_stats")
     except NotFound:
-        auth_bucket = storage_client.create_bucket('strat_stats')
+        auth_bucket = storage_client.create_bucket("strat_stats")
 
-    blob_name = f"{strat.id}/stats_{strat.mode}/{timestr}.csv".format(timestr)
+    blob_name = f"{strat.id}/stats_{strat.mode}/{timestr}".format(timestr)
     blob = auth_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
     strat.log.info(f"Uploaded strat stats to {blob_name}")
     return blob_name, auth_bucket.name
-

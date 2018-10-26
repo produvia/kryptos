@@ -636,6 +636,8 @@ class Strategy(object):
         plt.savefig(filename)
         plt.close()
 
+        outputs.save_plot_to_storage(self, filename)
+
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
         self.log.warning('Calling analyze function and completing algorithm')
@@ -668,8 +670,9 @@ class Strategy(object):
             self.log.error('Failed to upload strat analysis to storage', exec_info=True)
 
 
-        for i in self._ml_models:
-            i.analyze(self.name, context.DATA_FREQ, extra_results)
+    
+    # def upload_results(self, context, results):
+
 
     def get_extra_results(self, context, results):
         extra_results = {
