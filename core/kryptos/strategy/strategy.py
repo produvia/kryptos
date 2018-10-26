@@ -138,6 +138,15 @@ class Strategy(object):
     def is_backtest(self):
         return not self._live
 
+    @property
+    def mode(self):
+        if self.is_backtest:
+            return 'backtest'
+        elif self.is_paper:
+            return 'paper'
+        elif self.is_live:
+            return 'live'
+
     def serialize(self):
         return json.dumps(self.to_dict(), indent=3)
 
