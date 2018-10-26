@@ -382,31 +382,9 @@ class Strategy(object):
 
 
 
-    def _fetch_history(self, context, data):
-        # Get price, open, high, low, close
-        # The frequency attribute determine the bar size. We use this convention
-        # for the frequency alias:
-        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        self.log.debug('Fetching history')
-        context.prices = data.history(
-            context.asset,
-            bar_count=context.BARS,
-            fields=["price", "open", "high", "low", "close", "volume"],
-            frequency=context.HISTORY_FREQ,
-        )
 
-    def _process_data(self, context, data):
-        """Called at each algo iteration
 
-        Calculates indicators, processes signals, and
-        records market and external data
-
-        Arguments:
-            context {pandas.Dataframe} -- Catalyst context object
-            data {pandas.Datframe} -- Catalyst data object
-        """
-        context.i += 1
-
+    def _set_current_fields(self, context, data):
         try:
             # In live mode, "volume", "close" and "price" are the only available fields.
             # In live mode, "volume" returns the last 24 hour trading volume.
@@ -420,20 +398,14 @@ class Strategy(object):
                             fields=["open", "high", "low", "volume", "close", "price"])
             context.price = context.current.price
             record(price=context.price, cash=context.portfolio.cash, volume=context.current.volume)
-
+            return True
 
         except exchange_errors.NoValueForField as e:
             self.log.warn(e)
             self.log.warn(f'Skipping trade period: {e}')
-            return
+            return False
 
-        # To check to apply stop-loss, take-profit or keep position
-        self.check_open_positions(context)
-
-        # set date first for logging purposes
-        self.current_date = get_datetime()
-
-        # Filter minute frequency
+    def _check_minute_freq(self, context, data):
         if context.DATA_FREQ == 'minute':
             # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
             if self.last_date is None:
@@ -442,38 +414,28 @@ class Strategy(object):
                 last_date = self.last_date
             base_minutes = (self.current_date - last_date) / np.timedelta64(1, 'm')
             if base_minutes != int(context.MINUTE_FREQ):
-                return
+                return False
 
             if self.last_date is None:
                 self.last_date = last_date
 
-        if self.in_job:
-            job = get_current_job()
-            job.meta['date'] = str(self.current_date)
-            job.save_meta()
+        return True
 
-        self.log.debug("Processing algo iteration")
-        for i in context.blotter.open_orders:
-            msg = "Canceling unfilled open order {}".format(i)
-            self.log.info(msg)
-            self.notify(msg)
-            cancel_order(i)
+    def _fetch_history(self, context, data):
+        # Get price, open, high, low, close
+        # The frequency attribute determine the bar size. We use this convention
+        # for the frequency alias:
+        # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
+        self.log.debug('Fetching history')
+        context.prices = data.history(
+            context.asset,
+            bar_count=context.BARS,
+            fields=["price", "open", "high", "low", "close", "volume"],
+            frequency=context.HISTORY_FREQ,
+        )
 
-        try:
-            retry(self._fetch_history,
-                  sleeptime=5,
-                  retry_exceptions=(ccxt_errors.RequestTimeout),
-                  args=(context, data),
-                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
 
-        except ccxt_errors.ExchangeNotAvailable:
-            self.log.error(f"{self.exchange} API is currently unavailable, skipping trading step")
-            return
-
-        except ccxt_errors.DDoSProtection:
-            self.log.error('Hit Rate limit, skipping trade step')
-            return
-
+    def _filter_fetched_history(self, context, data):
         # Filter historic data according to minute frequency
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
@@ -493,15 +455,85 @@ class Strategy(object):
             self.last_date = get_datetime()
             context.prices.loc[self.last_date] = context.current
 
+    def fetch_history(self, context, data):
+
+        try:
+            retry(self._fetch_history,
+                  sleeptime=5,
+                  retry_exceptions=(ccxt_errors.RequestTimeout),
+                  args=(context, data),
+                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+
+        except ccxt_errors.ExchangeNotAvailable:
+            self.log.error(f"{self.exchange} API is currently unavailable, skipping trading step")
+            return False
+
+        except ccxt_errors.DDoSProtection:
+            self.log.error('Hit Rate limit, skipping trade step')
+            return False
+
+        return True
+
+    def _enqueue_ml_calcs(self, context, data):
+        # Add external datasets (Google Search Volume and Blockchain Info) as features
+        for i in self._ml_models:
+            if context.DATA_FREQ == 'daily':
+                for dataset, manager in self._datasets.items():
+                    context.prices.index.tz = None
+                    context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
+            i.calculate(context.prices, self.name)
+
+    def _process_data(self, context, data):
+        """Called at each algo iteration
+
+        Calculates indicators, processes signals, and
+        records market and external data
+
+        Arguments:
+            context {pandas.Dataframe} -- Catalyst context object
+            data {pandas.Datframe} -- Catalyst data object
+        """
+        context.i += 1
+
+        # the following called methods return:
+        # True if the iteration should continued
+        # False if the algo should not continue
+
+        if not self._set_current_fields(context, data):
+            return
+
+        # To check to apply stop-loss, take-profit or keep position
+        self.check_open_positions(context)
+
+        # set date first for logging purposes
+        self.current_date = get_datetime()
+
+        if not self.fetch_history(context, data):
+            return
+
+        # Filter minute frequency
+        self._check_minute_freq(context, data)
+
+        if self.in_job:
+            job = get_current_job()
+            job.meta['date'] = str(self.current_date)
+            job.save_meta()
+
+        self.log.debug("Processing algo iteration")
+        for i in context.blotter.open_orders:
+            msg = "Canceling unfilled open order {}".format(i)
+            self.log.info(msg)
+            self.notify(msg)
+            cancel_order(i)
+
+        if not self.fetch_history(context, data):
+            return
+
+        self._filter_fetched_history(context, data)
+
+        # ## enqueue ml models as soon as data filtered
         if self._ml_models:
-            # Add external datasets (Google Search Volume and Blockchain Info) as features
-            for i in self._ml_models:
-                if context.DATA_FREQ == 'daily':
-                    for dataset, manager in self._datasets.items():
-                        context.prices.index.tz = None
-                        context.prices = pd.concat([context.prices, manager.df], axis=1, join_axes=[context.prices.index])
-                i.calculate(context.prices, self.name)
-                i.record()
+            self._enqueue_ml_calcs(context, data)
 
         else:
             for dataset, manager in self._datasets.items():
@@ -516,8 +548,14 @@ class Strategy(object):
                 self.log.error(e)
                 self.log.error('Error calculating {}, skipping...'.format(i.name))
 
+
+        for i in self._ml_models:
+            i.record()
+
         self._extra_handle(context, data)
         self._count_signals(context, data)
+
+       
 
         if context.frame_stats:
             pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
