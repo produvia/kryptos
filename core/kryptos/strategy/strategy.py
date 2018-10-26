@@ -14,7 +14,15 @@ from rq import get_current_job
 import arrow
 
 from catalyst import run_algorithm
-from catalyst.api import symbol, set_benchmark, record, order, order_target_percent, cancel_order, get_datetime
+from catalyst.api import (
+    symbol,
+    set_benchmark,
+    record,
+    order,
+    order_target_percent,
+    cancel_order,
+    get_datetime,
+)
 from catalyst.exchange.utils import stats_utils
 from catalyst.exchange import exchange_errors
 from ccxt.base import errors as ccxt_errors
@@ -29,12 +37,12 @@ from kryptos.analysis import quant
 
 from redo import retry
 import matplotlib
-matplotlib.use('agg')
+
+matplotlib.use("agg")
 import matplotlib.pyplot as plt
 
 
 class StratLogger(logbook.Logger):
-
     def __init__(self, strat):
         self.strat = strat
         super().__init__(name="STRATEGY")
@@ -43,16 +51,16 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
 
-        if self.strat.in_job: # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
+        if self.strat.in_job:  # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
-            if not job.meta.get('output'):
-                job.meta['output'] = record.msg
+            if not job.meta.get("output"):
+                job.meta["output"] = record.msg
             else:
-                job.meta['output'] += record.msg + '\n'
+                job.meta["output"] += record.msg + "\n"
             job.save_meta()
 
-class StratState(object):
 
+class StratState(object):
     def load_from_context(self, context):
         for k, v in context.state.items():
             setattr(self, k, v)
@@ -62,7 +70,6 @@ class StratState(object):
 
 
 class Strategy(object):
-
     def __init__(self, name=None, **kw):
         """Central interface used to build and execute trading strategies
 
@@ -108,7 +115,6 @@ class Strategy(object):
 
         self.telegram_id = None
 
-
         self._signal_buy_funcs = []
         self._signal_sell_funcs = []
 
@@ -151,11 +157,11 @@ class Strategy(object):
     @property
     def mode(self):
         if self.is_backtest:
-            return 'backtest'
+            return "backtest"
         elif self.is_paper:
-            return 'paper'
+            return "paper"
         elif self.is_live:
-            return 'live'
+            return "live"
 
     @property
     def state(self):
@@ -192,11 +198,11 @@ class Strategy(object):
 
     @property
     def exchange(self):
-        return self.trading_info.get('EXCHANGE')
+        return self.trading_info.get("EXCHANGE")
 
     @exchange.setter
     def exchange(self, val):
-        self.trading_info['EXCHANGE'] = val
+        self.trading_info["EXCHANGE"] = val
 
     def indicator(self, label):
         for i in self._market_indicators:
@@ -293,24 +299,24 @@ class Strategy(object):
 
     def _dump_signals(self):
         res = {}
-        res['buy'] = self._buy_signal_objs
-        res['sell'] = self._sell_signal_objs
+        res["buy"] = self._buy_signal_objs
+        res["sell"] = self._sell_signal_objs
         return res
 
     def _load_signals(self, strat_dict):
-        signals = strat_dict.get('signals', {})
-        for s in signals.get('buy', []):
-            sig_func = getattr(signal_utils, s['func'], None)
+        signals = strat_dict.get("signals", {})
+        for s in signals.get("buy", []):
+            sig_func = getattr(signal_utils, s["func"], None)
             if not sig_func:
-                raise Exception('JSON defined signals require a defined function')
+                raise Exception("JSON defined signals require a defined function")
 
             # store json repr so we can load params during execution
             self._buy_signal_objs.append(s)
 
-        for s in signals.get('sell', []):
-            sig_func = getattr(signal_utils, s['func'], None)
+        for s in signals.get("sell", []):
+            sig_func = getattr(signal_utils, s["func"], None)
             if not sig_func:
-                raise Exception('JSON defined signals require a defined function')
+                raise Exception("JSON defined signals require a defined function")
 
             # store json repr so we can load params during execution
             self._sell_signal_objs.append(s)
@@ -325,13 +331,12 @@ class Strategy(object):
             self.trading_info["TICK_SIZE"] = 1000.0
 
     def load_dict(self, strat_dict):
-        self.name = strat_dict.get('name')
+        self.name = strat_dict.get("name")
         self._load_trading(strat_dict)
         self._load_indicators(strat_dict)
         self._load_datasets(strat_dict)
         self._load_signals(strat_dict)
         self._load_ml_models(strat_dict)
-
 
     def load_json_file(self, json_file):
         with open(json_file, "r") as f:
@@ -354,7 +359,6 @@ class Strategy(object):
         if self.telegram_id:
             tasks.queue_notification(msg, self.telegram_id)
 
-
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
         self._context_ref = context
@@ -362,7 +366,7 @@ class Strategy(object):
 
         self.state.asset = symbol(self.trading_info["ASSET"])
         if self.is_backtest:
-            self.log.debug('Setting benchmark')
+            self.log.debug("Setting benchmark")
             set_benchmark(self.state.asset)
 
         for k, v in self.trading_info.items():
@@ -370,27 +374,29 @@ class Strategy(object):
                 setattr(self.state, k, v)
 
         if self._datasets.items():
-            if self.state.DATA_FREQ == 'daily':
+            if self.state.DATA_FREQ == "daily":
                 for dataset, manager in self._datasets.items():
                     manager.fetch_data()
             else:
-                raise ValueError('Internal Error: Value of self.state.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
+                raise ValueError(
+                    'Internal Error: Value of self.state.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.'
+                )
 
         self._extra_init(context)
 
         if self.in_job:
             job = get_current_job()
-            if job.meta.get('PAUSED'):
-                self.log.warning(f'Paused strategy {self.id} has been resumed')
-                self.notify('Your strategy has resumed!')
-                self.log.notice(f'resuming on trade iteration {self.state.i}')
+            if job.meta.get("PAUSED"):
+                self.log.warning(f"Paused strategy {self.id} has been resumed")
+                self.notify("Your strategy has resumed!")
+                self.log.notice(f"resuming on trade iteration {self.state.i}")
                 try:
                     self.log.info(json.dumps(self.state))
                     self.notify(self.state.i)
                 except Exception:
                     pass
             else:
-                self.notify('Your strategy has started!')
+                self.notify("Your strategy has started!")
                 self.state.i = 0
                 self.state.errors = []
 
@@ -398,10 +404,14 @@ class Strategy(object):
         self._check_configuration(context)
 
         # Set self.state.BARS size to work with custom minute frequency
-        if self.state.DATA_FREQ == 'minute':
-            self.state.BARS = int(self.state.BARS * 24 * 60 / int(24*60/int(self.state.MINUTE_FREQ)))
+        if self.state.DATA_FREQ == "minute":
+            self.state.BARS = int(
+                self.state.BARS * 24 * 60 / int(24 * 60 / int(self.state.MINUTE_FREQ))
+            )
 
-        self.date_init_reference = pd.Timestamp('2013-01-01 00:00:00', tz='utc') + pd.Timedelta(minutes=int(self.state.MINUTE_TO_OPERATE))
+        self.date_init_reference = pd.Timestamp("2013-01-01 00:00:00", tz="utc") + pd.Timedelta(
+            minutes=int(self.state.MINUTE_TO_OPERATE)
+        )
 
         # Set commissions
         context.set_commission(maker=self.state.MAKER_COMMISSION, taker=self.state.TAKER_COMMISSION)
@@ -412,55 +422,68 @@ class Strategy(object):
         self._context_ref = context
         self.state.load_from_context(context)
 
-        if self.state.DATA_FREQ != 'minute' and self.state.DATA_FREQ != 'daily':
-            raise ValueError('Internal Error: Value of self.state.DATA_FREQ should be "minute" or "daily"')
-        if self.state.DATA_FREQ == 'minute':
+        if self.state.DATA_FREQ != "minute" and self.state.DATA_FREQ != "daily":
+            raise ValueError(
+                'Internal Error: Value of self.state.DATA_FREQ should be "minute" or "daily"'
+            )
+        if self.state.DATA_FREQ == "minute":
             if self.state.HISTORY_FREQ[-1] != "T":
-                raise ValueError('Internal Error: When self.state.DATA_FREQ=="minute" the value of self.state.HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"')
+                raise ValueError(
+                    'Internal Error: DATA_FREQ=="minute" the value of HISTORY_FREQ shoud be "<NUMBER>T". Example: "1T"'
+                )
             if int(self.state.MINUTE_FREQ) % int(self.state.HISTORY_FREQ[:-1]) != 0:
-                raise ValueError('Internal Error: When self.state.DATA_FREQ=="minute" self.state.HISTORY_FREQ shoud be divisible by self.state.MINUTE_FREQ')
-        elif self.state.DATA_FREQ == 'daily':
+                raise ValueError(
+                    'Internal Error: When DATA_FREQ=="minute" HISTORY_FREQ shoud be divisible by MINUTE_FREQ'
+                )
+        elif self.state.DATA_FREQ == "daily":
             if self.state.HISTORY_FREQ[-1] != "d":
-                raise ValueError('Internal Error: When self.state.DATA_FREQ=="minute" the value of self.state.HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"')
+                raise ValueError(
+                    'Internal Error: When DATA_FREQ=="minute" the value of HISTORY_FREQ shoud be "<NUMBER>d". Example: "1d"'
+                )
 
         self.state.dump_to_context(context)
-
-
 
     def _set_current_fields(self, context, data):
         try:
             # In live mode, "volume", "close" and "price" are the only available fields.
             # In live mode, "volume" returns the last 24 hour trading volume.
 
-            # Update actual self.state.price
+            #  Update actual self.state.price
             if not self.is_backtest:
-                self.state.current = data.current(assets=self.state.asset,
-                            fields=["volume", "close", "price"])
+                self.state.current = data.current(
+                    assets=self.state.asset, fields=["volume", "close", "price"]
+                )
             else:
-                self.state.current = data.current(assets=self.state.asset,
-                            fields=["open", "high", "low", "volume", "close", "price"])
+                self.state.current = data.current(
+                    assets=self.state.asset,
+                    fields=["open", "high", "low", "volume", "close", "price"],
+                )
             self.state.price = self.state.current.price
-            record(price=self.state.price, cash=context.portfolio.cash, volume=self.state.current.volume)
+            record(
+                price=self.state.price,
+                cash=context.portfolio.cash,
+                volume=self.state.current.volume,
+            )
             return True
 
         except exchange_errors.NoValueForField as e:
             self.log.warn(e)
-            self.log.warn(f'Skipping trade period: {e}')
+            self.log.warn(f"Skipping trade period: {e}")
             return False
 
         except KeyError:
-            self.log.warn('Error when getting current fields')
+            self.log.warn("Error when getting current fields")
 
         self.state.dump_to_context(context)
 
     def _check_minute_freq(self, context, data):
-        if self.state.DATA_FREQ == 'minute':
+        if self.state.DATA_FREQ == "minute":
             # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
             if self.last_date is None:
                 last_date = self._get_last_date(context, data)
             else:
                 last_date = self.last_date
-            base_minutes = (self.current_date - last_date) / np.timedelta64(1, 'm')
+            base_minutes = (self.current_date - last_date) / np.timedelta64(1, "m")
             if base_minutes != int(self.state.MINUTE_FREQ):
                 return False
 
@@ -474,7 +497,7 @@ class Strategy(object):
         # The frequency attribute determine the bar size. We use this convention
         # for the frequency alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        self.log.debug('Fetching history')
+        self.log.debug("Fetching history")
         self.state.prices = data.history(
             self.state.asset,
             bar_count=self.state.BARS,
@@ -482,23 +505,25 @@ class Strategy(object):
             frequency=self.state.HISTORY_FREQ,
         )
 
-
         self.state.dump_to_context(context)
-
 
     def _filter_fetched_history(self, context, data):
         # Filter historic data according to minute frequency
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
-        if self.state.DATA_FREQ == 'minute':
-            filter_dates = pd.date_range(start=self.date_init_reference,
-                                        end=self.state.prices.iloc[-1].name,
-                                        freq=str(self.state.MINUTE_FREQ)+"min")
+        if self.state.DATA_FREQ == "minute":
+            filter_dates = pd.date_range(
+                start=self.date_init_reference,
+                end=self.state.prices.iloc[-1].name,
+                freq=str(self.state.MINUTE_FREQ) + "min",
+            )
             self.state.prices = self.state.prices.loc[filter_dates]
             self.state.prices = self.state.prices.dropna()
 
             if self.filter_dates is not None:
-                self.filter_dates = self.filter_dates.append(self.filter_dates.symmetric_difference(filter_dates))
+                self.filter_dates = self.filter_dates.append(
+                    self.filter_dates.symmetric_difference(filter_dates)
+                )
             else:
                 self.filter_dates = filter_dates
 
@@ -509,32 +534,36 @@ class Strategy(object):
 
     def fetch_history(self, context, data):
         try:
-            retry(self._fetch_history,
-                  sleeptime=5,
-                  retry_exceptions=(ccxt_errors.RequestTimeout),
-                  args=(context, data),
-                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+            retry(
+                self._fetch_history,
+                sleeptime=5,
+                retry_exceptions=(ccxt_errors.RequestTimeout),
+                args=(context, data),
+                cleanup=lambda: self.log.warn("CCXT request timed out, retrying..."),
+            )
 
         except ccxt_errors.ExchangeNotAvailable:
             self.log.error(f"{self.exchange} API is currently unavailable, skipping trading step")
             return False
 
         except ccxt_errors.DDoSProtection:
-            self.log.error('Hit Rate limit, skipping trade step')
+            self.log.error("Hit Rate limit, skipping trade step")
             return False
 
         except Exception:
-            self.log.error('Could not fetch latest history', exec_info=True)
+            self.log.error("Could not fetch latest history", exec_info=True)
 
         return True
 
     def _enqueue_ml_calcs(self, context, data):
-        # Add external datasets (Google Search Volume and Blockchain Info) as features
+        #  Add external datasets (Google Search Volume and Blockchain Info) as features
         for i in self._ml_models:
-            if self.state.DATA_FREQ == 'daily':
+            if self.state.DATA_FREQ == "daily":
                 for dataset, manager in self._datasets.items():
                     self.state.prices.index.tz = None
-                    self.state.prices = pd.concat([self.state.prices, manager.df], axis=1, join_axes=[self.state.prices.index])
+                    self.state.prices = pd.concat(
+                        [self.state.prices, manager.df], axis=1, join_axes=[self.state.prices.index]
+                    )
             i.calculate(self.state.prices, self.name)
 
         self.state.dump_to_context(context)
@@ -567,12 +596,12 @@ class Strategy(object):
         if not self.fetch_history(context, data):
             return
 
-        # Filter minute frequency
+        #  Filter minute frequency
         self._check_minute_freq(context, data)
 
         if self.in_job:
             job = get_current_job()
-            job.meta['date'] = str(self.current_date)
+            job.meta["date"] = str(self.current_date)
             job.save_meta()
 
         self.log.debug("Processing algo iteration")
@@ -602,8 +631,7 @@ class Strategy(object):
                 i.record()
             except Exception as e:
                 self.log.error(e)
-                self.log.error('Error calculating {}, skipping...'.format(i.name))
-
+                self.log.error("Error calculating {}, skipping...".format(i.name))
 
         for i in self._ml_models:
             i.record()
@@ -631,16 +659,20 @@ class Strategy(object):
         """
         if self.last_date is None:
             # Get historic prices
-            retry(self._fetch_history,
-                  sleeptime=5,
-                  retry_exceptions=(ccxt_errors.RequestTimeout),
-                  args=(context, data),
-                  cleanup=lambda: self.log.warn('CCXT request timed out, retrying...'))
+            retry(
+                self._fetch_history,
+                sleeptime=5,
+                retry_exceptions=(ccxt_errors.RequestTimeout),
+                args=(context, data),
+                cleanup=lambda: self.log.warn("CCXT request timed out, retrying..."),
+            )
 
-            # Filter selected dates
-            filter_dates = pd.date_range(start=self.date_init_reference,
-                                        end=self.state.prices.iloc[-1].name,
-                                        freq=str(self.state.MINUTE_FREQ)+"min")
+            #  Filter selected dates
+            filter_dates = pd.date_range(
+                start=self.date_init_reference,
+                end=self.state.prices.iloc[-1].name,
+                freq=str(self.state.MINUTE_FREQ) + "min",
+            )
 
             self.state.prices = self.state.prices.loc[filter_dates]
 
@@ -686,10 +718,10 @@ class Strategy(object):
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
-        self.log.warning('Calling analyze function and completing algorithm')
+        self.log.warning("Calling analyze function and completing algorithm")
         ending_cash = results.cash[-1]
-        self.log.notice('Ending cash: ${}'.format(ending_cash))
-        self.log.notice('Completed for {} trading periods'.format(self.state.i))
+        self.log.notice("Ending cash: ${}".format(ending_cash))
+        self.log.notice("Completed for {} trading periods".format(self.state.i))
         self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
 
         try:
@@ -704,36 +736,35 @@ class Strategy(object):
                 i.analyze(self.name, self.state.DATA_FREQ, extra_results)
 
         except (ValueError, ZeroDivisionError, KeyError):
-            self.log.warning('Not enough data to make plots')
+            self.log.warning("Not enough data to make plots")
 
         # need to catch all exceptions because algo will end either way
         except Exception as e:
-            self.log.error('Error during shutdown/analyze()')
+            self.log.error("Error during shutdown/analyze()")
 
         try:
-           outputs.save_analysis_to_storage(self, results)
+            outputs.save_analysis_to_storage(self, results)
         except Exception:
-            self.log.error('Failed to upload strat analysis to storage', exec_info=True)
+            self.log.error("Failed to upload strat analysis to storage", exec_info=True)
 
         self.state.dump_to_context(context)
-    
-    # def upload_results(self, context, results):
 
+    # def upload_results(self, context, results):
 
     def get_extra_results(self, context, results):
         extra_results = {
-            'start': self.state.START,
-            'end': self.state.END,
-            'minute_freq': self.state.MINUTE_FREQ,
-            'data_freq': self.state.DATA_FREQ,
-            'return_profit_pct': results.algorithm_period_return.tail(1).values[0],
-            'sharpe_ratio': '',
-            'sharpe_ratio_benchmark': '',
-            'sortino_ratio': '',
-            'sortino_ratio_benchmark': ''
+            "start": self.state.START,
+            "end": self.state.END,
+            "minute_freq": self.state.MINUTE_FREQ,
+            "data_freq": self.state.DATA_FREQ,
+            "return_profit_pct": results.algorithm_period_return.tail(1).values[0],
+            "sharpe_ratio": "",
+            "sharpe_ratio_benchmark": "",
+            "sortino_ratio": "",
+            "sortino_ratio_benchmark": "",
         }
 
-        if self.state.DATA_FREQ == 'minute':
+        if self.state.DATA_FREQ == "minute":
             try:
                 self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
                 if results.algorithm_period_return.loc[self.filter_dates].dropna().std() != 0.0:
@@ -746,8 +777,8 @@ class Strategy(object):
             except:
                 pass
         else:
-            extra_results['sharpe_ratio'] = results.sharpe[30:].mean()
-            extra_results['sortino_ratio'] = results.sortino[30:].mean()
+            extra_results["sharpe_ratio"] = results.sharpe[30:].mean()
+            extra_results["sortino_ratio"] = results.sortino[30:].mean()
 
         return extra_results
 
@@ -793,7 +824,10 @@ class Strategy(object):
         if self._ml_models:
             # Using from CONFIG.START date - CONFIG.BARS days to CONFIG.END date
             config = copy.deepcopy(self.trading_info)
-            config['START'] = (datetime.datetime.strptime(config['START'], '%Y-%m-%d') + datetime.timedelta(days=-config['BARS'])).strftime("%Y-%m-%d")
+            config["START"] = (
+                datetime.datetime.strptime(config["START"], "%Y-%m-%d")
+                + datetime.timedelta(days=-config["BARS"])
+            ).strftime("%Y-%m-%d")
             data_manager = get_data_manager(dataset_name, cols=columns, config=config)
         else:
             data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
@@ -811,8 +845,8 @@ class Strategy(object):
 
             # use a specific output column
             # MY_BBANDS.middleband
-            elif '.' in sig_params[arg]:
-                [indicator_label, output] = sig_params[arg].split('.')
+            elif "." in sig_params[arg]:
+                [indicator_label, output] = sig_params[arg].split(".")
                 indicator = self.indicator(indicator_label)
                 output_col = indicator.outputs[output]
                 kwargs[arg] = output_col
@@ -825,11 +859,11 @@ class Strategy(object):
         return kwargs
 
     def _construct_signal(self, obj):
-        func = getattr(signal_utils, obj['func'])
-        params = obj.get('params', {})
+        func = getattr(signal_utils, obj["func"])
+        params = obj.get("params", {})
 
         kwargs = self._get_kw_from_signal_params(params, func)
-        self.log.debug('Calculating {}'.format(func.__name__))
+        self.log.debug("Calculating {}".format(func.__name__))
         return func(**kwargs)
 
     def _calculate_custom_signals(self, context, data):
@@ -849,7 +883,6 @@ class Strategy(object):
                 neutrals += 1
 
         return sells, buys, neutrals
-
 
     def _count_signals(self, context, data):
         """Processes indicator to determine buy/sell opportunities"""
@@ -965,10 +998,10 @@ class Strategy(object):
             position = context.portfolio.positions.get(self.state.asset)
             # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
-            if self.state.price >= position.cost_basis * (1 + TAKE_PROFIT): # Take Profit
+            if self.state.price >= position.cost_basis * (1 + TAKE_PROFIT):  #  Take Profit
                 self._take_profit_sell(context, position)
 
-            if self.state.price < position.cost_basis * (1 - STOP_LOSS): # Stop Loss
+            if self.state.price < position.cost_basis * (1 - STOP_LOSS):  # Stop Loss
                 self._stop_loss_sell(context, position)
 
     def _take_profit_sell(self, context, position):
@@ -981,7 +1014,8 @@ class Strategy(object):
         profit = (self.state.price * position.amount) - (position.cost_basis * position.amount)
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
-                amount=position.amount, price=self.state.price, profit=profit, date=get_datetime())
+            amount=position.amount, price=self.state.price, profit=profit, date=get_datetime()
+        )
 
         self.log.notice(msg)
         self.notify(dedent(msg))
@@ -996,7 +1030,8 @@ class Strategy(object):
         profit = (self.state.price * position.amount) - (position.cost_basis * position.amount)
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-                amount=position.amount, price=self.state.price, profit=profit, date=get_datetime())
+            amount=position.amount, price=self.state.price, profit=profit, date=get_datetime()
+        )
 
         self.log.notice(msg)
         self.notify(dedent(msg))
@@ -1004,23 +1039,26 @@ class Strategy(object):
     def _default_buy(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(self.state.asset)
         if position is None:
-            self.log.info('Using default buy function')
+            self.log.info("Using default buy function")
             order(
                 asset=self.state.asset,
                 amount=self.state.ORDER_SIZE,
-                limit_price=self.state.price * (1 + self.state.SLIPPAGE_ALLOWED)
+                limit_price=self.state.price * (1 + self.state.SLIPPAGE_ALLOWED),
             )
-            msg = "Bought {amount} @ {price}".format(amount=self.state.ORDER_SIZE, price=self.state.price)
+            msg = "Bought {amount} @ {price}".format(
+                amount=self.state.ORDER_SIZE, price=self.state.price
+            )
             self.log.notice(msg)
             self.notify(msg)
         else:
             msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
-                            amount=position.amount, cost_basis=position.cost_basis)
+                amount=position.amount, cost_basis=position.cost_basis
+            )
             self.log.warn(msg)
             self.notify(msg)
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
-        self.log.info('Using default sell function')
+        self.log.info("Using default sell function")
         position = context.portfolio.positions.get(self.state.asset)
         if position == 0:
             self.log.warn("Position Zero, skipping sell")
@@ -1048,7 +1086,6 @@ class Strategy(object):
 
     # Save the prices and analysis to send to analyze
 
-
     def run(self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False):
         """Executes the trade strategy as a catalyst algorithm
 
@@ -1060,8 +1097,8 @@ class Strategy(object):
 
         if self.in_job:
             job = get_current_job()
-            job.meta['config'] = self.to_dict()
-            job.meta['telegram_id'] = self.telegram_id
+            job.meta["config"] = self.to_dict()
+            job.meta["telegram_id"] = self.telegram_id
             job.save_meta()
 
         self._live = live or self.trading_info.get("LIVE", False)
@@ -1077,9 +1114,8 @@ class Strategy(object):
         elif self.is_live:
             return self.run_live(user_id)
 
-
     def run_backtest(self):
-        self.log.notice('Running in backtest mode')
+        self.log.notice("Running in backtest mode")
         try:
             run_algorithm(
                 algo_namespace=self.id,
@@ -1094,7 +1130,7 @@ class Strategy(object):
                 end=pd.to_datetime(self.trading_info["END"], utc=True),
             )
         except exchange_errors.PricingDataNotLoadedError as e:
-            self.log.critical('Failed to run stratey Requires data ingestion')
+            self.log.critical("Failed to run stratey Requires data ingestion")
             raise e
             # from kryptos.worker import ingester
             # ingester.run_ingest(self.exchange, symbol=self.trading_info['ASSET'])
@@ -1102,49 +1138,49 @@ class Strategy(object):
             # self.log.warn("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)
 
-
-
     def run_paper(self):
-        self.log.notice('Running in paper mode')
+        self.log.notice("Running in paper mode")
         self._live = True
         self._simulate_orders = True
         self._run_real_time(simulate_orders=True)
-
-
-
 
     def run_live(self, user_id):
         from google.api_core.exceptions import NotFound
 
         self._live = True
         self._simulate_orders = False
-        self.log.notice('Running in live mode')
+        self.log.notice("Running in live mode")
         if user_id is None:
-            raise ValueError('user_id is required for auth when running in live mode')
+            raise ValueError("user_id is required for auth when running in live mode")
         self.user_id = user_id
 
         try:
             auth_alias = auth.get_user_auth_alias(self.user_id, self.exchange.lower())
         except NotFound:
-            self.log.error('Missing user exchange auth')
-            self.notify('Before running a live strategy, you will need to authorize with your API key')
+            self.log.error("Missing user exchange auth")
+            self.notify(
+                "Before running a live strategy, you will need to authorize with your API key"
+            )
             return pd.DataFrame()
 
         if auth_alias is None:
-            self.log.error('Aborting strategy due to missing exchange auth')
+            self.log.error("Aborting strategy due to missing exchange auth")
             return pd.DataFrame()
-
 
         try:
             self._run_real_time(simulate_orders=False, user_id=user_id, auth_aliases=auth_alias)
         except exchange_errors.ExchangeAuthEmpty:
-            self.log.critical('Failed to run strategy due to missing exchange auth')
-            self.notify('Failed to run strategy due to missing exchange auth. If you have already provided your API key please re-authenticate to ensure the correct key is correct')
+            self.log.critical("Failed to run strategy due to missing exchange auth")
+            self.notify(
+                "Failed to run strategy due to missing exchange auth. If you have already provided your API key please re-authenticate to ensure the correct key is correct"
+            )
             return pd.DataFrame()
 
         except exchange_errors.NotEnoughCashError as e:
             self.log.critical(str(e))
-            self.notify(f'You do not have enough cash on the exchange account to run the strategy.\n\n{str(e)}')
+            self.notify(
+                f"You do not have enough cash on the exchange account to run the strategy.\n\n{str(e)}"
+            )
             return pd.DataFrame()
 
         finally:
@@ -1152,13 +1188,13 @@ class Strategy(object):
 
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
 
-        self.log.notice('Running live trading, simulating orders: {}'.format(simulate_orders))
-        if self.trading_info['DATA_FREQ'] != 'minute':
+        self.log.notice("Running live trading, simulating orders: {}".format(simulate_orders))
+        if self.trading_info["DATA_FREQ"] != "minute":
             self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
-            self.trading_info['DATA_FREQ'] = 'minute'
+            self.trading_info["DATA_FREQ"] = "minute"
 
         # start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
-        end = arrow.get(self.trading_info["END"], 'YYYY-M-D')
+        end = arrow.get(self.trading_info["END"], "YYYY-M-D")
 
         # TODO fix for utc/tz issue
         # if start < arrow.utcnow().floor('day'):
@@ -1166,15 +1202,14 @@ class Strategy(object):
         #     start = arrow.utcnow().shift(seconds=+30)
         #     self.trading_info["START"] = start.format('YYYY-M-D')
 
-
         # if end < start or end < arrow.utcnow().floor('minute'):
-        if end < arrow.utcnow().floor('minute'):
-            self.log.error('Specified end date is invalid, will use 3 days from today')
+        if end < arrow.utcnow().floor("minute"):
+            self.log.error("Specified end date is invalid, will use 3 days from today")
             end = arrow.utcnow().shift(days=+3)
-            self.trading_info["END"] = end.format('YYYY-M-D')
+            self.trading_info["END"] = end.format("YYYY-M-D")
 
         # self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
-        self.log.notice(f'Stopping strategy {end.humanize()} -- {end}')
+        self.log.notice(f"Stopping strategy {end.humanize()} -- {end}")
 
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
@@ -1190,5 +1225,5 @@ class Strategy(object):
             stats_output=None,
             # start=pd.to_datetime(start.datetime, utc=True),
             end=pd.to_datetime(end.datetime, utc=True),
-            auth_aliases=auth_aliases
+            auth_aliases=auth_aliases,
         )
