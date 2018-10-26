@@ -196,17 +196,17 @@ def begin_mode_prompt():
 @assist.action("strat-mode", events=["strat-mode-start"])
 def prompt_for_mode():
     context = context_manager.get("strat-config-data")
-    backtest_id = utils.launch_backtest(context)
+    # backtest_id = utils.launch_backtest(context)
 
-    current_app.logger.info(f"Queues Strat {backtest_id}")
-    backtest_url = os.path.join(
-        current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
-    )
+    # current_app.logger.info(f"Queues Strat {backtest_id}")
+    # backtest_url = os.path.join(
+    #     current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
+    # )
 
     speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days."
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("View Past Performance", url=backtest_url)
+    # resp.add_button("View Past Performance", url=backtest_url)
     resp.add_button("Launch in Paper Mode", "paper")
     resp.add_button("Lauch in Live mode", "live")
     resp.add_button("Nevermind", "no")
@@ -249,7 +249,3 @@ def launch_strategy_paper(existing_strategy):
     resp = inline_keyboard(dedent(speech))
     resp.add_button("View your Strategy", url=url)
     return resp
-
-
-
-
