@@ -360,10 +360,16 @@ class Strategy(object):
                 raise ValueError('Internal Error: Value of context.DATA_FREQ should be "minute" if you use Google Search Volume or Quandl datasets.')
 
         self._extra_init(context)
+
+        if self.in_job:
+            job = get_current_job()
+            if job.meta.get('PAUSED'):
+                self.log.warning(f'Paused strategy {self.id} has been resumed')
+                self.notify('Your strategy has resumed!')
+            else:
+                self.notify('Your strategy has started!')
+
         self.log.info("Initilized Strategy")
-        self.notify('Your strategy has started!')
-
-
         self._check_configuration(context)
 
         # Set context.BARS size to work with custom minute frequency
