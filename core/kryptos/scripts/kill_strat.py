@@ -13,10 +13,9 @@ LOCAL_BASE_URL = "http://web:8080"
 def run(strat_id, hosted):
     click.secho(f"Killing strat {strat_id}", fg="yellow")
 
-    if hosted:
-        resp = kill_from_api(strat_id, hosted=hosted)
-        resp.raise_for_status()
-        return
+    resp = kill_from_api(strat_id, hosted=hosted)
+    resp.raise_for_status()
+    return
 
 
 def kill_from_api(strat_id, hosted=False):
