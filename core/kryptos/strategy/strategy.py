@@ -1,13 +1,12 @@
 import json
-from pathlib import Path
 import uuid
-import shutil
 import os
 import inspect
 import datetime
 import copy
 from textwrap import dedent
 import logbook
+import time
 
 import pandas as pd
 import numpy as np
@@ -20,7 +19,7 @@ from catalyst.exchange.utils import stats_utils
 from catalyst.exchange import exchange_errors
 from ccxt.base import errors as ccxt_errors
 
-from kryptos.utils import viz, tasks, auth
+from kryptos.utils import viz, tasks, auth, outputs
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
@@ -569,7 +568,8 @@ class Strategy(object):
         if context.frame_stats:
             pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
             self.log.notice(pretty_output)
-            outputs.save_stats_to_storage(self)
+            if not self.is_backtest:
+                outputs.save_stats_to_storage(self)
 
 
     @property
