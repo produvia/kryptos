@@ -569,6 +569,7 @@ class Strategy(object):
         if context.frame_stats:
             pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
             self.log.notice(pretty_output)
+            outputs.save_stats_to_storage(self)
 
 
     @property
