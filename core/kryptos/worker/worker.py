@@ -3,7 +3,7 @@ import time
 from threading import Thread
 import signal
 
-from rq import Queue
+from rq import Queue, Worker, get_failed_queue
 from rq.worker import HerokuWorker as Worker
 from rq.job import Job
 
@@ -46,5 +46,36 @@ class StratQueue(Queue):
 
 
 class StratWorker(Worker):
+    imminent_shutdown_delay = 20
     queue_class = StratQueue
     job_class = StratJob
+
+    def shutdown_job(self):
+        self.log.warning("Initiating job cleanup")
+        job = self.get_current_job()
+
+        self.log.warning("quarantining job")
+        fq = get_failed_queue()
+        fq.quarantine(job, Exception("Instance Shutdown"))
+
+        self.log.warning("Setting job as PAUSED")
+        job.meta["PAUSED"] = True
+        job.save()
+        self.log.warning(f"Moving job {job.id} back to queue")
+        fq.requeue(job.id)
+        self.log.warning("Sending job kill signal to attempt analysis upload")
+        job.kill()
+
+    def request_stop_sigrtmin(self, signum, frame):
+        if self.imminent_shutdown_delay == 0:
+            self.log.warning("Imminent shutdown, raising ShutDownImminentException immediately")
+            self.request_force_stop_sigrtmin(signum, frame)
+        else:
+            self.log.warning(
+                "Imminent shutdown, raising ShutDownImminentException in %d seconds",
+                self.imminent_shutdown_delay,
+            )
+            signal.signal(signal.SIGRTMIN, self.request_force_stop_sigrtmin)
+            signal.signal(signal.SIGALRM, self.request_force_stop_sigrtmin)
+            signal.alarm(self.imminent_shutdown_delay)
+            self.shutdown_job()
