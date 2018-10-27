@@ -1,3 +1,4 @@
+import os
 import redis
 from rq import Connection, get_failed_queue
 from rq.exceptions import ShutDownImminentException
@@ -5,6 +6,7 @@ import click
 import multiprocessing
 import time
 import logbook
+import signal
 
 import datetime
 
@@ -86,6 +88,13 @@ def kill_marked_jobs():
                 # w.request_stop_sigrtmin()
                 # raise ShutDownImminentException
 
+def shutdown_workers(signum, frame):
+    log.warning('Sending SIGTERM to each worker to start graceful shutdown')
+    for w in Worker.all():
+        log.warning(f'Killing worker {w}')
+        os.kill(w.pid, signal.SIGTERM)
+        signal.pause()
+
 
 @click.command()
 def manage_workers():
@@ -95,8 +104,9 @@ def manage_workers():
     # remove_stale_workers()
     # start main worker
     with Connection(CONN):
-        log.info("Starting initial workers")
+        signal.signal(signal.SIGTERM, shutdown_workers)
 
+        log.info("Starting initial workers")
         log.info("Starting worker for BACKTEST queue")
         backtest_worker = Worker(["backtest"])
         register_sentry(client, backtest_worker)
@@ -143,9 +153,15 @@ def retry_handler(job, exc_type, exc_value, traceback):
     auth_errors = [AuthenticationError, ExchangeRequestError]
 
     if exc_type in auth_errors:
+        if job.meta.get("telegram_id"):
+            tasks.queue_notification(f"Auth error: {exc_value}", job.meta["telegram_id"])
+
+        else:
+            log.warning("No Telegram, could not notify")
+
         log.critical(exc_value)
         job.save()
-        tasks.queue_notification(f"Auth error: {exc_value}", job.meta["telegram_id"])
+
         return True
 
     if exc_type == SystemExit:
@@ -167,9 +183,15 @@ def retry_handler(job, exc_type, exc_value, traceback):
 
     # Too many failures
     if job.meta["failures"] >= MAX_FAILURES:
+        if job.meta.get("telegram_id"):
+            tasks.queue_notification(f"Strategy has failed", job.meta["telegram_id"])
+
+        else:
+            log.warning("No Telegram, could not notify")
+
         log.warn("job %s: failed too many times times - moving to failed queue" % job.id)
         job.save()
-        tasks.queue_notification(f"Strategy has failed", job.meta["telegram_id"])
+
         return True
 
     # Requeue job and stop it from being moved into the failed queue
