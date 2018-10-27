@@ -61,6 +61,10 @@ class StratLogger(logbook.Logger):
 
 
 class StratState(object):
+
+    def __init__(self):
+        self.i = 0
+
     def load_from_context(self, context):
         for k, v in context.state.items():
             setattr(self, k, v)
@@ -364,6 +368,7 @@ class Strategy(object):
         self._context_ref = context
         self.state.load_from_context(context)
 
+
         self.state.asset = symbol(self.trading_info["ASSET"])
         if self.is_backtest:
             self.log.debug("Setting benchmark")
@@ -389,12 +394,9 @@ class Strategy(object):
             if job.meta.get("PAUSED"):
                 self.log.warning(f"Paused strategy {self.id} has been resumed")
                 self.notify("Your strategy has resumed!")
+                self.log.info(json.dumps(self.state))
                 self.log.notice(f"resuming on trade iteration {self.state.i}")
-                try:
-                    self.log.info(json.dumps(self.state))
-                    self.notify(self.state.i)
-                except Exception:
-                    pass
+                
             else:
                 self.notify("Your strategy has started!")
                 self.state.i = 0
@@ -715,6 +717,7 @@ class Strategy(object):
         plt.close()
 
         outputs.save_plot_to_storage(self, filename)
+        
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
