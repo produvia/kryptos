@@ -7,6 +7,10 @@ import ccxt
 from app.models import User
 from app import task
 
+ML_MODELS = [
+    "XGBOOST",
+    "LIGHTGBM"
+]
 
 EXISTING_STRATS = [
     # display, callback
@@ -17,6 +21,8 @@ EXISTING_STRATS = [
     ("On Balance Volume (OBV)", "OBV"),
     ("Relative Strength Index (RSI)", "RSI"),
     ("Stochastic (STOCH)", "STOCH"),
+    ("XGBOOST (ML)", "XGBOOST"),
+    ("LIGHTGBM (ML)", "LIGHTGBM")
 ]
 
 # TODO possibly use telegram chat_id
@@ -89,7 +95,10 @@ def build_strat_dict_from_context(context, mode):
     start = datetime.datetime.today()
     end = start + datetime.timedelta(days=3)
 
-    strat_dict = {"trading": {}, "indicators": [{"name": strat}]}
+    if strat in ML_MODELS:
+        strat_dict = {"trading": {}, "models": [{"name": strat}]}
+    else:
+        strat_dict = {"trading": {}, "indicators": [{"name": strat}]}
     strat_dict["trading"]["START"] = datetime.datetime.strftime(start, "%Y-%m-%d")
     strat_dict["trading"]["END"] = datetime.datetime.strftime(end, "%Y-%m-%d")
 
