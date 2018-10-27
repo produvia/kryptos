@@ -60,16 +60,16 @@ class MLIndicator(AbstractIndicator):
     def record(self):
         q = Queue('ml', connection=tasks.CONN)
         job = q.fetch_job(self.current_job_id)
+
+        self.log.info('Waiting for ML job')
         while not job.is_finished:
-            self.log.info('Waiting for ML job')
-            time.sleep(3)
-        self.log.info('Job complete')
+            pass
+        self.log.info('Job complete, recording results')
         self.result, df_results_json, df_final_json, self._signals_buy, self._signals_sell, self.hyper_params = job.result
         self.current_job_id = None
         df_results = pd.read_json(df_results_json)
         self.df_results = self.df_results.append(df_results)
         self.df_final = pd.read_json(df_final_json)
-        model_name = self.name
         payload = {self.name: self.result}
         record(**payload)
 
