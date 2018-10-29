@@ -466,6 +466,7 @@ class Strategy(object):
                 cash=context.portfolio.cash,
                 volume=self.state.current.volume,
             )
+            self.state.dump_to_context(context)
             return True
 
         except exchange_errors.NoValueForField as e:
@@ -475,8 +476,9 @@ class Strategy(object):
 
         except KeyError:
             self.log.warn("Error when getting current fields")
+            return False
 
-        self.state.dump_to_context(context)
+        
 
     def _check_minute_freq(self, context, data):
         if self.state.DATA_FREQ == "minute":
@@ -543,6 +545,7 @@ class Strategy(object):
                 args=(context, data),
                 cleanup=lambda: self.log.warn("CCXT request timed out, retrying..."),
             )
+            return True
 
         except ccxt_errors.ExchangeNotAvailable:
             self.log.error(f"{self.exchange} API is currently unavailable, skipping trading step")
@@ -554,8 +557,7 @@ class Strategy(object):
 
         except Exception:
             self.log.error("Could not fetch latest history", exec_info=True)
-
-        return True
+            return False
 
     def _enqueue_ml_calcs(self, context, data):
         #  Add external datasets (Google Search Volume and Blockchain Info) as features
