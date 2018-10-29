@@ -555,6 +555,10 @@ class Strategy(object):
             self.log.error("Hit Rate limit, skipping trade step")
             return False
 
+        except SystemExit:
+            self.log.warning('Not retrying history due to algo exit')
+            return False
+
         except Exception:
             self.log.error("Could not fetch latest history", exec_info=True)
             return False
