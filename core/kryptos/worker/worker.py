@@ -61,16 +61,17 @@ class StratWorker(Worker):
         self.log.warning("Setting job as PAUSED")
         job.meta["PAUSED"] = True
         job.save()
+        job.kill()  # causes algo to exit gracefully
         self.log.warning(f"Moving job {job.id} back to queue")
         fq.requeue(job.id)
         self.log.warning("Sending job kill signal to attempt analysis upload")
-        job.kill()
 
     def request_stop_sigrtmin(self, signum, frame):
         if self.imminent_shutdown_delay == 0:
             self.log.warning("Imminent shutdown, raising ShutDownImminentException immediately")
             self.request_force_stop_sigrtmin(signum, frame)
         else:
+            self.shutdown_job()
             self.log.warning(
                 "Imminent shutdown, raising ShutDownImminentException in %d seconds",
                 self.imminent_shutdown_delay,
@@ -78,4 +79,3 @@ class StratWorker(Worker):
             signal.signal(signal.SIGRTMIN, self.request_force_stop_sigrtmin)
             signal.signal(signal.SIGALRM, self.request_force_stop_sigrtmin)
             signal.alarm(self.imminent_shutdown_delay)
-            self.shutdown_job()
