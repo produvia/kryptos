@@ -1,7 +1,6 @@
 import os
 import redis
 from rq import Connection, get_failed_queue
-from rq.exceptions import ShutDownImminentException
 import click
 import multiprocessing
 import time
@@ -172,21 +171,6 @@ def retry_handler(job, exc_type, exc_value, traceback):
         job.save()
         job.cleanup()
         return False
-
-    #
-    if exc_type == ShutDownImminentException:
-        log.notice("Instance shutdown, requeuing and shutting down job")
-
-        fq = get_failed_queue()
-        fq.quarantine(job, Exception("Some fake error"))
-
-        job.meta['PAUSED'] = True
-        job.save()
-        fq.requeue(job.id)
-        job.kill()
-
-        # skip retry
-        return True
 
     # Too many failures
     if job.meta["failures"] >= MAX_FAILURES:
