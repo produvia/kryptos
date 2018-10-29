@@ -660,14 +660,8 @@ class Strategy(object):
         """Get last date filtered to work in the train dataset.
         """
         if self.last_date is None:
-            # Get historic prices
-            retry(
-                self._fetch_history,
-                sleeptime=5,
-                retry_exceptions=(ccxt_errors.RequestTimeout),
-                args=(context, data),
-                cleanup=lambda: self.log.warn("CCXT request timed out, retrying..."),
-            )
+
+            # self.state.prices was set in fetch_history
 
             #  Filter selected dates
             filter_dates = pd.date_range(
