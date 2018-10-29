@@ -169,7 +169,8 @@ def retry_handler(job, exc_type, exc_value, traceback):
 
     if exc_type == SystemExit:
         log.notice("Strat was set killed, not requeuing or retrying")
-        job.kill()
+        job.save()
+        job.cleanup()
         return False
 
     #
