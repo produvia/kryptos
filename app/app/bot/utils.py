@@ -92,15 +92,16 @@ def build_strat_dict_from_context(context, mode):
     capital_base = context.get("capital_base")
     trade_pair = f"{base_currency}_{quote_currency}".lower()
 
-    start = datetime.datetime.today()
     end = start + datetime.timedelta(days=3)
+    start = datetime.datetime.utcnow()
 
     if strat in ML_MODELS:
         strat_dict = {"trading": {}, "models": [{"name": strat}]}
     else:
         strat_dict = {"trading": {}, "indicators": [{"name": strat}]}
-    strat_dict["trading"]["START"] = datetime.datetime.strftime(start, "%Y-%m-%d")
-    strat_dict["trading"]["END"] = datetime.datetime.strftime(end, "%Y-%m-%d")
+    strat_dict["trading"]["START"] = datetime.datetime.strftime(start, "%Y-%m-%d-%H-%M")
+    strat_dict["trading"]["END"] = datetime.datetime.strftime(end, "%Y-%m-%d %H:%M:%S")
+
 
     strat_dict["trading"]["EXCHANGE"] = exchange
     strat_dict["trading"]["ASSET"] = trade_pair
