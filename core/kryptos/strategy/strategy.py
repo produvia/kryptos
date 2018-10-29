@@ -588,6 +588,13 @@ class Strategy(object):
         """
         self.state.i += 1
 
+        # uses context.end because to get algo's exact time end
+        # which was passed to run_algorithm
+        end = arrow.get(context.end)
+        # now = arrow.utcnow()
+        time_left = end.humanize(only_distance=True)
+        self.log.debug(f"Stopping strategy in {time_left}")
+
         # the following called methods return:
         # True if the iteration should continued
         # False if the algo should not continue
@@ -1197,19 +1204,14 @@ class Strategy(object):
             self.trading_info["DATA_FREQ"] = "minute"
 
         # start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
-        end = arrow.get(self.trading_info["END"], "YYYY-M-D")
+        end = arrow.get(self.trading_info["END"])
 
-        # TODO fix for utc/tz issue
-        # if start < arrow.utcnow().floor('day'):
-        #     self.log.error('Specified start date is in the past, will use today instead')
-        #     start = arrow.utcnow().shift(seconds=+30)
-        #     self.trading_info["START"] = start.format('YYYY-M-D')
-
-        # if end < start or end < arrow.utcnow().floor('minute'):
         if end < arrow.utcnow().floor("minute"):
-            self.log.error("Specified end date is invalid, will use 3 days from today")
-            end = arrow.utcnow().shift(days=+3)
-            self.trading_info["END"] = end.format("YYYY-M-D")
+            self.log.warning(f'End Date: {end} is invalid, will use ')
+            # self.log.warning("Specified end date is invalid, will use 3 days from today")
+            self.log.warning("Will use 30 minutes from now")
+            end = arrow.utcnow().shift(minutes=+30)
+            self.trading_info["END"] = end.format("YYYY-M-D-H-MM")
 
         # self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
         self.log.notice(f"Stopping strategy {end.humanize()} -- {end}")
