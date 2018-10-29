@@ -88,9 +88,10 @@ def build_strat_dict_from_context(context, mode):
     quote_currency = context.get("quote_currency").upper()
     capital_base = context.get("capital_base")
     trade_pair = f"{base_currency}_{quote_currency}".lower()
+    hours = int(context.get("hours"))
 
     start = datetime.datetime.utcnow()
-    end = start + datetime.timedelta(hours=12)
+    end = start + datetime.timedelta(hours=hours)
 
     if strat in ML_MODELS:
         strat_dict = {"trading": {}, "models": [{"name": strat}]}
