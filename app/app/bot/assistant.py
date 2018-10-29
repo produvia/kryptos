@@ -203,7 +203,7 @@ def prompt_for_mode():
     #     current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
     # )
 
-    speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days."
+    speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n"
 
     resp = inline_keyboard(dedent(speech))
     # resp.add_button("View Past Performance", url=backtest_url)
@@ -223,7 +223,7 @@ def launch_strategy_paper(existing_strategy):
     url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
     speech = f"""\
-    Great! The strategy is now running in paper mode and will run for the next 3 days.
+    Great! The strategy is now running in paper mode and will run for the next 12 hours.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
@@ -241,7 +241,7 @@ def launch_strategy_paper(existing_strategy):
     url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
     speech = f"""\
-    Great! The strategy is now live and will run for the next 3 days.
+    Great! The strategy is now live and will run for the next 12 hours.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
