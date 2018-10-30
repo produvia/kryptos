@@ -64,6 +64,12 @@ def get_stats_dir(strat):
     return stats_folder
 
 
+def get_algo_state_file(strat):
+    mode_state_file = f"context.state_paper.p"
+    algo_folder = get_algo_dir(strat)
+    return os.path.join(algo_folder, mode_state_file)
+
+
 def get_stats_bucket():
 
     if CONFIG_ENV == "dev":
@@ -132,3 +138,30 @@ def save_stats_to_storage(strat):
     blob.upload_from_filename(filename)
     strat.log.info(f"Uploaded strat stats to {blob_name}")
     return blob_name, stats_bucket.name
+
+
+def upload_state_to_storage(strat):
+    stats_bucket = get_stats_bucket()
+    filename = get_algo_state_file(strat)
+    blob_name = f"{strat.id}/{filename}"
+
+    blob = stats_bucket.blob(blob_name)
+    blob.upload_from_filename(filename)
+    strat.log.info(f"Uploaded strat context state")
+    return blob_name, stats_bucket.name
+
+
+def load_state_from_storage(strat):
+    strat.log.debug("Checking for previous stored state")
+    stats_bucket = get_stats_bucket()
+    filename = get_algo_state_file(strat)
+    blob_name = f"{strat.id}/{filename}"
+
+    try:
+        blob = stats_bucket.blob(blob_name)
+        blob.download_to_filename(filename)
+        strat.log.info(f"Downloaded previous strat state")
+        return True
+    except NotFound:
+        strat.log.info("No previous state file found")
+        return False

@@ -365,8 +365,11 @@ class Strategy(object):
 
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
+
         self._context_ref = context
         self.state.load_from_context(context)
+
+        self.log.debug(f'Starting strategy on iteration {self.state.i}')
 
 
         self.state.asset = symbol(self.trading_info["ASSET"])
@@ -586,6 +589,13 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
+
+        # catalyst dumps pickle file after handle_data called
+        # so this call uploads the state of
+        # the previously compelted iteration
+        outputs.upload_state_to_storage(self)
+
+
         self.state.i += 1
 
         # uses context.end because to get algo's exact time end
@@ -1197,7 +1207,6 @@ class Strategy(object):
             auth.delete_alias_file(self.user_id, self.exchange)
 
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
-
         self.log.notice("Running live trading, simulating orders: {}".format(simulate_orders))
         if self.trading_info["DATA_FREQ"] != "minute":
             self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
@@ -1215,6 +1224,11 @@ class Strategy(object):
 
         # self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
         self.log.notice(f"Stopping strategy {end.humanize()} -- {end}")
+
+        # catalyst loads state before init called
+        # so need to fetch state before algorithm starts
+        if outputs.load_state_from_storage(self):
+            self.log.info(f'Resuming strategy with saved state')
 
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
