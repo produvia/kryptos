@@ -54,6 +54,7 @@ def get_algo_dir(strat):
     """Modifed version of catalyst get_algo_folder"""
     home_dir = str(Path.home())
     algo_folder = os.path.join(home_dir, ".catalyst/data/live_algos", strat.id)
+    os.makedirs(algo_folder, exist_ok=True)
     return algo_folder
 
 
@@ -87,7 +88,7 @@ def get_stats_bucket():
 
 def save_analysis_to_storage(strat, results):
 
-    strat.log.info("saving final analysis to disk")
+    strat.log.info("Saving final performance to disk")
     folder = get_stats_dir(strat)
     filename = os.path.join(folder, "final_performance.csv")
 
@@ -102,8 +103,8 @@ def save_analysis_to_storage(strat, results):
     blob_name = f"{strat.id}/stats_{strat.mode}/final_performance.csv"
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
-    strat.log.info(f"Uploaded strat performance to {blob_name}")
-    self.notify(f"https://storage.cloud.google.com/strat_stats/{blob_name}")
+    strat.log.info(f"Uploaded strat performance")
+    strat.log.info(f"Performance URL: https://storage.cloud.google.com/strat_stats/{blob_name}")
 
 
 def save_plot_to_storage(strat, plot_file):
@@ -114,8 +115,8 @@ def save_plot_to_storage(strat, plot_file):
     blob_name = f"{strat.id}/stats_{strat.mode}/summary_plot.png"
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(plot_file)
-    strat.log.info(f"Uploaded strat plot to {blob_name}")
-    self.notify(f"https://storage.cloud.google.com/strat_stats/{blob_name}")
+    strat.log.info(f"Uploaded strat plot")
+    strat.log.info(f"Plot URL: https://storage.cloud.google.com/strat_stats/{blob_name}")
 
 
 def save_stats_to_storage(strat):
@@ -143,11 +144,13 @@ def save_stats_to_storage(strat):
 def upload_state_to_storage(strat):
     stats_bucket = get_stats_bucket()
     filename = get_algo_state_file(strat)
-    blob_name = f"{strat.id}/{filename}"
+    blob_name = f"{strat.id}/context.state_{strat.mode}.p"
+
+    strat.log.info(f"Uploading state from {filename}")
 
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
-    strat.log.info(f"Uploaded strat context state")
+    strat.log.info(f"Uploaded strat state to {blob_name}")
     return blob_name, stats_bucket.name
 
 
@@ -155,7 +158,7 @@ def load_state_from_storage(strat):
     strat.log.debug("Checking for previous stored state")
     stats_bucket = get_stats_bucket()
     filename = get_algo_state_file(strat)
-    blob_name = f"{strat.id}/{filename}"
+    blob_name = f"{strat.id}/context.state_{strat.mode}.p"
 
     try:
         blob = stats_bucket.blob(blob_name)
