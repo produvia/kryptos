@@ -606,14 +606,19 @@ class Strategy(object):
             context {pandas.Dataframe} -- Catalyst context object
             data {pandas.Datframe} -- Catalyst data object
         """
-
         # catalyst dumps pickle file after handle_data called
         # so this call uploads the state of
         # the previously compelted iteration
-        outputs.upload_state_to_storage(self)
-
 
         self.state.i += 1
+        self.log.debug(f'Beginning iteration {self.state.i}')
+
+        if self.state.i > 1:
+            outputs.upload_state_to_storage(self)
+
+        else:
+            self.log.debug('Skipping stats upload until catalyst writes to file')
+
 
         # uses context.end because to get algo's exact time end
         # which was passed to run_algorithm
