@@ -88,7 +88,7 @@ def get_stats_bucket():
 
 def save_analysis_to_storage(strat, results):
 
-    strat.log.info("Saving final performance to disk")
+    strat.log.debug("Saving final performance to disk")
     folder = get_stats_dir(strat)
     filename = os.path.join(folder, "final_performance.csv")
 
@@ -96,7 +96,7 @@ def save_analysis_to_storage(strat, results):
     with open(filename, "w") as f:
         results.to_csv(f)
 
-    strat.log.info("Uploading final performance to storage")
+    strat.log.debug("Uploading final performance to storage")
 
     stats_bucket = get_stats_bucket()
 
@@ -108,14 +108,14 @@ def save_analysis_to_storage(strat, results):
 
 
 def save_plot_to_storage(strat, plot_file):
-    strat.log.info("Uploading summar plot to storage")
+    strat.log.debug("Uploading summar plot to storage")
 
     stats_bucket = get_stats_bucket()
 
     blob_name = f"{strat.id}/stats_{strat.mode}/summary_plot.png"
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(plot_file)
-    strat.log.info(f"Uploaded strat plot")
+    strat.log.info(f"Uploaded strat plot to storage")
     strat.log.info(f"Plot URL: https://storage.cloud.google.com/strat_stats/{blob_name}")
 
 
@@ -126,7 +126,7 @@ def save_stats_to_storage(strat):
 
     # However this file won't be written until the end of the iteration,
     # so upload occurs the followign iteration
-    strat.log.info("Uploading previous iteration stats")
+    strat.log.debug("Uploading previous iteration stats")
     stats_folder = get_stats_dir(strat)
 
     timestr = time.strftime("%Y%m%d")
@@ -137,7 +137,7 @@ def save_stats_to_storage(strat):
     blob_name = f"{strat.id}/stats_{strat.mode}/{timestr}".format(timestr)
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
-    strat.log.info(f"Uploaded strat stats to {blob_name}")
+    strat.log.info(f"Uploaded iteration {strat.state.i - 1} stats to storage")
     return blob_name, stats_bucket.name
 
 
@@ -146,11 +146,11 @@ def upload_state_to_storage(strat):
     filename = get_algo_state_file(strat)
     blob_name = f"{strat.id}/context.state_{strat.mode}.p"
 
-    strat.log.info(f"Uploading state from {filename}")
+    strat.log.debug(f"Uploading state from local catalyst file")
 
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
-    strat.log.info(f"Uploaded strat state to {blob_name}")
+    strat.log.info(f"Uploaded strat state to storage")
     return blob_name, stats_bucket.name
 
 
@@ -160,6 +160,9 @@ def load_state_from_storage(strat):
     filename = get_algo_state_file(strat)
     blob_name = f"{strat.id}/context.state_{strat.mode}.p"
 
+    # ensure file is created
+    open(filename, "a+").close()
+
     try:
         blob = stats_bucket.blob(blob_name)
         blob.download_to_filename(filename)
@@ -167,4 +170,7 @@ def load_state_from_storage(strat):
         return True
     except NotFound:
         strat.log.info("No previous state file found")
+
+        # prevent catalyst loading empty pickle
+        os.remove(filename)
         return False
