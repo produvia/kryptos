@@ -56,7 +56,7 @@ services:
       context: ./core
       dockerfile: Dockerfile
     volumes:
-      - catalyst:/root/.catalyst
+      # - catalyst:/root/.catalyst
       - ./core:/core
     environment:
       - REDIS_HOST=redis
