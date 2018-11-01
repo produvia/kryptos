@@ -25,6 +25,8 @@ REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
 SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
+CLOUD_LOGGING = os.getenv('CLOUD_LOGGING', False)
+
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")

@@ -32,8 +32,11 @@ from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group
-from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR
+from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR, CLOUD_LOGGING
 from kryptos.analysis import quant
+import google.cloud.logging
+
+cloud_client = google.cloud.logging.Client()
 
 from redo import retry
 import matplotlib
@@ -47,10 +50,15 @@ class StratLogger(logbook.Logger):
         self.strat = strat
         super().__init__(name="STRATEGY")
 
+        self.cloud_logger = None
+        if CLOUD_LOGGING:
+            logger_name = f"STRAT:{self.strat.id}"
+            self.cloud_logger = cloud_client.logger("STRATEGY")
+
     def process_record(self, record):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
-        record.extra['strat_id'] = self.strat.id
+        record.extra["strat_id"] = self.strat.id
 
         if self.strat.in_job:  # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
@@ -60,9 +68,20 @@ class StratLogger(logbook.Logger):
                 job.meta["output"] += record.msg + "\n"
             job.save_meta()
 
+        if self.cloud_logger:
+            self.cloud_logger.log_struct(
+                {
+                    "strat_id": self.strat.id,
+                    "mode": self.strat.mode,
+                    "message": record.msg,
+                    "user_id": self.strat.user_id,
+                },
+                severity=record.level,
+                # source_location=f"{record.filename}:{record.lineno}",
+            )
+
 
 class StratState(object):
-
     def __init__(self):
         self.i = 0
 
@@ -370,8 +389,7 @@ class Strategy(object):
         self._context_ref = context
         self.state.load_from_context(context)
 
-        self.log.debug(f'Starting strategy on iteration {self.state.i}')
-
+        self.log.debug(f"Starting strategy on iteration {self.state.i}")
 
         self.state.asset = symbol(self.trading_info["ASSET"])
         if self.is_backtest:
@@ -400,7 +418,7 @@ class Strategy(object):
                 self.notify("Your strategy has resumed!")
                 self.log.info(json.dumps(self.state))
                 self.log.notice(f"resuming on trade iteration {self.state.i}")
-                
+
             else:
                 self.notify("Your strategy has started!")
                 self.state.i = 0
@@ -482,8 +500,6 @@ class Strategy(object):
             self.log.warn("Error when getting current fields")
             return False
 
-        
-
     def _check_minute_freq(self, context, data):
         if self.state.DATA_FREQ == "minute":
             # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
@@ -560,7 +576,7 @@ class Strategy(object):
             return False
 
         except SystemExit:
-            self.log.warning('Not retrying history due to algo exit')
+            self.log.warning("Not retrying history due to algo exit")
             return False
 
         except Exception:
@@ -735,7 +751,6 @@ class Strategy(object):
         plt.close()
 
         outputs.save_plot_to_storage(self, filename)
-        
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
