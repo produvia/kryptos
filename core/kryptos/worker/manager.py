@@ -13,7 +13,7 @@ from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
 
-from kryptos import logger_group
+from kryptos import logger_group, setup_logging
 
 from kryptos.utils import tasks
 from kryptos.settings import QUEUE_NAMES, REDIS_HOST, REDIS_PORT, SENTRY_DSN, CONFIG_ENV
@@ -26,9 +26,8 @@ client = Client(SENTRY_DSN, transport=HTTPTransport)
 CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
-log = logbook.Logger("WorkerManager")
+log = logbook.Logger("MANAGER")
 logger_group.add_logger(log)
-log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 
 
 def get_queue(queue_name):
@@ -203,4 +202,6 @@ def retry_handler(job, exc_type, exc_value, traceback):
 
 
 if __name__ == "__main__":
+    setup_logging()
+    log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
     manage_workers()

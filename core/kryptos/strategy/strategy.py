@@ -50,6 +50,7 @@ class StratLogger(logbook.Logger):
     def process_record(self, record):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
+        record.extra['strat_id'] = self.strat.id
 
         if self.strat.in_job:  # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
