@@ -2,10 +2,10 @@ import os
 import redis
 from rq import Connection, get_failed_queue
 import click
-import multiprocessing
 import time
 import logbook
 import signal
+from subprocess import Popen
 
 import datetime
 
@@ -37,6 +37,26 @@ def get_queue(queue_name):
 def workers_required(queue_name):
     q = get_queue(queue_name)
     return len(q)
+
+
+def spawn_worker(q, burst=False):
+    cmd = [
+        "rq",
+        "worker",
+        "--config",
+        "kryptos.settings",
+        "--worker-class",
+        "kryptos.worker.worker.StratWorker",
+        "--job-class",
+        "kryptos.worker.worker.StratJob",
+        "--queue-class",
+        "kryptos.worker.worker.StratQueue",
+        q,
+    ]
+    if burst:
+        cmd.append("--burst")
+
+    return Popen(cmd)
 
 
 def remove_zombie_workers():
@@ -91,10 +111,10 @@ def shutdown_workers(signum, frame):
     log.warning("Sending SIGTERM to each worker to start graceful shutdown")
     for w in Worker.all():
         log.warning(f"Killing worker {w.pid}")
+        w.shutdown_job()
         # w.handle_warm_shutdown_request()
-        os.kill(w.pid, signal.SIGTERM)
+        # os.kill(w.pid, signal.SIGTERM)
         signal.pause()
-        w.get_current_job().kill()
 
 
 @click.command()
@@ -109,24 +129,16 @@ def manage_workers():
 
         log.info("Starting initial workers")
         log.info("Starting worker for BACKTEST queue")
-        backtest_worker = Worker(["backtest"])
-        register_sentry(client, backtest_worker)
-        multiprocessing.Process(target=backtest_worker.work).start()
+        spawn_worker('backtest')
 
         log.info("Starting worker for PAPER queues")
-        paper_worker = Worker(["paper"], exception_handlers=[retry_handler])
-        register_sentry(client, paper_worker)
-        multiprocessing.Process(target=paper_worker.work).start()
+        spawn_worker('paper')
 
         log.info("Starting worker for LIVE queues")
-        live_worker = Worker(["live"], exception_handlers=[retry_handler])
-        register_sentry(client, live_worker)
-        multiprocessing.Process(target=live_worker.work).start()
+        spawn_worker('live')
 
         log.info("Starting worker for TA queue")
-        ta_worker = Worker(["ta"])
-        register_sentry(client, ta_worker)
-        multiprocessing.Process(target=ta_worker.work).start()
+        spawn_worker('ta')
 
         # create paper/live queues when needed
         while True:
@@ -134,11 +146,12 @@ def manage_workers():
                 required = workers_required(q)
                 for i in range(required):
                     log.info(f"Creating {q} worker")
-                    worker = Worker([q], exception_handlers=[retry_handler])
-                    register_sentry(client, worker)
-                    multiprocessing.Process(target=worker.work, kwargs={"burst": True}).start()
+                    spawn_worker(q, burst=True)
+                    time.sleep(5)
 
-            time.sleep(5)
+            time.sleep(2)
+        else:
+            log.critical("Instance is shutting down")
 
 
 def retry_handler(job, exc_type, exc_value, traceback):
