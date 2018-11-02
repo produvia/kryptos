@@ -61,10 +61,10 @@ class StratWorker(Worker):
         self.log.warning("Setting job as PAUSED")
         job.meta["PAUSED"] = True
         job.save()
-        job.kill()  # causes algo to exit gracefully
         self.log.warning(f"Moving job {job.id} back to queue")
         fq.requeue(job.id)
         self.log.warning("Sending job kill signal to attempt analysis upload")
+        job.kill()  # causes algo to exit gracefully
 
     def request_stop_sigrtmin(self, signum, frame):
         if self.imminent_shutdown_delay == 0:
