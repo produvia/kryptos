@@ -31,7 +31,7 @@ from kryptos.utils import viz, tasks, auth, outputs
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
-from kryptos import logger_group
+from kryptos import logger_group, setup_logging
 from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR, CLOUD_LOGGING
 from kryptos.analysis import quant
 import google.cloud.logging
@@ -158,6 +158,7 @@ class Strategy(object):
 
         self.log = StratLogger(self)
         logger_group.add_logger(self.log)
+        setup_logging()
 
         self.current_date = None
         self.last_date = None
@@ -416,7 +417,6 @@ class Strategy(object):
             if job.meta.get("PAUSED"):
                 self.log.warning(f"Paused strategy {self.id} has been resumed")
                 self.notify("Your strategy has resumed!")
-                self.log.info(json.dumps(self.state))
                 self.log.notice(f"resuming on trade iteration {self.state.i}")
 
             else:
@@ -611,14 +611,13 @@ class Strategy(object):
         # the previously compelted iteration
 
         self.state.i += 1
-        self.log.debug(f'Beginning iteration {self.state.i}')
+        self.log.debug(f"Beginning iteration {self.state.i}")
 
         if self.state.i > 1:
             outputs.upload_state_to_storage(self)
 
         else:
-            self.log.debug('Skipping stats upload until catalyst writes to file')
-
+            self.log.debug("Skipping stats upload until catalyst writes to file")
 
         # uses context.end because to get algo's exact time end
         # which was passed to run_algorithm
@@ -691,6 +690,7 @@ class Strategy(object):
             self.log.notice(pretty_output)
             if not self.is_backtest:
                 outputs.save_stats_to_storage(self)
+
         self.state.dump_to_context(context)
 
     @property
@@ -852,8 +852,6 @@ class Strategy(object):
             indicator = ml.get_indicator(indicator)
 
         indicator.symbol = self.trading_info["ASSET"]
-
-        # indic
 
         # if "symbol" not in params:
         #     params["symbol"] = self.trading_info["ASSET"]
@@ -1237,7 +1235,7 @@ class Strategy(object):
         end = arrow.get(self.trading_info["END"])
 
         if end < arrow.utcnow().floor("minute"):
-            self.log.warning(f'End Date: {end} is invalid, will use ')
+            self.log.warning(f"End Date: {end} is invalid, will use ")
             # self.log.warning("Specified end date is invalid, will use 3 days from today")
             self.log.warning("Will use 30 minutes from now")
             end = arrow.utcnow().shift(minutes=+30)
@@ -1249,7 +1247,7 @@ class Strategy(object):
         # catalyst loads state before init called
         # so need to fetch state before algorithm starts
         if outputs.load_state_from_storage(self):
-            self.log.info(f'Resuming strategy with saved state')
+            self.log.info(f"Resuming strategy with saved state")
 
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],
