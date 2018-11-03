@@ -2,10 +2,19 @@ import os
 import time
 from threading import Thread
 import signal
+import logbook
+
 
 from rq import Queue, Worker, get_failed_queue
 from rq.worker import HerokuWorker as Worker
 from rq.job import Job
+from raven import Client
+from raven.transport.http import HTTPTransport
+from rq.contrib.sentry import register_sentry
+
+from kryptos.logger import logger_group, setup_logging
+
+client = Client(transport=HTTPTransport)
 
 # Because the workers are running in separate processes,
 # calling worker methods such handle_warm_shutdown_request() and request_stop_sigrtmin()
@@ -49,6 +58,15 @@ class StratWorker(Worker):
     imminent_shutdown_delay = 20
     queue_class = StratQueue
     job_class = StratJob
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        register_sentry(client, self)
+        self.log = logbook.Logger('STRATWORKER')
+        self.log.level = logbook.INFO
+        logger_group.add_logger(self.log)
+        setup_logging()
+
 
     def shutdown_job(self):
         self.log.warning("Initiating job cleanup")
