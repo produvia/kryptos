@@ -1,8 +1,10 @@
 import os
+import sys
 import time
 from threading import Thread
 import signal
-import logbook
+
+from logbook.compat import RedirectLoggingHandler, redirect_logging
 
 
 from rq import Queue, Worker, get_failed_queue
@@ -62,11 +64,10 @@ class StratWorker(Worker):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         register_sentry(client, self)
-        self.log = logbook.Logger('STRATWORKER')
-        self.log.level = logbook.INFO
-        logger_group.add_logger(self.log)
+        self.log.addHandler(RedirectLoggingHandler())
+        redirect_logging()
         setup_logging()
-
+       
 
     def shutdown_job(self):
         self.log.warning("Initiating job cleanup")
