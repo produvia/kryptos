@@ -50,15 +50,12 @@ class StratLogger(logbook.Logger):
         self.strat = strat
         super().__init__(name="STRATEGY")
 
-        self.cloud_logger = None
-        if CLOUD_LOGGING:
-            logger_name = f"STRAT:{self.strat.id}"
-            self.cloud_logger = cloud_client.logger("STRATEGY")
-
     def process_record(self, record):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
         record.extra["strat_id"] = self.strat.id
+        record.extra['mode'] = self.strat.mode
+        record.extra['user_id'] = self.strat.user_id
 
         if self.strat.in_job:  # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
@@ -67,18 +64,6 @@ class StratLogger(logbook.Logger):
             else:
                 job.meta["output"] += record.msg + "\n"
             job.save_meta()
-
-        if self.cloud_logger:
-            self.cloud_logger.log_struct(
-                {
-                    "strat_id": self.strat.id,
-                    "mode": self.strat.mode,
-                    "message": record.msg,
-                    "user_id": self.strat.user_id,
-                },
-                severity=record.level,
-                # source_location=f"{record.filename}:{record.lineno}",
-            )
 
 
 class StratState(object):
