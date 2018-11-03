@@ -8,7 +8,7 @@ from kryptos.strategy import Strategy
 from kryptos.settings import REDIS_HOST, REDIS_PORT
 
 
-log = logbook.Logger("WorkerManager")
+log = logbook.Logger("WorkerJobs")
 logger_group.add_logger(log)
 log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 

@@ -3,8 +3,10 @@ import sys
 import logbook
 from logbook.more import ColorizedStderrHandler
 from logbook.handlers import StringFormatterHandlerMixin
+import google.cloud.logging
 
-from kryptos.settings import LOG_DIR
+
+from kryptos.settings import LOG_DIR, CLOUD_LOGGING
 
 logger_group = logbook.LoggerGroup()
 # logger_group.level = logbook.INFO
@@ -48,8 +50,10 @@ class GoogleCloudHandler(logbook.Handler, StringFormatterHandlerMixin):
 
     def emit(self, record):
         if CLOUD_LOGGING:
-            self.log_to_cloud(record)
-
+            try:
+                self.log_to_cloud(record)
+            except Exception:
+                Warning("Could not emit cloud log")
 
 
 def setup_logging(*handlers):
@@ -100,3 +104,4 @@ Exception: {record.formatted_exception}
     )
 
     setup.push_thread()
+    cloud_client.setup_logging()
