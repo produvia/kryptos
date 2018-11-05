@@ -1,4 +1,5 @@
 import os
+import sys
 import redis
 from rq import Connection, get_failed_queue
 import click
@@ -30,6 +31,8 @@ CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 log = logbook.Logger("MANAGER")
 logger_group.add_logger(log)
 
+WORKER_PROCESSES = []
+
 
 def get_queue(queue_name):
     return StratQueue(queue_name, connection=CONN)
@@ -58,7 +61,9 @@ def spawn_worker(q, burst=False):
     if burst:
         cmd.append("--burst")
 
-    return Popen(cmd)
+    proc = Popen(cmd, shell=False)
+    WORKER_PROCESSES.append(proc)
+    return proc
 
 
 def remove_zombie_workers():
@@ -111,17 +116,27 @@ def kill_marked_jobs():
 
 def shutdown_workers(signum, frame):
     log.warning("Sending SIGTERM to each worker to start graceful shutdown")
-    for w in Worker.all():
-        log.warning(f"Killing worker {w.pid}")
-        w.shutdown_job()
-        # w.handle_warm_shutdown_request()
-        # os.kill(w.pid, signal.SIGTERM)
-        signal.pause()
+
+    for p in WORKER_PROCESSES:
+        log.warning(f"Terminating worker process with pid {p.pid}")
+        p.terminate()
+
+    while len(WORKER_PROCESSES) > 0:
+        for p in WORKER_PROCESSES:
+            if p.poll():
+                log.warning(f"waiting on process {p.pid} to terminate")
+            else:
+                log.info(f"Process {p.pid} has finished")
+                WORKER_PROCESSES.remove(p)
+
+    log.notice("Shutdown process complete, exiting")
+    sys.exit(0)
 
 
 @click.command()
 def manage_workers():
     log.info(f"Starting core service in {CONFIG_ENV} env")
+    log.info(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 
     remove_zombie_workers()
     # remove_stale_workers()
@@ -218,6 +233,6 @@ def retry_handler(job, exc_type, exc_value, traceback):
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, shutdown_workers)
     setup_logging()
-    log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
     manage_workers()
