@@ -12,6 +12,7 @@ import datetime
 from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
+from rq.suspension import is_suspended, resume
 
 from kryptos import logger_group, setup_logging
 
@@ -40,6 +41,7 @@ def workers_required(queue_name):
 
 
 def spawn_worker(q, burst=False):
+    log.info(f"Creating {q} worker")
     cmd = [
         "rq",
         "worker",
@@ -125,33 +127,34 @@ def manage_workers():
     # remove_stale_workers()
     # start main worker
     with Connection(CONN):
-        # signal.signal(signal.SIGTERM, shutdown_workers)
+        if is_suspended(CONN):
+            log.warning("Resuming connection for startup")
+            resume(CONN)
 
         log.info("Starting initial workers")
         log.info("Starting worker for BACKTEST queue")
-        spawn_worker('backtest')
+        spawn_worker("backtest")
 
         log.info("Starting worker for PAPER queues")
-        spawn_worker('paper')
+        spawn_worker("paper")
 
         log.info("Starting worker for LIVE queues")
-        spawn_worker('live')
+        spawn_worker("live")
 
         log.info("Starting worker for TA queue")
-        spawn_worker('ta')
+        spawn_worker("ta")
 
         # create paper/live queues when needed
-        while True:
+        while not is_suspended(CONN):
             for q in QUEUE_NAMES:
                 required = workers_required(q)
                 for i in range(required):
-                    log.info(f"Creating {q} worker")
                     spawn_worker(q, burst=True)
                     time.sleep(5)
 
             time.sleep(2)
         else:
-            log.critical("Instance is shutting down")
+            log.warning("Instance is shutting down")
 
 
 def retry_handler(job, exc_type, exc_value, traceback):

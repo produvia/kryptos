@@ -9,6 +9,7 @@ from logbook.compat import RedirectLoggingHandler, redirect_logging
 
 from rq import Queue, Worker, get_failed_queue
 from rq.worker import HerokuWorker as Worker
+from rq.suspension import suspend
 from rq.job import Job
 from raven import Client
 from raven.transport.http import HTTPTransport
@@ -70,6 +71,8 @@ class StratWorker(Worker):
        
 
     def shutdown_job(self):
+        self.log.warning("Suspending worker connection")
+        suspend(self.connection)
         self.log.warning("Initiating job cleanup")
         job = self.get_current_job()
 
