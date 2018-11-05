@@ -142,6 +142,8 @@ def manage_workers():
             log.warning("Resuming connection for startup")
             resume(CONN)
 
+        requeue_terminated_fail_jobs()
+
         log.info("Starting initial workers")
         log.info("Starting worker for BACKTEST queue")
         spawn_worker("backtest")
@@ -167,6 +169,22 @@ def manage_workers():
         else:
             log.warning("Instance is shutting down")
 
+
+def requeue_terminated_fail_jobs():
+    """Checks for failed jobs caused by work horse cold shutdown
+
+    This serves as a final catch if jobs weren't re-queued on shutdown
+    """
+
+    fq = get_failed_queue()
+
+    log.info("Checking for terminated jobs in failed queue")
+    for job in fq.jobs:
+        log.warning(job.exc_info)
+        log.warning(f"Job {job.id} - Paused: {job.meta.get('PAUSED')}")
+        if "terminated unexpectedly" in job.exc_info:
+            log.warning(f"Requeing terminated job: {job.id}")
+        fq.requeue(job.id)
 
 def retry_handler(job, exc_type, exc_value, traceback):
     MAX_FAILURES = 3
