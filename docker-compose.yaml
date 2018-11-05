@@ -65,8 +65,6 @@ services:
       - PYTHONUNBUFFERED=1
       - CONFIG_ENV=dev
 
-    # entrypoint: ['python', 'worker.py']
-    entrypoint: ['honcho', 'start', 'worker', '--no-prefix']
     depends_on:
     - redis
 
