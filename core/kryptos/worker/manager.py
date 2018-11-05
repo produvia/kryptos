@@ -117,10 +117,6 @@ def kill_marked_jobs():
 def shutdown_workers(signum, frame):
     log.warning("Sending SIGTERM to each worker to start graceful shutdown")
 
-    for p in WORKER_PROCESSES:
-        log.warning(f"Terminating worker process with pid {p.pid}")
-        p.terminate()
-
     while len(WORKER_PROCESSES) > 0:
         for p in WORKER_PROCESSES:
             if p.poll():
@@ -128,8 +124,8 @@ def shutdown_workers(signum, frame):
             else:
                 log.info(f"Process {p.pid} has finished")
                 WORKER_PROCESSES.remove(p)
-
-    log.notice("Shutdown process complete, exiting")
+        time.sleep(0.5)
+    log.warning("Shutdown process complete, exiting")
     sys.exit(0)
 
 

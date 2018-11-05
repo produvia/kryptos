@@ -66,9 +66,7 @@ class StratWorker(Worker):
         super().__init__(*args, **kw)
         register_sentry(client, self)
         self.log.addHandler(RedirectLoggingHandler())
-        redirect_logging()
         setup_logging()
-       
 
     def shutdown_job(self):
         self.log.warning("Suspending worker connection")
