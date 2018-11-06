@@ -1,4 +1,3 @@
-import os
 import sys
 import redis
 from rq import Connection, get_failed_queue
@@ -56,6 +55,8 @@ def spawn_worker(q, burst=False):
         "kryptos.worker.worker.StratJob",
         "--queue-class",
         "kryptos.worker.worker.StratQueue",
+        "--exception-handler",
+        "kryptos.worker.manager.exc_handler",
         q,
     ]
     if burst:
@@ -186,11 +187,8 @@ def requeue_terminated_fail_jobs():
             log.warning(f"Requeing terminated job: {job.id}")
         fq.requeue(job.id)
 
-def retry_handler(job, exc_type, exc_value, traceback):
-    MAX_FAILURES = 3
-    job.meta.setdefault("failures", 0)
-    job.meta["failures"] += 1
 
+def exc_handler(job, exc_type, exc_value, traceback):
     log.error(f"Job raised {exc_type}")
 
     from ccxt.base.errors import AuthenticationError
@@ -216,33 +214,15 @@ def retry_handler(job, exc_type, exc_value, traceback):
         job.cleanup()
         return False
 
-    # Too many failures
-    if job.meta["failures"] >= MAX_FAILURES:
-        if job.meta.get("telegram_id"):
-            tasks.queue_notification(f"Strategy has failed", job.meta["telegram_id"])
+    if job.meta.get("telegram_id"):
+        tasks.queue_notification(f"Strategy has failed", job.meta["telegram_id"])
 
-        else:
-            log.warning("No Telegram, could not notify")
+    else:
+        log.warning("No Telegram, could not notify")
 
-        log.warn("job %s: failed too many times times - moving to failed queue" % job.id)
-        job.save()
-
-        return True
-
-    # Requeue job and stop it from being moved into the failed queue
-    log.warn("job %s: failed %d times - retrying" % (job.id, job.meta["failures"]))
-
-    fq = get_failed_queue()
-    fq.quarantine(job, exc_type(exc_value))
-    # assert fq.count == 1
-
-    job.meta["failures"] += 1
+    log.warn("job %s: moving to failed queue" % job.id)
     job.save()
-    fq.requeue(job.id)
 
-    # Can't find queue, which should basically never happen as we only work jobs that match the given queue names and
-    # queues are transient in rq.
-    log.warn("job %s: cannot find queue %s - moving to failed queue" % (job.id, job.origin))
     return True
 
 
