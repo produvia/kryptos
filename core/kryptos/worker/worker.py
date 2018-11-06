@@ -1,22 +1,21 @@
 import os
-import sys
 import time
 from threading import Thread
 import signal
 
-from logbook.compat import RedirectLoggingHandler, redirect_logging
+from logbook.compat import RedirectLoggingHandler
 
 
-from rq import Queue, Worker, get_failed_queue
+from rq import Queue, get_failed_queue
 
-# from rq.worker import HerokuWorker as Worker
+from rq.worker import HerokuWorker as Worker
 from rq.suspension import suspend
 from rq.job import Job
 from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
 
-from kryptos.logger import logger_group, setup_logging
+from kryptos.logger import setup_logging
 
 client = Client(transport=HTTPTransport)
 
@@ -69,35 +68,37 @@ class StratWorker(Worker):
         self.log.addHandler(RedirectLoggingHandler())
         setup_logging()
 
+    def shutdown_job(self):
+        self.log.warning("Suspending worker connection")
+        suspend(self.connection)
+        self.log.warning("Initiating job cleanup")
+        job = self.get_current_job()
+        if job is None:
+            return
 
-    # def shutdown_job(self):
-    #     self.log.warning("Suspending worker connection")
-    #     suspend(self.connection)
-    #     self.log.warning("Initiating job cleanup")
-    #     job = self.get_current_job()
+        self.log.warning(f"Attempt to grace kill and requeue current job {job.id}")
+        self.log.warning("quarantining job")
+        fq = get_failed_queue()
+        fq.quarantine(job, exc_info="Graceful shutdown")
 
-    #     self.log.warning("quarantining job")
-    #     fq = get_failed_queue()
-    #     fq.quarantine(job, exc_info="Instance Shutdown")
+        self.log.warning("Setting job as PAUSED")
+        job.meta["PAUSED"] = True
+        job.save()
+        self.log.warning(f"Moving job {job.id} back to queue")
+        fq.requeue(job.id)
+        self.log.warning("Sending job kill signal to attempt analysis upload")
+        job.kill()  # causes algo to exit gracefully
 
-    #     self.log.warning("Setting job as PAUSED")
-    #     job.meta["PAUSED"] = True
-    #     job.save()
-        # self.log.warning(f"Moving job {job.id} back to queue")
-        # fq.requeue(job.id)
-        # self.log.warning("Sending job kill signal to attempt analysis upload")
-        # job.kill()  # causes algo to exit gracefully
-
-    # def request_stop_sigrtmin(self, signum, frame):
-    #     if self.imminent_shutdown_delay == 0:
-    #         self.log.warning("Imminent shutdown, raising ShutDownImminentException immediately")
-    #         self.request_force_stop_sigrtmin(signum, frame)
-    #     else:
-    #         self.shutdown_job()
-    #         self.log.warning(
-    #             "Imminent shutdown, raising ShutDownImminentException in %d seconds",
-    #             self.imminent_shutdown_delay,
-    #         )
-    #         signal.signal(signal.SIGRTMIN, self.request_force_stop_sigrtmin)
-    #         signal.signal(signal.SIGALRM, self.request_force_stop_sigrtmin)
-    #         signal.alarm(self.imminent_shutdown_delay)
+    def request_stop_sigrtmin(self, signum, frame):
+        if self.imminent_shutdown_delay == 0:
+            self.log.warning("Imminent shutdown, raising ShutDownImminentException immediately")
+            self.request_force_stop_sigrtmin(signum, frame)
+        else:
+            self.shutdown_job()
+            self.log.warning(
+                "Imminent shutdown, raising ShutDownImminentException in %d seconds",
+                self.imminent_shutdown_delay,
+            )
+            signal.signal(signal.SIGRTMIN, self.request_force_stop_sigrtmin)
+            signal.signal(signal.SIGALRM, self.request_force_stop_sigrtmin)
+            signal.alarm(self.imminent_shutdown_delay)

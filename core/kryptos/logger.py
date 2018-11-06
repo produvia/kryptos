@@ -70,7 +70,7 @@ def setup_logging(*handlers):
 
     cloud_handler = GoogleCloudHandler(level="INFO", bubble=True, format_string=format_string)
 
-    stder_handler = ColorizedStderrHandler(level="WARNING", bubble=False)
+    stder_handler = ColorizedStderrHandler(level="WARNING", bubble=True)
     stder_handler.format_string = format_string
 
     error_file_handler = logbook.RotatingFileHandler(ERROR_LOG, level="ERROR", bubble=True)

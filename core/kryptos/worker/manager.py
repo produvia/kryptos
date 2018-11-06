@@ -114,8 +114,8 @@ def kill_marked_jobs():
                 # raise ShutDownImminentException
 
 
-def shutdown_workers(signum, frame):
-    log.warning("Sending SIGTERM to each worker to start graceful shutdown")
+def monitor_worker_shutdown(signum, frame):
+    log.warning("Caught SIGTERM, monitoring onitoring worker process shutdown")
 
     while len(WORKER_PROCESSES) > 0:
         for p in WORKER_PROCESSES:
@@ -247,6 +247,6 @@ def retry_handler(job, exc_type, exc_value, traceback):
 
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGTERM, shutdown_workers)
+    signal.signal(signal.SIGTERM, monitor_worker_shutdown)
     setup_logging()
     manage_workers()
