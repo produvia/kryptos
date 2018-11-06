@@ -128,13 +128,25 @@ def manage_exchanges():
             "key": new_form.api_key.data,
             "secret": new_form.api_secret.data,
         }
-        current_app.logger.info(
-            f'Adding new auth key for {current_user} {exchange_dict["name"]}'
-        )
+        current_app.logger.info(f'Adding new auth key for {current_user} {exchange_dict["name"]}')
+
+        exchange_name = new_form.exchange.data.lower()
+
+        existing = UserExchangeAuth.query.filter_by(
+            user=current_user, exchange=exchange_name
+        ).first()
+
+        if existing is not None:
+            flash(
+                f"You have already provided an API key for {exchange_name}, please remove it before adding a new one",
+                "error",
+            )
+            return redirect(url_for("account.manage_exchanges"))
 
         blob_name, auth_bucket = upload_user_auth(exchange_dict, current_user.id)
         user = current_user
-        exchange_ref = UserExchangeAuth(exchange=new_form.exchange.data.lower(), user=user)
+        exchange_ref = UserExchangeAuth(exchange=exchange_name, user=user)
+
         db.session.add(exchange_ref)
         db.session.commit()
 

@@ -103,7 +103,10 @@ def delete_auth_from_storage(user_id: str, exchange_name: str) -> None:
     blob_name = f"auth_{exchange_name}_{user_id}_json"
     auth_bucket = storage_client.get_bucket("catalyst_auth")
     blob = auth_bucket.blob(blob_name)
-    blob.delete()
+    try:
+        blob.delete()
+    except NotFound:
+        current_app.logger.warning('auth blob_name not found, skipping delete')
     current_app.logger.info(f"Deleted user {user_id} {exchange_name} storage blob")
 
 
