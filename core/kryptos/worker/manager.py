@@ -13,6 +13,7 @@ from raven import Client
 from raven.transport.http import HTTPTransport
 from rq.contrib.sentry import register_sentry
 from rq.suspension import is_suspended, resume
+from rq.exceptions import ShutDownImminentException
 
 from kryptos import logger_group, setup_logging
 
@@ -159,7 +160,6 @@ def requeue_terminated_fail_jobs():
 
 
 def exc_handler(job, exc_type, exc_value, traceback):
-    log.error(f"Job raised {exc_type}")
 
     from ccxt.base.errors import AuthenticationError
     from catalyst.exchange.exchange_errors import ExchangeRequestError
@@ -184,11 +184,17 @@ def exc_handler(job, exc_type, exc_value, traceback):
         job.cleanup()
         return False
 
+    if exc_type == ShutDownImminentException:
+        log.warning("Job has been stopped to instance shutdown")
+        return True
+
     if job.meta.get("telegram_id"):
         tasks.queue_notification(f"Strategy has failed", job.meta["telegram_id"])
 
     else:
         log.warning("No Telegram, could not notify")
+
+    log.error(f"Job raised {exc_type}")
 
     log.warn("job %s: moving to failed queue" % job.id)
     job.save()
