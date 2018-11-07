@@ -446,8 +446,11 @@ class Strategy(object):
         self._context_ref = context
         self.state.load_from_context(context)
 
-        if not (self.trading_info["END"] == self.state.END == context.end):
+        if not (self.trading_info["END"] == context.end):
             raise ValueError("Trading info END datetime does not match algorithms datetime")
+
+        if self.state.END and (self.state.END != context.end):
+            raise ValueError("Algorithm's end time does not match strat state endtime")
 
         if self.state.DATA_FREQ != "minute" and self.state.DATA_FREQ != "daily":
             raise ValueError(
@@ -1239,8 +1242,8 @@ class Strategy(object):
         if end_arrow < arrow.utcnow().floor("minute"):
             self.log.warning(f"End Date: {end_arrow} is invalid, will use 30 minutes from now")
             end_arrow = arrow.utcnow().shift(minutes=+30)
-            self.trading_info["END"] = end_arrow.datetime
 
+        self.trading_info["END"] = end_arrow.datetime
         self.log.notice(f"Stopping strategy {end_arrow.humanize()} -- {end_arrow.datetime}")
 
         # catalyst loads state before init called
