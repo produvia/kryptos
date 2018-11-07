@@ -197,6 +197,8 @@ def exc_handler(job, exc_type, exc_value, traceback):
     log.error(f"Job raised {exc_type}")
 
     log.warn("job %s: moving to failed queue" % job.id)
+    fq = get_failed_queue()
+    fq.quarantine(job, exc_info=exc_type(exc_value))
     job.save()
 
     return True
