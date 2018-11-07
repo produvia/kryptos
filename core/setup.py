@@ -45,10 +45,9 @@ setup(
         [console_scripts]
         bchain=kryptos.scripts.bchain_activity:run
         trends=kryptos.scripts.trends:run
-        strat=kryptos.scripts.build_strategy:run
+        strat=kryptos.scripts.strat:cli
         compare_all_ta=kryptos.scripts.run_all_ta:run
         workers=kryptos.worker.worker:manage_workers
-        stress=kryptos.scripts.stress_worker:run
     ''',
     zip_safe=False,
 )

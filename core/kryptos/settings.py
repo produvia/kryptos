@@ -13,6 +13,7 @@ def get_from_datastore(config_key, env):
     return entity[config_key]
 
 
+CONFIG_ENV = os.getenv("CONFIG_ENV", 'production')
 PROJECT_ID = os.getenv("PROJECT_ID", "kryptos-205115")
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
@@ -23,6 +24,8 @@ REDIS_HOST = os.getenv("REDIS_HOST", "10.0.0.3")
 REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
 SENTRY_DSN = os.getenv("SENTRY_DSN", None)
+
+CLOUD_LOGGING = os.getenv('CLOUD_LOGGING', False)
 
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")

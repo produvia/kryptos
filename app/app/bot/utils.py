@@ -7,6 +7,7 @@ import ccxt
 from app.models import User
 from app import task
 
+ML_MODELS = ["XGBOOST", "LIGHTGBM"]
 
 EXISTING_STRATS = [
     # display, callback
@@ -17,6 +18,8 @@ EXISTING_STRATS = [
     ("On Balance Volume (OBV)", "OBV"),
     ("Relative Strength Index (RSI)", "RSI"),
     ("Stochastic (STOCH)", "STOCH"),
+    ("XGBOOST (ML)", "XGBOOST"),
+    ("LIGHTGBM (ML)", "LIGHTGBM"),
 ]
 
 # TODO possibly use telegram chat_id
@@ -85,13 +88,17 @@ def build_strat_dict_from_context(context, mode):
     quote_currency = context.get("quote_currency").upper()
     capital_base = context.get("capital_base")
     trade_pair = f"{base_currency}_{quote_currency}".lower()
+    hours = int(context.get("hours"))
 
-    start = datetime.datetime.today()
-    end = start + datetime.timedelta(days=3)
+    start = datetime.datetime.utcnow()
+    end = start + datetime.timedelta(hours=hours)
 
-    strat_dict = {"trading": {}, "indicators": [{"name": strat}]}
-    strat_dict["trading"]["START"] = datetime.datetime.strftime(start, "%Y-%m-%d")
-    strat_dict["trading"]["END"] = datetime.datetime.strftime(end, "%Y-%m-%d")
+    if strat in ML_MODELS:
+        strat_dict = {"trading": {}, "models": [{"name": strat}]}
+    else:
+        strat_dict = {"trading": {}, "indicators": [{"name": strat}]}
+    strat_dict["trading"]["START"] = datetime.datetime.strftime(start, "%Y-%m-%d-%H-%M")
+    strat_dict["trading"]["END"] = datetime.datetime.strftime(end, "%Y-%m-%d %H:%M:%S")
 
     strat_dict["trading"]["EXCHANGE"] = exchange
     strat_dict["trading"]["ASSET"] = trade_pair

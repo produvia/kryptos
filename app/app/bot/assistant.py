@@ -104,6 +104,7 @@ def select_strategy(existing_strategy):
 @assist.context("strat-config-data")
 @assist.action("strat-config", events=["strat-config-start"])
 def prompt_exchange(existing_strategy):
+    current_app.logger.debug(f"Building strategy for {existing_strategy}")
     context_manager.set("strat-config-data", "existing_strategy", existing_strategy)
     speech = "Which exchange would you like to trade on?"
     resp = inline_keyboard(dedent(speech))
@@ -117,6 +118,7 @@ def prompt_exchange(existing_strategy):
 @assist.context("strat-config-data")
 @assist.action("strat-config-exchange")
 def prompt_quote_currency(exchange):
+    current_app.logger.debug(f"Setting exchange as {exchange}")
     context_manager.set("strat-config-data", "exchange", exchange)
     speech = f"""\
     Which currency would you like to use as the quote currency?
@@ -136,6 +138,7 @@ def prompt_quote_currency(exchange):
 @assist.context("strat-config-data")
 @assist.action("strat-config-quote-currency")
 def prompt_capital_base(quote_currency):
+    current_app.logger.debug(f"Setting quote currency as {quote_currency}")
     context_manager.set("strat-config-data", "quote_currency", quote_currency)
     speech = f"How much {quote_currency.upper()} would you like to allocate as the capital base?"
     return ask(speech)
@@ -144,6 +147,7 @@ def prompt_capital_base(quote_currency):
 @assist.context("strat-config-data")
 @assist.action("strat-config-capital-base")
 def prompt_trade_currency(capital_base):
+    current_app.logger.debug(f"Setting capital base as {capital_base}")
     context_manager.set("strat-config-data", "captial_base", capital_base)
 
     speech = "Which asset would you like to trade?"
@@ -161,8 +165,19 @@ def prompt_trade_currency(capital_base):
 
 @assist.context("strat-config-data")
 @assist.action("strat-config-trade-currency")
-def review_config(trade_currency):
+def prompt_for_hours(trade_currency):
+    current_app.logger.debug(f"Setting trade currency as {trade_currency}")
     context_manager.set("strat-config-data", "trade_currency", trade_currency)
+
+    speech = "For how many hours would you like the run the strategy?"
+    return ask(speech)
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-hours")
+def review_config(hours):
+    current_app.logger.debug(f"Setting hours as {hours}")
+    context_manager.set("strat-config-data", "hours", hours)
     context = context_manager.get("strat-config-data")
 
     strat = context.get("existing_strategy")
@@ -172,8 +187,6 @@ def review_config(trade_currency):
     capital_base = context.get("capital_base")
     trade_pair = f"{base_currency}_{quote_currency}".lower()
 
-    current_app.logger.error(strat)
-
     speech = """\
         Great, does this look right?
 
@@ -181,8 +194,9 @@ def review_config(trade_currency):
         Exchange: {}
         Trade Pair: {}
         Capital Base: {} ({})
+        Run for: {} hours
     """.format(
-        strat, exchange, trade_pair, capital_base, quote_currency
+        strat, exchange, trade_pair, capital_base, quote_currency, hours
     )
 
     return ask(dedent(speech)).with_quick_reply("yes", "no")
@@ -196,17 +210,17 @@ def begin_mode_prompt():
 @assist.action("strat-mode", events=["strat-mode-start"])
 def prompt_for_mode():
     context = context_manager.get("strat-config-data")
-    backtest_id = utils.launch_backtest(context)
+    # backtest_id = utils.launch_backtest(context)
 
-    current_app.logger.info(f"Queues Strat {backtest_id}")
-    backtest_url = os.path.join(
-        current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
-    )
+    # current_app.logger.info(f"Queues Strat {backtest_id}")
+    # backtest_url = os.path.join(
+    #     current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
+    # )
 
-    speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days."
+    speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n"
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("View Past Performance", url=backtest_url)
+    # resp.add_button("View Past Performance", url=backtest_url)
     resp.add_button("Launch in Paper Mode", "paper")
     resp.add_button("Lauch in Live mode", "live")
     resp.add_button("Nevermind", "no")
@@ -222,11 +236,14 @@ def launch_strategy_paper(existing_strategy):
 
     url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
-    speech = f"""\
-    Great! The strategy is now running in paper mode and will run for the next 3 days.
+    hours = context.get("hours")
+    speech = """\
+    Great! The strategy is now running in paper mode and will run for the next {} hours.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
-    """
+    """.format(
+        hours
+    )
 
     resp = inline_keyboard(dedent(speech))
     resp.add_button("View your Strategy", url=url)
@@ -240,8 +257,9 @@ def launch_strategy_paper(existing_strategy):
 
     url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
+    hours = context.get("hours")
     speech = f"""\
-    Great! The strategy is now live and will run for the next 3 days.
+    Great! The strategy is now live and will run for the next {hours} hours.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
@@ -249,7 +267,3 @@ def launch_strategy_paper(existing_strategy):
     resp = inline_keyboard(dedent(speech))
     resp.add_button("View your Strategy", url=url)
     return resp
-
-
-
-

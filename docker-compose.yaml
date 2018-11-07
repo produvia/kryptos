@@ -56,16 +56,15 @@ services:
       context: ./core
       dockerfile: Dockerfile
     volumes:
-      - catalyst:/root/.catalyst
+      # - catalyst:/root/.catalyst
       - ./core:/core
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
       - PYTHONUNBUFFERED=1
+      - CONFIG_ENV=dev
 
-    # entrypoint: ['python', 'worker.py']
-    entrypoint: ['honcho', 'start', 'worker', '--no-prefix']
     depends_on:
     - redis
 
