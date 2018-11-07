@@ -94,7 +94,6 @@ class StratWorker(Worker):
             self.log.warning("Imminent shutdown, raising ShutDownImminentException immediately")
             self.request_force_stop_sigrtmin(signum, frame)
         else:
-            self.shutdown_job()
             self.log.warning(
                 "Imminent shutdown, raising ShutDownImminentException in %d seconds",
                 self.imminent_shutdown_delay,
@@ -102,3 +101,4 @@ class StratWorker(Worker):
             signal.signal(signal.SIGRTMIN, self.request_force_stop_sigrtmin)
             signal.signal(signal.SIGALRM, self.request_force_stop_sigrtmin)
             signal.alarm(self.imminent_shutdown_delay)
+            self.shutdown_job()
