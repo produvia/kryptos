@@ -153,10 +153,10 @@ def requeue_terminated_fail_jobs():
     log.info("Checking for terminated jobs in failed queue")
     for job in fq.jobs:
         log.warning(job.exc_info)
-        log.warning(f"Job {job.id} - Paused: {job.meta.get('PAUSED')}")
-        if "terminated unexpectedly" in job.exc_info:
+        log.warning(f"Job {job.id} - exc_info: {job.exc_info}")
+        if job.exc_info and "terminated unexpectedly" in job.exc_info:
             log.warning(f"Requeing terminated job: {job.id}")
-        fq.requeue(job.id)
+            fq.requeue(job.id)
 
 
 def exc_handler(job, exc_type, exc_value, traceback):
