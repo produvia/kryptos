@@ -105,9 +105,9 @@ def delete_auth_from_storage(user_id: str, exchange_name: str) -> None:
     blob = auth_bucket.blob(blob_name)
     try:
         blob.delete()
+        current_app.logger.info(f"Deleted user {user_id} {exchange_name} storage blob")
     except NotFound:
         current_app.logger.warning('auth blob_name not found, skipping delete')
-    current_app.logger.info(f"Deleted user {user_id} {exchange_name} storage blob")
 
 
 def upload_user_auth(exchange_dict: Dict[str, str], user_id: int) -> Tuple[str, str]:
