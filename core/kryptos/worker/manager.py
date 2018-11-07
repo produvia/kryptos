@@ -5,7 +5,7 @@ import click
 import time
 import logbook
 import signal
-from subprocess import Popen
+import multiprocessing
 
 import datetime
 
@@ -44,25 +44,12 @@ def workers_required(queue_name):
 
 def spawn_worker(q, burst=False):
     log.info(f"Creating {q} worker")
-    cmd = [
-        "rq",
-        "worker",
-        "--config",
-        "kryptos.settings",
-        "--worker-class",
-        "kryptos.worker.worker.StratWorker",
-        "--job-class",
-        "kryptos.worker.worker.StratJob",
-        "--queue-class",
-        "kryptos.worker.worker.StratQueue",
-        "--exception-handler",
-        "kryptos.worker.manager.exc_handler",
-        q,
-    ]
-    if burst:
-        cmd.append("--burst")
 
-    proc = Popen(cmd, shell=False)
+    worker = Worker([q], exception_handlers=[exc_handler])
+    proc = multiprocessing.Process(target=worker.work, kwargs={"burst": burst})
+    proc.daemon = True
+    proc.start()
+
     WORKER_PROCESSES.append(proc)
     return proc
 
@@ -97,30 +84,13 @@ def remove_stale_workers():
                 worker.register_death()
 
 
-def kill_marked_jobs():
-    workers = Worker.all()
-    log.debug(f"Checking {len(workers)} workers for jobs marked to kill")
-    for w in workers:
-        if w.get_current_job():
-            log.debug(f"Checking {w.name} job")
-            meta = w.get_current_job().meta
-            if meta.get("MARK_KILL"):
-                log.warning(f"Killing job by sending kill signal to worker pid {w.pid}")
-                # ok.kill_horse()
-                # os.kill(w.pid, signal.SIGTERM)
-                # raise Exception('Shutting down worker marked to kill job')
-                # w.handle_warm_shutdown_request()
-
-                # w.request_stop_sigrtmin()
-                # raise ShutDownImminentException
-
-
 def monitor_worker_shutdown(signum, frame):
-    log.warning("Caught SIGTERM, monitoring onitoring worker process shutdown")
+    """Keeps main process alive until all worker processes shutdown"""
+    log.warning("Caught SIGTERM, monitoring worker process shutdown")
 
     while len(WORKER_PROCESSES) > 0:
         for p in WORKER_PROCESSES:
-            if p.poll():
+            if p.is_alive():
                 log.warning(f"waiting on process {p.pid} to terminate")
             else:
                 log.info(f"Process {p.pid} has finished")
