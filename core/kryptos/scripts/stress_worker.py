@@ -15,7 +15,7 @@ REMOTE_API_URL = "http://kryptos.produvia.com/api"
 LOCAL_API_URL = "http://web:8080/api" if in_docker() else "http://0.0.0.0:8080/api"
 
 
-@click.command()
+@click.command(help="Launch multiple strategies")
 @click.argument("job_quantity", type=int)
 @click.option(
     "--market-indicators",

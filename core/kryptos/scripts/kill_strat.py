@@ -7,7 +7,7 @@ REMOTE_BASE_URL = "https://kryptos-205115.appspot.com"
 LOCAL_BASE_URL = "http://web:8080"
 
 
-@click.command()
+@click.command(help="Kill a running strategy")
 @click.argument("strat_id", type=str)
 @click.option("--hosted", "-h", is_flag=True, help="Kill on a GCP instance via the API")
 def run(strat_id, hosted):
