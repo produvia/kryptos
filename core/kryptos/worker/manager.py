@@ -56,12 +56,11 @@ def spawn_worker(q, burst=False):
 
 
 def remove_zombie_workers():
-    log.warn("Removing zombie workers")
+    log.debug("Removing zombie workers")
     workers = Worker.all(connection=CONN)
     for worker in workers:
         if len(worker.queues) < 1:
-            log.warn("f")
-            log.warn(f"{worker} is a zombie, killing...")
+            log.info(f"{worker} is a zombie, killing...")
             job = worker.get_current_job()
             if job is not None:
                 job.ended_at = datetime.datetime.utcnow()
@@ -75,12 +74,12 @@ def remove_zombie_workers():
 # these workers stay in redis memory and have a queue (not zombie) but no job
 # but they have actually been killed, and won't restart
 def remove_stale_workers():
-    log.warn("Removing stale workers")
+    log.debug("Removing stale workers")
     workers = Worker.all(connection=CONN)
     for worker in workers:
         for q in ["paper", "live", "backtest"]:
             if q in worker.queue_names() and worker.get_current_job() is None:
-                log.warn("Removing stale worker {}".format(worker))
+                log.info("Removing stale worker {}".format(worker))
                 worker.clean_registries()
                 worker.register_death()
 
@@ -92,7 +91,7 @@ def monitor_worker_shutdown(signum, frame):
     while len(WORKER_PROCESSES) > 0:
         for p in WORKER_PROCESSES:
             if p.is_alive():
-                log.warning(f"waiting on process {p.pid} to terminate")
+                log.info(f"waiting on process {p.pid} to terminate")
             else:
                 log.info(f"Process {p.pid} has finished")
                 WORKER_PROCESSES.remove(p)
@@ -104,29 +103,29 @@ def monitor_worker_shutdown(signum, frame):
 @click.command()
 def manage_workers():
     log.info(f"Starting core service in {CONFIG_ENV} env")
-    log.info(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
+    log.debug(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 
     remove_zombie_workers()
     # remove_stale_workers()
     # start main worker
     with Connection(CONN):
         if is_suspended(CONN):
-            log.warning("Resuming connection for startup")
+            log.info("Resuming connection for startup")
             resume(CONN)
 
         requeue_terminated_fail_jobs()
 
         log.info("Starting initial workers")
-        log.info("Starting worker for BACKTEST queue")
+        log.debug("Starting worker for BACKTEST queue")
         spawn_worker("backtest")
 
-        log.info("Starting worker for PAPER queues")
+        log.debug("Starting worker for PAPER queues")
         spawn_worker("paper")
 
-        log.info("Starting worker for LIVE queues")
+        log.debug("Starting worker for LIVE queues")
         spawn_worker("live")
 
-        log.info("Starting worker for TA queue")
+        log.debug("Starting worker for TA queue")
         spawn_worker("ta")
 
         # create paper/live queues when needed
@@ -150,12 +149,11 @@ def requeue_terminated_fail_jobs():
 
     fq = get_failed_queue()
 
-    log.info("Checking for terminated jobs in failed queue")
+    log.debug("Checking for terminated jobs in failed queue")
     for job in fq.jobs:
-        log.warning(job.exc_info)
-        log.warning(f"Job {job.id} - exc_info: {job.exc_info}")
+        log.debug(f"Job {job.id} - exc_info: {job.exc_info}")
         if job.exc_info and "terminated unexpectedly" in job.exc_info:
-            log.warning(f"Requeing terminated job: {job.id}")
+            log.warning(f"Requeing unexpectedly terminated job: {job.id}, exc_info: {job.exc_info}")
             fq.requeue(job.id)
 
 
@@ -171,21 +169,21 @@ def exc_handler(job, exc_type, exc_value, traceback):
             tasks.queue_notification(f"Auth error: {exc_value}", job.meta["telegram_id"])
 
         else:
-            log.warning("No Telegram, could not notify")
+            log.warning("No telegram_id, could not notify user of failed job")
 
-        log.critical(exc_value)
+        log.error(exc_value)
         job.save()
 
         return True
 
     if exc_type == SystemExit:
-        log.notice("Strat was set killed, not requeuing or retrying")
+        log.warning("Strat was canceled, not requeuing or retrying")
         job.save()
         job.cleanup()
         return False
 
     if exc_type == ShutDownImminentException:
-        log.warning("Job has been stopped to instance shutdown")
+        log.critical("Job has been stopped to instance shutdown")
         return True
 
     if job.meta.get("telegram_id"):
@@ -196,7 +194,7 @@ def exc_handler(job, exc_type, exc_value, traceback):
 
     log.error(f"Job raised {exc_type}")
 
-    log.warn("job %s: moving to failed queue" % job.id)
+    log.warning(f"job {job.id}: moving to failed queue")
     fq = get_failed_queue()
     fq.quarantine(job, exc_info=exc_type(exc_value))
     job.save()

@@ -137,7 +137,7 @@ def save_stats_to_storage(strat):
     blob_name = f"{strat.id}/stats_{strat.mode}/{timestr}".format(timestr)
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
-    strat.log.info(f"Uploaded iteration {strat.state.i - 1} stats to storage")
+    strat.log.info(f"Uploaded iteration {strat.state.i - 1} statistics")
     return blob_name, stats_bucket.name
 
 
@@ -170,7 +170,6 @@ def load_state_from_storage(strat):
         return True
     except NotFound:
         strat.log.info("No previous state file found")
-
         # prevent catalyst loading empty pickle
         os.remove(filename)
         return False

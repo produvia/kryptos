@@ -56,10 +56,16 @@ class GoogleCloudHandler(logbook.Handler, StringFormatterHandlerMixin):
                 Warning("Could not emit cloud log")
 
 
-def setup_logging(*handlers):
+def setup_logging():
     os.makedirs(LOG_DIR, exist_ok=True)
 
     format_string = "[{record.time:%H:%M:%S}] {record.level_name}: {record.channel}:{record.extra[strat_id]} {record.message}"
+
+    handlers = [logbook.NullHandler()]
+
+    if CLOUD_LOGGING:
+        cloud_handler = GoogleCloudHandler(level="INFO", bubble=True, format_string=format_string)
+        handlers.append(cloud_handler)
 
     file_handler = logbook.RotatingFileHandler(
         APP_LOG, level="DEBUG", bubble=True, format_string=format_string
@@ -67,11 +73,6 @@ def setup_logging(*handlers):
 
     stream_handler = logbook.StreamHandler(sys.stdout, level="INFO", bubble=True)
     stream_handler.format_string = format_string
-
-    cloud_handler = GoogleCloudHandler(level="INFO", bubble=True, format_string=format_string)
-
-    stder_handler = ColorizedStderrHandler(level="WARNING", bubble=True)
-    stder_handler.format_string = format_string
 
     error_file_handler = logbook.RotatingFileHandler(ERROR_LOG, level="ERROR", bubble=True)
     error_file_handler.format_string = """
@@ -91,16 +92,8 @@ Exception: {record.formatted_exception}
 ----------------------------------------------------------------------------------
 """
 
-    setup = logbook.NestedSetup(
-        [
-            logbook.NullHandler(),
-            file_handler,
-            stream_handler,
-            cloud_handler,
-            stder_handler,
-            error_file_handler,
-            *handlers,
-        ]
-    )
+    handlers.extend([file_handler, stream_handler, error_file_handler])
+
+    setup = logbook.NestedSetup(handlers)
 
     setup.push_thread()

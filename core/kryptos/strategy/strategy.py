@@ -376,8 +376,8 @@ class Strategy(object):
         if getattr(self.state, "END", False):
             end_arrow = arrow.get(self.state.END)
 
-            self.log.notice(f"Loading end time from previous state: {end_arrow}")
-            self.log.notice(f"Still have {end_arrow.humanize(only_distance=True)} left")
+            self.log.info(f"Loading end time from previous state: {end_arrow}")
+            self.log.info(f"Still have {end_arrow.humanize(only_distance=True)} left")
             self.trading_info["END"] = end_arrow.datetime
             context.end = end_arrow.datetime
 
@@ -388,7 +388,7 @@ class Strategy(object):
 
         self.state.load_from_context(context)
 
-        self.log.debug(f"Starting strategy on iteration {self.state.i}")
+        self.log.info(f"Starting strategy on iteration {self.state.i}")
 
         self.state.asset = symbol(self.trading_info["ASSET"])
         if self.is_backtest:
@@ -409,9 +409,8 @@ class Strategy(object):
         if self.in_job:
             job = get_current_job()
             if job.meta.get("PAUSED"):
-                self.log.warning(f"Resuming strategy {self.id}")
                 self.notify("Your strategy has resumed!")
-                self.log.notice(f"resuming on trade iteration {self.state.i}")
+                self.log.info(f"Resuming on trade iteration {self.state.i}")
                 self._load_state_end_time(context)
 
             else:
@@ -447,10 +446,10 @@ class Strategy(object):
         self.state.load_from_context(context)
 
         if not (self.trading_info["END"] == context.end):
-            raise ValueError("Trading info END datetime does not match algorithms datetime")
+            raise ValueError(f"Trading info END datetime does not match algorithms datetime\n{self.trading_info['END']} != {context.end}")
 
         if self.state.END and (self.state.END != context.end):
-            raise ValueError("Algorithm's end time does not match strat state endtime")
+            raise ValueError(f"Algorithm's end time does not match strat state endtime\n{self.state.END} != {context.end}")
 
         if self.state.DATA_FREQ != "minute" and self.state.DATA_FREQ != "daily":
             raise ValueError(
@@ -498,12 +497,12 @@ class Strategy(object):
             return True
 
         except exchange_errors.NoValueForField as e:
-            self.log.warn(e)
-            self.log.warn(f"Skipping trade period: {e}")
+            self.log.warning(e)
+            self.log.warning(f"Skipping trade period: {e}")
             return False
 
         except KeyError:
-            self.log.warn("Error when getting current fields")
+            self.log.warning("Error when getting current fields")
             return False
 
     def _check_minute_freq(self, context, data):
@@ -569,7 +568,7 @@ class Strategy(object):
                 sleeptime=5,
                 retry_exceptions=(ccxt_errors.RequestTimeout),
                 args=(context, data),
-                cleanup=lambda: self.log.warn("CCXT request timed out, retrying..."),
+                cleanup=lambda: self.log.warning("CCXT request timed out, retrying..."),
             )
             return True
 
@@ -617,7 +616,7 @@ class Strategy(object):
         # the previously compelted iteration
 
         self.state.i += 1
-        self.log.debug(f"Beginning iteration {self.state.i}")
+        self.log.info(f"Processing algo iteration - {self.state.i}")
 
         if self.state.i > 1:
             outputs.upload_state_to_storage(self)
@@ -656,7 +655,6 @@ class Strategy(object):
             job.meta["date"] = str(self.current_date)
             job.save_meta()
 
-        self.log.debug("Processing algo iteration")
         for i in context.blotter.open_orders:
             msg = "Canceling unfilled open order {}".format(i)
             self.log.info(msg)
@@ -693,7 +691,7 @@ class Strategy(object):
 
         if context.frame_stats:
             pretty_output = stats_utils.get_pretty_stats(context.frame_stats)
-            self.log.notice(pretty_output)
+            self.log.debug(pretty_output)
             if not self.is_backtest:
                 outputs.save_stats_to_storage(self)
 
@@ -726,6 +724,7 @@ class Strategy(object):
             return self.state.prices.iloc[-1].name
 
     def _make_plots(self, context, results):
+        log.info("Creating analysis plots")
         # strat_plots = len(self._market_indicators) + len(self._datasets)
         pos = viz.get_start_geo(self.total_plots + 3)
         viz.plot_percent_return(results, pos=pos)
@@ -765,7 +764,7 @@ class Strategy(object):
 
     def _analyze(self, context, results):
         """Plots results of algo performance, external data, and indicators"""
-        self.log.warning("Calling analyze function and completing algorithm")
+        self.log.info("Calling analyze function and completing algorithm")
         ending_cash = results.cash[-1]
         self.log.notice("Ending cash: ${}".format(ending_cash))
         self.log.notice("Completed for {} trading periods".format(self.state.i))
@@ -783,7 +782,7 @@ class Strategy(object):
                 i.analyze(self.name, self.state.DATA_FREQ, extra_results)
 
         except (ValueError, ZeroDivisionError, KeyError):
-            self.log.warning("Not enough data to make plots")
+            self.log.error("Not enough data to make plots")
 
         # need to catch all exceptions because algo will end either way
         except Exception as e:
@@ -1002,7 +1001,7 @@ class Strategy(object):
 
     def make_buy(self, context):
         if context.portfolio.cash < self.state.price * self.state.ORDER_SIZE:
-            self.log.warn(
+            self.log.warning(
                 "Skipping signaled buy due to cash amount: {} < {}".format(
                     context.portfolio.cash, (self.state.price * self.state.ORDER_SIZE)
                 )
@@ -1023,11 +1022,7 @@ class Strategy(object):
 
     def make_sell(self, context):
         if self.state.asset not in context.portfolio.positions:
-            self.log.warn("Skipping signaled sell due b/c no position")
-            msg = """\
-            A signaled sell order was cancelled, because you currently have no posiiton.\n
-            """
-            self.notify(dedent(msg))
+            self.log.warning("Skipping signaled sell due b/c no position")
             return
 
         self.log.notice("Making Sell Order")
@@ -1099,14 +1094,14 @@ class Strategy(object):
             msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
                 amount=position.amount, cost_basis=position.cost_basis
             )
-            self.log.warn(msg)
+            self.log.warning(msg)
             self.notify(msg)
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         self.log.info("Using default sell function")
         position = context.portfolio.positions.get(self.state.asset)
         if position == 0:
-            self.log.warn("Position Zero, skipping sell")
+            self.log.warning("Position Zero, skipping sell")
             return
 
         # Cost Basis
@@ -1180,7 +1175,7 @@ class Strategy(object):
             # from kryptos.worker import ingester
             # ingester.run_ingest(self.exchange, symbol=self.trading_info['ASSET'])
             # load.ingest_exchange(self.trading_info)
-            # self.log.warn("Exchange ingested, please run the command again")
+            # self.log.warning("Exchange ingested, please run the command again")
             # self.run(live, simulate_orders, viz, as_job)
 
     def run_paper(self):
@@ -1244,12 +1239,12 @@ class Strategy(object):
             end_arrow = arrow.utcnow().shift(minutes=+30)
 
         self.trading_info["END"] = end_arrow.datetime
-        self.log.notice(f"Stopping strategy {end_arrow.humanize()} -- {end_arrow.datetime}")
+        self.log.debug(f"Stopping strategy {end_arrow.humanize()} -- {end_arrow.datetime}")
 
         # catalyst loads state before init called
         # so need to fetch state before algorithm starts
         if outputs.load_state_from_storage(self):
-            self.log.info(f"Resuming strategy with saved state")
+            self.log.warning(f"Resuming strategy with saved state")
 
         run_algorithm(
             capital_base=self.trading_info["CAPITAL_BASE"],

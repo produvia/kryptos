@@ -43,7 +43,7 @@ def decrypt_auth_key(user_id: int, exchange_name: str, ciphertext: bytes) -> Dic
     )
 
     response = key_client.decrypt(key_path, ciphertext)
-    log.info(f"successfully decrypted user {user_id} {exchange_name} auth")
+    log.debug(f"successfully decrypted user {user_id} {exchange_name} auth")
     return json.loads(response.plaintext)
 
 
@@ -62,7 +62,7 @@ def get_encrypted_auth(user_id: int, exchange_name: str) -> bytes:
     bucket = storage_client.get_bucket("catalyst_auth")
     blob = bucket.blob(f"auth_{exchange_name}_{user_id}_json")
     encrypted_text = blob.download_as_string()
-    log.info("obtained encrypted auth")
+    log.debug("obtained encrypted auth")
     return encrypted_text
 
 
@@ -71,7 +71,7 @@ def save_to_catalyst(user_id: int, exchange_name: str, auth_dict: Dict[str, str]
     file_name = get_auth_alias_path(user_id, exchange_name)
 
     with open(file_name, "w") as f:
-        log.warn(f"Writing auth_json_str to {file_name}")
+        log.debug(f"Writing auth_json_str to {file_name}")
         json.dump(auth_dict, f)
 
 
@@ -92,6 +92,7 @@ def get_user_auth_alias(user_id: int, exchange_name: str) -> Dict[str, str]:
     auth_dict = decrypt_auth_key(user_id, exchange_name, encrypted)
     save_to_catalyst(user_id, exchange_name, auth_dict)
     auth_alias = {exchange_name: f"auth{user_id}"}
+    log.info("Fetched user auth and set up auth_alias")
 
     return auth_alias
 
