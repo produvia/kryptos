@@ -54,8 +54,8 @@ class StratLogger(logbook.Logger):
         logbook.Logger.process_record(self, record)
         record.extra["trade_date"] = self.strat.current_date
         record.extra["strat_id"] = self.strat.id
-        record.extra['mode'] = self.strat.mode
-        record.extra['user_id'] = self.strat.user_id
+        record.extra["mode"] = self.strat.mode
+        record.extra["user_id"] = self.strat.user_id
 
         if self.strat.in_job:  # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
             job = get_current_job()
@@ -369,10 +369,23 @@ class Strategy(object):
         if self.telegram_id:
             tasks.queue_notification(msg, self.telegram_id)
 
+    def _load_state_end_time(self, context):
+        # saving end in state allows us to
+        # recover original end when resuming
+        # if not saved to state, will use porvided trade_info
+        if getattr(self.state, "END", False):
+            end_arrow = arrow.get(self.state.END)
+
+            self.log.notice(f"Loading end time from previous state: {end_arrow}")
+            self.log.notice(f"Still have {end_arrow.humanize(only_distance=True)} left")
+            self.trading_info["END"] = end_arrow.datetime
+            context.end = end_arrow.datetime
+
     def _init_func(self, context):
         """Sets up catalyst's context object and fetches external data"""
 
         self._context_ref = context
+
         self.state.load_from_context(context)
 
         self.log.debug(f"Starting strategy on iteration {self.state.i}")
@@ -381,10 +394,6 @@ class Strategy(object):
         if self.is_backtest:
             self.log.debug("Setting benchmark")
             set_benchmark(self.state.asset)
-
-        for k, v in self.trading_info.items():
-            if "__" not in k:
-                setattr(self.state, k, v)
 
         if self._datasets.items():
             if self.state.DATA_FREQ == "daily":
@@ -400,14 +409,20 @@ class Strategy(object):
         if self.in_job:
             job = get_current_job()
             if job.meta.get("PAUSED"):
-                self.log.warning(f"Paused strategy {self.id} has been resumed")
+                self.log.warning(f"Resuming strategy {self.id}")
                 self.notify("Your strategy has resumed!")
                 self.log.notice(f"resuming on trade iteration {self.state.i}")
+                self._load_state_end_time(context)
 
             else:
                 self.notify("Your strategy has started!")
                 self.state.i = 0
                 self.state.errors = []
+                self.state.end = context.end
+
+        for k, v in self.trading_info.items():
+            if "__" not in k:
+                setattr(self.state, k, v)
 
         self.log.info("Initilized Strategy")
         self._check_configuration(context)
@@ -430,6 +445,9 @@ class Strategy(object):
         """Checking config.json valid values"""
         self._context_ref = context
         self.state.load_from_context(context)
+
+        if not (self.trading_info["END"] == self.state.END == context.end):
+            raise ValueError("Trading info END datetime does not match algorithms datetime")
 
         if self.state.DATA_FREQ != "minute" and self.state.DATA_FREQ != "daily":
             raise ValueError(
@@ -1213,21 +1231,17 @@ class Strategy(object):
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
         self.log.notice("Running live trading, simulating orders: {}".format(simulate_orders))
         if self.trading_info["DATA_FREQ"] != "minute":
-            self.log.warn('"daily" data frequency is not supported in live mode, using "minute"')
+            self.log.warning('"daily" data frequency is not supported in live mode, using "minute"')
             self.trading_info["DATA_FREQ"] = "minute"
 
-        # start = arrow.get(self.trading_info["START"], 'YYYY-M-D')
-        end = arrow.get(self.trading_info["END"])
+        end_arrow = arrow.get(self.trading_info["END"])
 
-        if end < arrow.utcnow().floor("minute"):
-            self.log.warning(f"End Date: {end} is invalid, will use ")
-            # self.log.warning("Specified end date is invalid, will use 3 days from today")
-            self.log.warning("Will use 30 minutes from now")
-            end = arrow.utcnow().shift(minutes=+30)
-            self.trading_info["END"] = end.format("YYYY-M-D-H-MM")
+        if end_arrow < arrow.utcnow().floor("minute"):
+            self.log.warning(f"End Date: {end_arrow} is invalid, will use 30 minutes from now")
+            end_arrow = arrow.utcnow().shift(minutes=+30)
+            self.trading_info["END"] = end_arrow.datetime
 
-        # self.log.notice(f'Starting Strategy {start.humanize()} -- {start}')
-        self.log.notice(f"Stopping strategy {end.humanize()} -- {end}")
+        self.log.notice(f"Stopping strategy {end_arrow.humanize()} -- {end_arrow.datetime}")
 
         # catalyst loads state before init called
         # so need to fetch state before algorithm starts
@@ -1247,6 +1261,6 @@ class Strategy(object):
             simulate_orders=simulate_orders,
             stats_output=None,
             # start=pd.to_datetime(start.datetime, utc=True),
-            end=pd.to_datetime(end.datetime, utc=True),
+            end=pd.to_datetime(end_arrow.datetime, utc=True),
             auth_aliases=auth_aliases,
         )
