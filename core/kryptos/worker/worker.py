@@ -75,6 +75,7 @@ class StratWorker(Worker):
         job = self.get_current_job()
         if job is None:
             return
+            return os.kill(os.getpid(), signal.SIGRTMIN)
 
         self.log.warning(f"Attempt to grace kill and requeue current job {job.id}")
         self.log.warning("quarantining job")
@@ -88,6 +89,7 @@ class StratWorker(Worker):
         fq.requeue(job.id)
         self.log.warning("Sending job kill signal to attempt analysis upload")
         job.kill()  # causes algo to exit gracefully
+        os.kill(os.getpid(), signal.SIGRTMIN)
 
     def request_stop_sigrtmin(self, signum, frame):
         if self.imminent_shutdown_delay == 0:
