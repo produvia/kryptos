@@ -104,4 +104,3 @@ Exception: {record.formatted_exception}
     )
 
     setup.push_thread()
-    cloud_client.setup_logging()

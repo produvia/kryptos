@@ -31,7 +31,7 @@ from kryptos.utils import viz, tasks, auth, outputs
 from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
-from kryptos import logger_group
+from kryptos import logger_group, setup_logging
 from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR, CLOUD_LOGGING
 from kryptos.analysis import quant
 import google.cloud.logging
@@ -143,6 +143,7 @@ class Strategy(object):
 
         self.log = StratLogger(self)
         logger_group.add_logger(self.log)
+        setup_logging()
 
         self.current_date = None
         self.last_date = None
