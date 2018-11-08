@@ -64,7 +64,7 @@ def setup_logging():
     handlers = [logbook.NullHandler()]
 
     if CLOUD_LOGGING:
-        cloud_handler = GoogleCloudHandler(level="INFO", bubble=True, format_string=format_string)
+        cloud_handler = GoogleCloudHandler(level="DEBUG", bubble=True, format_string=format_string)
         handlers.append(cloud_handler)
 
     file_handler = logbook.RotatingFileHandler(
