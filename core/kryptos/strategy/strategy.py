@@ -406,7 +406,7 @@ class Strategy(object):
 
         self._extra_init(context)
 
-        if self.in_job:
+        if self.in_job and not self.is_backtest:
             job = get_current_job()
             if job.meta.get("PAUSED"):
                 self.notify("Your strategy has resumed!")
@@ -445,11 +445,17 @@ class Strategy(object):
         self._context_ref = context
         self.state.load_from_context(context)
 
-        if not (self.trading_info["END"] == context.end):
-            raise ValueError(f"Trading info END datetime does not match algorithms datetime\n{self.trading_info['END']} != {context.end}")
+        if not self.is_backtest:
 
-        if self.state.END and (self.state.END != context.end):
-            raise ValueError(f"Algorithm's end time does not match strat state endtime\n{self.state.END} != {context.end}")
+            if not (self.trading_info["END"] == context.end):
+                raise ValueError(
+                    f"Trading info END datetime does not match algorithms datetime\n{self.trading_info['END']} != {context.end}"
+                )
+
+            if self.state.END and (self.state.END != context.end):
+                raise ValueError(
+                    f"Algorithm's end time does not match strat state endtime\n{self.state.END} != {context.end}"
+                )
 
         if self.state.DATA_FREQ != "minute" and self.state.DATA_FREQ != "daily":
             raise ValueError(
@@ -618,16 +624,14 @@ class Strategy(object):
         self.state.i += 1
         self.log.info(f"Processing algo iteration - {self.state.i}")
 
-        if self.state.i > 1:
+        if not self.is_backtest and self.state.i > 1:
             outputs.upload_state_to_storage(self)
 
         else:
             self.log.debug("Skipping stats upload until catalyst writes to file")
 
-        # uses context.end because to get algo's exact time end
-        # which was passed to run_algorithm
-        end = arrow.get(context.end)
-        # now = arrow.utcnow()
+
+        end = arrow.get(self.state.END)
         time_left = end.humanize(only_distance=True)
         self.log.debug(f"Stopping strategy in {time_left}")
 
@@ -724,7 +728,7 @@ class Strategy(object):
             return self.state.prices.iloc[-1].name
 
     def _make_plots(self, context, results):
-        log.info("Creating analysis plots")
+        self.log.info("Creating analysis plots")
         # strat_plots = len(self._market_indicators) + len(self._datasets)
         pos = viz.get_start_geo(self.total_plots + 3)
         viz.plot_percent_return(results, pos=pos)
@@ -787,6 +791,7 @@ class Strategy(object):
         # need to catch all exceptions because algo will end either way
         except Exception as e:
             self.log.error("Error during shutdown/analyze()")
+            self.log.error(str(e))
 
         try:
             outputs.save_analysis_to_storage(self, results)
