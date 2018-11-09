@@ -66,7 +66,7 @@ def get_stats_dir(strat):
 
 
 def get_algo_state_file(strat):
-    mode_state_file = f"context.state_paper.p"
+    mode_state_file = f"context.state_{strat.mode}.p"
     algo_folder = get_algo_dir(strat)
     return os.path.join(algo_folder, mode_state_file)
 
@@ -108,7 +108,7 @@ def save_analysis_to_storage(strat, results):
 
 
 def save_plot_to_storage(strat, plot_file):
-    strat.log.debug("Uploading summar plot to storage")
+    strat.log.debug("Uploading summary plot to storage")
 
     stats_bucket = get_stats_bucket()
 
