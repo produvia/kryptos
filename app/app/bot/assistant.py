@@ -131,7 +131,7 @@ def prompt_quote_currency(exchange):
     quotes = utils.get_exchange_quote_currencies(exchange)
 
     for q in quotes:
-        resp.add_button(q, q)
+        resp.add_button(q, q.lower())
     return resp
 
 

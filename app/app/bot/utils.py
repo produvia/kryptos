@@ -103,7 +103,7 @@ def build_strat_dict_from_context(context, mode):
     strat_dict["trading"]["EXCHANGE"] = exchange
     strat_dict["trading"]["ASSET"] = trade_pair
     strat_dict["trading"]["CAPITAL_BASE"] = float(capital_base)
-    strat_dict["trading"]["BASE_CURRENCY"] = quote_currency  # TODO change refs of base to quote
+    strat_dict["trading"]["BASE_CURRENCY"] = quote_currency.lower()  # TODO change refs of base to quote
 
     strat_dict["name"] = f"{strat}-{mode.title()}"
     return strat_dict
@@ -149,5 +149,8 @@ def launch_paper(config_context):
 def launch_live(config_context):
     user = get_user()
     strat_dict = build_strat_dict_from_context(config_context, "live")
+    cap_base = strat_dict['trading']['CAPITAL_BASE']
+    quote_curr = strat_dict['trading']['BASE_CURRENCY']
+    current_app.logger.info(f'Queuing live strat for user {user.id}: {cap_base} {quote_curr}')
     job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=False)
     return job_id
