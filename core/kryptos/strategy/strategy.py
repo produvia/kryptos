@@ -1081,26 +1081,15 @@ class Strategy(object):
         self.log.notice(msg)
         self.notify(dedent(msg))
 
-    def _default_buy(self, context, size=None, price=None, slippage=None):
-        position = context.portfolio.positions.get(self.state.asset)
-        if position is None:
-            self.log.info("Using default buy function")
-            order(
-                asset=self.state.asset,
-                amount=self.state.ORDER_SIZE,
-                limit_price=self.state.price * (1 + self.state.SLIPPAGE_ALLOWED),
+
+    def _place_buy_portfolio_percent(self, context, pct: int):
+        self.log.info(f'Placing buy order for {pct} of portfolio')
+        try:
+            order_target_percent(self.state.asset, 1)
+            # placed_order, exec_price = get_order(order_id, self.state.asset, return_price=True)
+            msg = "Bought 100% of portfolio: @ {price}".format(
+                price=self.state.price
             )
-            msg = "Bought {amount} @ {price}".format(
-                amount=self.state.ORDER_SIZE, price=self.state.price
-            )
-            self.log.notice(msg)
-            self.notify(msg)
-        else:
-            msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
-                amount=position.amount, cost_basis=position.cost_basis
-            )
-            self.log.warning(msg)
-            self.notify(msg)
 
     def _default_sell(self, context, size=None, price=None, slippage=None):
         self.log.info("Using default sell function")
@@ -1116,11 +1105,11 @@ class Strategy(object):
                 amount=position.amount, cost_basis=cost_basis
             )
         )
-        # Sell when holding and got sell singnal
+
         profit = (self.state.price * position.amount) - (cost_basis * position.amount)
         order_target_percent(
             asset=self.state.asset,
-            target=0,
+            target=pct,
             limit_price=self.state.price * (1 - self.state.SLIPPAGE_ALLOWED),
         )
         msg = "Sold {amount} @ {price} Profit: {profit}".format(
@@ -1129,7 +1118,45 @@ class Strategy(object):
         self.log.notice(msg)
         self.notify(msg)
 
-    # Save the prices and analysis to send to analyze
+    def _place_buy_limit_order(self, context, amount=None, slippage=None):
+        self.log.info("Using default buy function")
+        if amount is None:
+            amount = self.state.ORDER_SIZE
+
+        if slippage is None:
+            slippage = self.state.SLIPPAGE_ALLOWED
+
+        limit_price = self.state.price * (1 + slippage)
+
+        try:
+            order(
+                asset=self.state.asset,
+                amount=amount,
+                limit_price=limit_price,
+            )
+            msg = "Bought {amount} @ {price}".format(
+                amount=self.state.ORDER_SIZE, price=self.state.price
+            )
+        except exchange_errors.CreateOrderError as e:
+            msg = f"Failed to make limit buy: {str(e)}"
+            self.log.error(str(e))
+
+        self.log.warning(msg)
+        self.notify(msg)
+
+
+    def _default_buy(self, context, size=None, price=None, slippage=None):
+        position = context.portfolio.positions.get(self.state.asset)
+        if position is None:
+            self.log.info("Using default buy function")
+            self._place_buy_portfolio_percent(context, 1)
+
+        else:
+            msg = "Skipping signaled buy due to open position: {amount} positions with cost basis {cost_basis}".format(
+                amount=position.amount, cost_basis=position.cost_basis
+            )
+            self.log.warning(msg)
+
 
     def run(self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False):
         """Executes the trade strategy as a catalyst algorithm
