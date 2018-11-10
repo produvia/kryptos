@@ -1017,15 +1017,21 @@ class Strategy(object):
     def make_buy(self, context):
         self.log.info("Making Buy Order")
         if self._buy_func is None:
-            return self._default_buy(context)
+            order_id = self._default_buy(context)
+            return
 
-        self._buy_func(context)
+        else:
+            order_id = self._buy_func(context)
+
+        if order_id is not None:
+            self.log.info(f'Order ID: {order_id}')
+
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(self.state.asset)
         if position is None:
             self.log.debug("Using default buy function")
-            self._place_buy_portfolio_percent(context, 100)
+            return self._place_buy_portfolio_percent(context, 100)
 
         else:
             msg = """\
@@ -1038,12 +1044,12 @@ class Strategy(object):
 
     def _place_buy_portfolio_percent(self, context, pct: int):
         self.log.info(f"Placing buy order for {pct} of portfolio")
-
+        order_id = None
         pct_dec = pct / 100
 
         try:
-            order_target_percent(self.state.asset, pct_dec)
-            # placed_order, exec_price = get_order(order_id, self.state.asset, return_price=True)
+            order_id = order_target_percent(self.state.asset, pct_dec)
+
             msg = f"Bought {pct}% of portfolio: @ {self.state.price}"
 
         except exchange_errors.CreateOrderError as e:
@@ -1052,6 +1058,7 @@ class Strategy(object):
 
         self.log.warning(msg)
         self.notify(msg)
+        return order_id
 
     def _place_buy_limit_order(self, context, amount=None, slippage=None):
         if amount is None:
@@ -1074,8 +1081,9 @@ class Strategy(object):
             f"Placing limit order for {amount} {self.state.asset} with total: {order_total}"
         )
 
+        order_id = None
         try:
-            order(asset=self.state.asset, amount=amount, limit_price=limit_price)
+            order_id = order(asset=self.state.asset, amount=amount, limit_price=limit_price)
             msg = "Bought {amount} @ {price}".format(
                 amount=self.state.ORDER_SIZE, price=self.state.price
             )
@@ -1085,6 +1093,7 @@ class Strategy(object):
 
         self.log.warning(msg)
         self.notify(msg)
+        return order_id
 
     def make_sell(self, context):
         if self.state.asset not in context.portfolio.positions:
