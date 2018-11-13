@@ -6,7 +6,6 @@ import datetime
 import copy
 from textwrap import dedent
 import logbook
-import time
 
 import pandas as pd
 import numpy as np
@@ -32,7 +31,7 @@ from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group, setup_logging
-from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR, CLOUD_LOGGING, WEB_URL
+from kryptos.settings import DEFAULT_CONFIG, PERF_DIR, WEB_URL
 from kryptos.analysis import quant
 import google.cloud.logging
 
@@ -550,6 +549,7 @@ class Strategy(object):
         self.state.dump_to_context(context)
 
     def _filter_fetched_history(self, context, data):
+
         # Filter historic data according to minute frequency
         # for the freq alias:
         # http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
@@ -559,6 +559,7 @@ class Strategy(object):
                 end=self.state.prices.iloc[-1].name,
                 freq=str(self.state.MINUTE_FREQ) + "min",
             )
+
             self.state.prices = self.state.prices.loc[filter_dates]
             self.state.prices = self.state.prices.dropna()
 
@@ -663,6 +664,7 @@ class Strategy(object):
         self._check_minute_freq(context, data)
 
         if self.in_job:
+
             job = get_current_job()
             job.meta["date"] = str(self.current_date)
             job.save_meta()
@@ -1033,10 +1035,10 @@ class Strategy(object):
             position = context.portfolio.positions.get(self.state.asset)
             # self.log.info('Checking open positions: {amount} positions with cost basis {cost_basis}'.format(amount=position.amount, cost_basis=position.cost_basis))
 
-            if self.state.price >= position.cost_basis * (1 + TAKE_PROFIT):  #  Take Profit
+            if self.state.price >= position.cost_basis * (1 + self.state.TAKE_PROFIT):
                 self._take_profit_sell(context, position)
 
-            if self.state.price < position.cost_basis * (1 - STOP_LOSS):  # Stop Loss
+            if self.state.price < position.cost_basis * (1 - self.state.STOP_LOSS):
                 self._stop_loss_sell(context, position)
 
     def make_buy(self, context):
