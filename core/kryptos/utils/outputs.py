@@ -30,7 +30,8 @@ def get_output_file(algo, config):
     # perf_dir = CONFIG.PERF_DIR
     algo_dir = os.path.join(PERF_DIR, algo.NAMESPACE)
     os.makedirs(algo_dir, exist_ok=True)
-    file_specs = "{}_{}_{}".format(CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"])
+    file_specs = "{}_{}_{}".format(
+        CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"])
     return os.path.join(algo_dir, file_specs)
 
 
@@ -39,7 +40,8 @@ def get_output_file_str(str, config):
     # perf_dir = CONFIG.PERF_DIR
     algo_dir = os.path.join(PERF_DIR, str)
     os.makedirs(algo_dir, exist_ok=True)
-    file_specs = "{}_{}_{}".format(CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"])
+    file_specs = "{}_{}_{}".format(
+        CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"])
     return os.path.join(algo_dir, file_specs)
 
 
@@ -103,8 +105,10 @@ def save_analysis_to_storage(strat, results):
     blob_name = f"{strat.id}/stats_{strat.mode}/final_performance.csv"
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(filename)
+    url = "https://storage.cloud.google.com/strat_stats/{blob_name}"
     strat.log.info(f"Uploaded strat performance")
-    strat.log.info(f"Performance URL: https://storage.cloud.google.com/strat_stats/{blob_name}")
+    strat.log.info(f"Performance URL: {url}")
+    return url
 
 
 def save_plot_to_storage(strat, plot_file):
@@ -115,8 +119,10 @@ def save_plot_to_storage(strat, plot_file):
     blob_name = f"{strat.id}/stats_{strat.mode}/summary_plot.png"
     blob = stats_bucket.blob(blob_name)
     blob.upload_from_filename(plot_file)
+    url = "https://storage.cloud.google.com/strat_stats/{blob_name}"
     strat.log.info(f"Uploaded strat plot to storage")
-    strat.log.info(f"Plot URL: https://storage.cloud.google.com/strat_stats/{blob_name}")
+    strat.log.info(f"Plot URL: {url}")
+    return url
 
 
 def save_stats_to_storage(strat):

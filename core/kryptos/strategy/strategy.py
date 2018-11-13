@@ -330,7 +330,8 @@ class Strategy(object):
         for s in signals.get("sell", []):
             sig_func = getattr(signal_utils, s["func"], None)
             if not sig_func:
-                raise Exception("JSON defined signals require a defined function")
+                raise Exception(
+                    "JSON defined signals require a defined function")
 
             # store json repr so we can load params during execution
             self._sell_signal_objs.append(s)
@@ -433,7 +434,8 @@ class Strategy(object):
         # Set self.state.BARS size to work with custom minute frequency
         if self.state.DATA_FREQ == "minute":
             self.state.BARS = int(
-                self.state.BARS * 24 * 60 / int(24 * 60 / int(self.state.MINUTE_FREQ))
+                self.state.BARS * 24 * 60 /
+                int(24 * 60 / int(self.state.MINUTE_FREQ))
             )
 
         self.date_init_reference = pd.Timestamp("2013-01-01 00:00:00", tz="utc") + pd.Timedelta(
@@ -441,7 +443,8 @@ class Strategy(object):
         )
 
         # Set commissions
-        context.set_commission(maker=self.state.MAKER_COMMISSION, taker=self.state.TAKER_COMMISSION)
+        context.set_commission(
+            maker=self.state.MAKER_COMMISSION, taker=self.state.TAKER_COMMISSION)
         self.state.dump_to_context(context)
 
     def _check_configuration(self, context):
@@ -578,7 +581,8 @@ class Strategy(object):
                 sleeptime=5,
                 retry_exceptions=(ccxt_errors.RequestTimeout),
                 args=(context, data),
-                cleanup=lambda: self.log.warning("CCXT request timed out, retrying..."),
+                cleanup=lambda: self.log.warning(
+                    "CCXT request timed out, retrying..."),
             )
             return True
 
@@ -632,7 +636,8 @@ class Strategy(object):
             outputs.upload_state_to_storage(self)
 
         else:
-            self.log.debug("Skipping stats upload until catalyst writes to file")
+            self.log.debug(
+                "Skipping stats upload until catalyst writes to file")
 
         end = arrow.get(self.state.END)
         time_left = end.humanize(only_distance=True)
@@ -688,7 +693,8 @@ class Strategy(object):
                 i.record()
             except Exception as e:
                 self.log.error(e)
-                self.log.error("Error calculating {}, skipping...".format(i.name))
+                self.log.error(
+                    "Error calculating {}, skipping...".format(i.name))
 
         for i in self._ml_models:
             i.record()
@@ -767,21 +773,28 @@ class Strategy(object):
         plt.savefig(filename)
         plt.close()
 
-        outputs.save_plot_to_storage(self, filename)
+        url = outputs.save_plot_to_storage(self, filename)
+        if self.in_job:
+            job = get_current_job()
+            job.meta['results']['plot_url'] = url
+            job.save_meta()
+            self.notify(f"You can view your strategy's plot at {url}")
 
     def _analyze(self, context, results):
-        """Plots results of algo performance, external data, and indicators"""
+        """plots results of algo performance, external data, and indicators"""
         self.log.info("Calling analyze function and completing algorithm")
         ending_cash = results.cash[-1]
         self.log.notice("Ending cash: ${}".format(ending_cash))
-        self.log.notice("Completed for {} trading periods".format(self.state.i))
+        self.log.notice(
+            "completed for {} trading periods".format(self.state.i))
         self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
 
         try:
             self._make_plots(context, results)
             # TODO - fix KeyError in quant analysis
             # quant.dump_plots_to_file(self.name, results)
-            self.quant_results = quant.dump_summary_table(self.name, self.trading_info, results)
+            self.quant_results = quant.dump_summary_table(
+                self.name, self.trading_info, results)
 
             extra_results = self.get_extra_results(context, results)
 
@@ -797,9 +810,16 @@ class Strategy(object):
             self.log.error(str(e))
 
         try:
-            outputs.save_analysis_to_storage(self, results)
+            url = outputs.save_analysis_to_storage(self, results)
+            if self.in_job:
+                job = get_current_job()
+                job.meta['results']['analysis_url'] = url
+                job.save_meta()
+                self.notify(f"You can view your strategy's analysis at {url}")
+
         except Exception:
-            self.log.error("Failed to upload strat analysis to storage", exec_info=True)
+            self.log.error(
+                "Failed to upload strat analysis to storage", exec_info=True)
 
         self.state.dump_to_context(context)
 
@@ -993,7 +1013,8 @@ class Strategy(object):
 
     def _weigh_signals(self, context, buys, sells, neutrals):
         self.log.debug(
-            "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(buys, sells, neutrals)
+            "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(
+                buys, sells, neutrals)
         )
         if buys > sells:
             msg = "Signaling to buy"
