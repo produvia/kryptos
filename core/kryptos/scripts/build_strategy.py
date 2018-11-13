@@ -12,9 +12,7 @@ from kryptos.data.manager import AVAILABLE_DATASETS
 from kryptos.utils.outputs import in_docker
 from kryptos.utils.load import get_strat
 from kryptos.utils import tasks
-
-REMOTE_BASE_URL = "https://kryptos-205115.appspot.com"
-LOCAL_BASE_URL = "http://web:8080"
+from kryptos.settings import REMOTE_BASE_URL, LOCAL_BASE_URL
 
 
 @click.command(name="build", help="Launch a strategy")
@@ -80,9 +78,11 @@ def run(
         return
 
     else:
-        click.secho("Running locally w/o worker (ML still requires a worker process)", fg="cyan")
+        click.secho(
+            "Running locally w/o worker (ML still requires a worker process)", fg="cyan")
         viz = not in_docker()
-        strat.run(live=paper or live, viz=viz, simulate_orders=not live)
+        strat.run(live=paper or live, viz=viz,
+                  simulate_orders=not live, user_id=1)
         result_json = strat.quant_results.to_json()
         display_summary(result_json)
 

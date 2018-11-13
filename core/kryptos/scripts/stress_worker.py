@@ -9,10 +9,7 @@ from kryptos.data.manager import AVAILABLE_DATASETS
 from kryptos.utils.outputs import in_docker
 from kryptos.scripts.build_strategy import load_from_cli
 from kryptos.scripts.kill_strat import kill_from_api
-
-
-REMOTE_API_URL = "http://kryptos.produvia.com/api"
-LOCAL_API_URL = "http://web:8080/api" if in_docker() else "http://0.0.0.0:8080/api"
+from kryptos.settings import REMOTE_BASE_URL, LOCAL_BASE_URL
 
 
 @click.command(help="Launch multiple strategies")
@@ -52,10 +49,10 @@ def run(
 
     if hosted:
         click.secho("Running remotely", fg="yellow")
-        api_url = REMOTE_API_URL
+        api_url = os.path.join(REMOTE_BASE_URL, 'api')
     else:
         click.secho("Running locally", fg="yellow")
-        api_url = LOCAL_API_URL
+        api_url = os.path.join(LOCAL_BASE_URL, "api")
 
     strat_ids = []
 
@@ -70,7 +67,8 @@ def run(
             python_script,
         )
         click.secho(f"Spawning strategy {i}")
-        strat_id = start_from_api(strat, api_url, paper=paper, live=False, hosted=hosted)
+        strat_id = start_from_api(
+            strat, api_url, paper=paper, live=False, hosted=hosted)
         strat_ids.append(strat_id)
 
     try:

@@ -32,7 +32,7 @@ from kryptos.strategy.indicators import technical, ml
 from kryptos.strategy.signals import utils as signal_utils
 from kryptos.data.manager import get_data_manager
 from kryptos import logger_group, setup_logging
-from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR, CLOUD_LOGGING
+from kryptos.settings import DEFAULT_CONFIG, TAKE_PROFIT, STOP_LOSS, PERF_DIR, CLOUD_LOGGING, WEB_URL
 from kryptos.analysis import quant
 import google.cloud.logging
 
@@ -57,7 +57,7 @@ class StratLogger(logbook.Logger):
         record.extra["mode"] = self.strat.mode
         record.extra["user_id"] = self.strat.user_id
 
-        if self.strat.in_job:  # and record.level_name in ['INFO', 'NOTICE', 'WARN']:
+        if self.strat.in_job:
             job = get_current_job()
             if not job.meta.get("output"):
                 job.meta["output"] = record.msg
@@ -163,6 +163,10 @@ class Strategy(object):
     @property
     def is_backtest(self):
         return not self._live
+
+    @property
+    def web_url(self):
+        return os.path.join(WEB_URL, 'strategy', self.id)
 
     @property
     def mode(self):

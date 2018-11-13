@@ -27,6 +27,14 @@ SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
 CLOUD_LOGGING = os.getenv('CLOUD_LOGGING', False)
 
+REMOTE_BASE_URL = "https://kryptos-205115.appspot.com"
+LOCAL_BASE_URL = "http://web:8080"
+
+if CONFIG_ENV == 'dev':
+    WEB_URL = LOCAL_BASE_URL
+else:
+    WEB_URL = REMOTE_BASE_URL
+
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
