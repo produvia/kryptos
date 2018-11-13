@@ -165,7 +165,7 @@ def run_from_api(strat, paper=False, live=False, hosted=False):
     strat_id = data["strat_id"]
     status = None
 
-    strat_url = get_strat_url(strat_id, base_url, paper)
+    strat_url = get_strat_url(strat_id, base_url)
     click.echo(f"Strategy enqueued to job {strat_id}")
     click.secho(f"View the strat at {strat_url}", fg="blue")
 
@@ -188,10 +188,8 @@ def run_from_api(strat, paper=False, live=False, hosted=False):
         time.sleep(3)
 
 
-def get_strat_url(strat_id, base_url, paper):
-    if paper:
-        return os.path.join(base_url, "strategy/strategy", strat_id)
-    return os.path.join(base_url, "strategy/backtest/strategy", strat_id)
+def get_strat_url(strat_id, base_url):
+    return os.path.join(base_url, "strategy", strat_id)
 
 
 def run_in_worker(strat, paper=False, live=False):
@@ -215,11 +213,12 @@ def run_in_worker(strat, paper=False, live=False):
             "telegram_id": None,
             "live": paper or live,
             "simulate_orders": not live,
+            "user_id": 1
         },
         timeout=-1,
     )
 
-    strat_url = get_strat_url(strat.id, LOCAL_BASE_URL, paper)
+    strat_url = get_strat_url(strat.id, LOCAL_BASE_URL)
     click.secho(f"View the strat at {strat_url}", fg="blue")
 
     while not job.is_finished:

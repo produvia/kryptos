@@ -1,8 +1,6 @@
 import logging
 import os
-import json
 from textwrap import dedent
-import datetime
 
 from flask import Blueprint, current_app
 from flask_assistant import Assistant, tell, event, context_manager
@@ -20,13 +18,20 @@ logging.getLogger("flask_assistant").setLevel(logging.INFO)
 @assist.action("Default Welcome Intent")
 def welcome_message():
     user_name = utils.get_first_name()
-    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual investment assistant that manages your cryptocurrency portfolio and automates your cryptocurrency trading"
+    msg = f"Hello {user_name}!"
+    msg += """I’m Kryptos AI, your virtual investment assistant\
+    that manages your cryptocurrency portfolio and automate\
+    your cryptocurrency trading"""
 
     if utils.get_user() is None:
         current_app.logger.info("Prompting user to login")
-        msg += f"\n\nBefore we can get started, you'll need to create a free Kryptos account and authentiate with Telegram"
+        msg += """\n\n \
+        Before we can get started,you'll need to \
+        create a free Kryptos account and authentiate with Telegram
+        """
         resp = inline_keyboard(msg)
-        url = os.path.join(current_app.config["FRONTEND_URL"], "account/telegram")
+        url = os.path.join(
+            current_app.config["FRONTEND_URL"], "account/telegram")
         resp.add_button("Create an account", url=url)
         return resp
 
@@ -105,7 +110,8 @@ def select_strategy(existing_strategy):
 @assist.action("strat-config", events=["strat-config-start"])
 def prompt_exchange(existing_strategy):
     current_app.logger.debug(f"Building strategy for {existing_strategy}")
-    context_manager.set("strat-config-data", "existing_strategy", existing_strategy)
+    context_manager.set("strat-config-data",
+                        "existing_strategy", existing_strategy)
     speech = "Which exchange would you like to trade on?"
     resp = inline_keyboard(dedent(speech))
     resp.add_button("Binance", "binance")
@@ -124,7 +130,7 @@ def prompt_quote_currency(exchange):
     Which currency would you like to use as the quote currency?
     This is the currency you will sell when making a buy order, and recieve when making a sell order.
 
-    You must also allocate an amount of this currency to the strategy as capital base 
+    You must also allocate an amount of this currency to the strategy as capital base
     This means you must hold the currency on {exchange} for live trading.
     """
     resp = inline_keyboard(dedent(speech))
@@ -154,7 +160,8 @@ def prompt_trade_currency(capital_base):
     resp = inline_keyboard(speech)
 
     exchange = context_manager.get("strat-config-data").get("exchange")
-    quote_currency = context_manager.get("strat-config-data").get("quote_currency")
+    quote_currency = context_manager.get(
+        "strat-config-data").get("quote_currency")
 
     options = utils.get_available_base_currencies(exchange, quote_currency)
 
@@ -234,13 +241,16 @@ def launch_strategy_paper(existing_strategy):
     context = context_manager.get("strat-config-data")
     job_id = utils.launch_paper(context)
 
-    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
+    url = os.path.join(
+        current_app.config["FRONTEND_URL"], "strategy", job_id)
 
     hours = context.get("hours")
     speech = """\
-    Great! The strategy is now running in paper mode and will run for the next {} hours.
+    Great! The strategy is now running in paper mode \
+    and will run for the next {} hours.
 
-    You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
+    You can view your strategy's progress by clicking the link \
+    below and I will keep you updated on how it performs.
     """.format(
         hours
     )

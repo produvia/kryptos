@@ -16,6 +16,7 @@ def _get_group_indicators():
     indicators = task.get_indicators_by_group(group)
     return jsonify(indicators)
 
+
 @blueprint.route('/_get_indicator_params/')
 def _get_indicator_params():
     indicator_abbrev = request.args.get('indicator', '01', type=str)
@@ -23,11 +24,11 @@ def _get_indicator_params():
     return jsonify(params_obj)
 
 
-@blueprint.route('/strategy/<strat_id>', methods=['GET'])
+@blueprint.route('/<strat_id>', methods=['GET'])
 @login_required
 def strategy_status(strat_id):
     strat = StrategyModel.query.filter_by(uuid=strat_id).first_or_404()
-    if not strat in current_user.strategies:
+    if strat not in current_user.strategies:
         flash('Strategy Not Found in DB', category='error')
         current_app.logger.error(f"Strat {strat_id} not Found")
 
@@ -66,6 +67,7 @@ def build_strategy():
 
     return render_template('strategy/trading.html', form=form)
 
+
 @blueprint.route('build/indicators', methods=['GET', 'POST'])
 def build_indicators():
 
@@ -94,7 +96,6 @@ def build_indicators():
 
         session['strat_dict']['indicators'] = strat_indicators
 
-
         # render new form if adding another
         if indicator_form.add_another.data:
             return render_template('strategy/indicators.html', form=indicator_form)
@@ -102,6 +103,7 @@ def build_indicators():
         return redirect(url_for('strategy.build_signals'))
 
     return render_template('strategy/indicators.html', form=indicator_form)
+
 
 @blueprint.route('build/signals', methods=['GET', 'POST'])
 def build_signals():
