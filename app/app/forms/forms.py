@@ -43,6 +43,13 @@ signal_funcs = [
 ]
 
 
+class DynamicChoiceField(SelectField):
+    """An open ended select field to accept dynamic choices added by the browser"""
+
+    def pre_validate(self, form):
+        pass
+
+
 class UserExchangeKeysForm(FlaskForm):
     exchange = SelectField(
         "Exchange", choices=exchanges, validators=[Required()], default=exchanges[0]
@@ -67,8 +74,19 @@ class TradeInfoForm(FlaskForm):
     )
     start = StringField("Start", default="2017-10-10")
     end = StringField("End", default="2018-3-28")
-    base_currency = StringField("Base Currency", default="usd")
-    asset = StringField("Asset", default="btc_usd")
+
+    exchange = SelectField(
+        "Exchange",
+        choices=exchanges,
+        validators=[Required()],
+        default=exchanges[0],
+        id="exchange_select",
+    )
+
+    base_currency = DynamicChoiceField(
+        "Base Currency", id="quote_select", validators=[]
+    )
+    asset = DynamicChoiceField("Asset", id="asset_select", validators=[])
     data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
     history_freq = StringField("History frequency", default="1d")
 
@@ -81,13 +99,6 @@ class TradeInfoForm(FlaskForm):
         "Slippage Allowed", validators=[DataRequired()], default=0.05
     )
     next_step = SubmitField("Next")
-
-
-class DynamicChoiceField(SelectField):
-    """An open ended select field to accept dynamic choices added by the browser"""
-
-    def pre_validate(self, form):
-        pass
 
 
 class IndicatorInfoForm(FlaskForm):
