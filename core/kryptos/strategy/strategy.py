@@ -786,7 +786,7 @@ class Strategy(object):
         url = outputs.save_plot_to_storage(self, filename)
         if self.in_job:
             job = get_current_job()
-            job.meta["results"]["plot_url"] = url
+            job.meta["plot_url"] = url
             job.save_meta()
             self.notify(f"You can view your strategy's plot at {url}")
 
@@ -825,11 +825,13 @@ class Strategy(object):
             url = outputs.save_analysis_to_storage(self, results)
             if self.in_job:
                 job = get_current_job()
-                job.meta["results"]["analysis_url"] = url
+
+                job.meta["analysis_url"] = url
                 job.save_meta()
                 self.notify(f"You can view your strategy's analysis at {url}")
 
-        except Exception:
+        except Exception as e:
+            raise e
             self.log.error("Failed to upload strat analysis to storage", exec_info=True)
 
         self.state.dump_to_context(context)

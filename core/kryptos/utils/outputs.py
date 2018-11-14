@@ -31,7 +31,8 @@ def get_output_file(algo, config):
     algo_dir = os.path.join(PERF_DIR, algo.NAMESPACE)
     os.makedirs(algo_dir, exist_ok=True)
     file_specs = "{}_{}_{}".format(
-        CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"])
+        CONFIG["ASSET"], CONFIG["EXCHANGE"], CONFIG["DATA_FREQ"]
+    )
     return os.path.join(algo_dir, file_specs)
 
 
