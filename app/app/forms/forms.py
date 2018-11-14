@@ -1,3 +1,4 @@
+import datetime
 from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -14,6 +15,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Required, Optional
 
+
 trade_types = [("backtest", "backtest"), ("paper", "paper"), ("live", "live")]
 exchanges = [
     ("binance", "binance"),
@@ -24,7 +26,11 @@ exchanges = [
 
 
 freqs = [("daily", "daily"), ("minute", "minute")]
-datasets = [("None", "None"), ("Google Trends, google"), ("Quandl Blochain Data", "quandl")]
+datasets = [
+    ("None", "None"),
+    ("Google Trends, google"),
+    ("Quandl Blochain Data", "quandl"),
+]
 
 signal_types = [("buy", "Buy"), ("sell", "Sell")]
 
@@ -54,7 +60,10 @@ class UserExchangeKeyRemoveForm(FlaskForm):
 class TradeInfoForm(FlaskForm):
     name = StringField("name", validators=[DataRequired()])
     trade_type = SelectField(
-        "Trade Type", choices=trade_types, validators=[Required()], default=trade_types[0]
+        "Trade Type",
+        choices=trade_types,
+        validators=[Required()],
+        default=trade_types[0],
     )
     start = StringField("Start", default="2017-10-10")
     end = StringField("End", default="2018-3-28")
@@ -62,13 +71,15 @@ class TradeInfoForm(FlaskForm):
     asset = StringField("Asset", default="btc_usd")
     data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
     history_freq = StringField("History frequency", default="1d")
-    exchange = SelectField(
-        "Exchange", choices=exchanges, validators=[Required()], default=exchanges[0]
+
+    capital_base = IntegerField(
+        "Capital Base", validators=[DataRequired()], default=5000
     )
-    capital_base = IntegerField("Capital Base", validators=[DataRequired()], default=5000)
     bar_period = IntegerField("Bar Period", validators=[DataRequired()], default=50)
     order_size = FloatField("Order Size", validators=[DataRequired()], default=0.5)
-    slippage_allowed = FloatField("Slippage Allowed", validators=[DataRequired()], default=0.05)
+    slippage_allowed = FloatField(
+        "Slippage Allowed", validators=[DataRequired()], default=0.05
+    )
     next_step = SubmitField("Next")
 
 
@@ -82,7 +93,9 @@ class DynamicChoiceField(SelectField):
 class IndicatorInfoForm(FlaskForm):
 
     group = SelectField("Group", id="indicator_group_select")
-    indicator_name = DynamicChoiceField("Indicator", validators=[], id="indicator_select")
+    indicator_name = DynamicChoiceField(
+        "Indicator", validators=[], id="indicator_select"
+    )
     custom_label = StringField("Custom Indicator Label")
     symbol = StringField("Symbol")
     next_step = SubmitField(label="Next")

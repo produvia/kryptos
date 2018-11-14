@@ -1,21 +1,31 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-from flask import Blueprint, redirect, current_app, render_template, request, url_for, flash
+from flask import (
+    Blueprint,
+    redirect,
+    current_app,
+    render_template,
+    request,
+    url_for,
+    flash,
+)
 from flask_user import current_user, login_required
 from google.cloud import storage
 
 from app.extensions import db
 from app.forms import forms
 from app.models import User, UserExchangeAuth
-from app.utils import upload_user_auth, delete_user_auth
+from app.utils.auth import upload_user_auth, delete_user_auth
 
 
 blueprint = Blueprint("account", __name__, url_prefix="/account")
 
 
 def telegram_auth_url():
-    return os.path.join(current_app.config["FRONTEND_URL"], "/account/telegram/authorize")
+    return os.path.join(
+        current_app.config["FRONTEND_URL"], "/account/telegram/authorize"
+    )
 
 
 @blueprint.route("/")
@@ -97,7 +107,9 @@ def remove_exchange_auth():
 
     if remove_form.validate():
         exchange_name = remove_form.exchange_name.data
-        current_app.logger.info(f"Removing new auth key for {current_user} {exchange_name}")
+        current_app.logger.info(
+            f"Removing new auth key for {current_user} {exchange_name}"
+        )
 
         # destroy_user_exchange_key(current_user.id, exchange_name)
         delete_user_auth(current_user.id, exchange_name)
@@ -128,7 +140,9 @@ def manage_exchanges():
             "key": new_form.api_key.data,
             "secret": new_form.api_secret.data,
         }
-        current_app.logger.info(f'Adding new auth key for {current_user} {exchange_dict["name"]}')
+        current_app.logger.info(
+            f'Adding new auth key for {current_user} {exchange_dict["name"]}'
+        )
 
         exchange_name = new_form.exchange.data.lower()
 

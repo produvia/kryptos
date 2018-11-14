@@ -13,7 +13,8 @@ from flask import (
 )
 from flask_user import current_user, login_required
 
-from app.forms import forms, utils
+from app.forms import forms
+from app.utils import form_utils
 from app.models import StrategyModel
 from app import task
 
@@ -60,7 +61,7 @@ def build_strategy():
     form = forms.TradeInfoForm()
     if form.validate_on_submit():
 
-        trading_dict = utils.process_trading_form(form)
+        trading_dict = form_utils.process_trading_form(form)
 
         live = form.trade_type in ["live", "paper"]
         simulate_orders = form.trade_type == "live"
@@ -89,7 +90,7 @@ def build_indicators():
 
     if request.method == "POST" and indicator_form.validate_on_submit():
 
-        indicator_dict = utils.process_indicator_form(indicator_form)
+        indicator_dict = form_utils.process_indicator_form(indicator_form)
         params = {}
 
         # get params outside of wtf form
@@ -145,7 +146,7 @@ def build_signals():
         existing_signals["sell"] = existing_signals.get("sell", [])
         existing_signals["buy"] = existing_signals.get("buy", [])
 
-        signal_dict = utils.process_signal_form(signal_form)
+        signal_dict = form_utils.process_signal_form(signal_form)
 
         if signal_form.signal_type == "sell":
             existing_signals["sell"].append(signal_dict)
