@@ -66,14 +66,6 @@ class UserExchangeKeyRemoveForm(FlaskForm):
 
 class TradeInfoForm(FlaskForm):
     name = StringField("name", validators=[DataRequired()])
-    trade_type = SelectField(
-        "Trade Type",
-        choices=trade_types,
-        validators=[Required()],
-        default=trade_types[0],
-    )
-    start = StringField("Start", default="2017-10-10")
-    end = StringField("End", default="2018-3-28")
 
     exchange = SelectField(
         "Exchange",

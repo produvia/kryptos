@@ -14,11 +14,18 @@ from flask import (
 from flask_user import current_user, login_required
 
 from app.forms import forms
-from app.utils import form_utils
+from app.utils import form_utils, build as build_utils
 from app.models import StrategyModel
 from app import task
 
 blueprint = Blueprint("strategy", __name__, url_prefix="/strategy")
+
+
+@blueprint.route("/_get_exchange_pairs")
+def _get_exchange_asset_pairs():
+    exchange = request.args.get("exchange")
+    assets = task.get_exchange_asset_pairs(exchange)
+    return jsonify(assets)
 
 
 @blueprint.route("/_get_group_indicators/")
@@ -59,6 +66,8 @@ def build_strategy():
     task.indicator_group_name_selectors()
     task.all_indicator_selectors()
     form = forms.TradeInfoForm()
+    form.base_currency.choices = []
+    form.asset.choices = []
     if form.validate_on_submit():
 
         trading_dict = form_utils.process_trading_form(form)

@@ -1,4 +1,5 @@
 {% extends 'flask_user/_authorized_base.html' %}
+{% from "flask_user/_macros.html" import render_field, render_submit_field %}
 {% from "_macros.html" import render_form %}
 {% block content %}
 
@@ -7,5 +8,127 @@
 <h3 class=text-center>Basic Configuration</h3>
 
 {{ render_form(form) }}
+
+
+{% block extra_js %}
+<script charset="utf-8" type="text/javascript">
+
+$(document).ready(function() {
+
+    var params = $('#param-field-group')
+
+    // jQuery selection for the 2 select boxes
+    var dropdown = {
+        exchange: $('#exchange_select'),
+		asset: $('#asset_select'),
+        quoteCurrency: $('#quote_select')
+    };
+
+    // call to update on load
+    requestExchangePairs();
+
+
+    function requestExchangePairs () {
+        var send = {
+            exchange: dropdown.exchange.val()
+        };
+        dropdown.asset.attr('disabled', 'disabled');
+        dropdown.asset.empty();
+        $.getJSON("{{ url_for('strategy._get_exchange_asset_pairs') }}", send, function(data) {
+
+            if (data) {
+                updateAssetList(data)
+            } else{
+                setTimeout(function(){
+
+                    requestExchangePairs();
+                }, 1000);
+            }
+        });
+    }
+
+    function requestInidicatorParams (self) {
+        let indicatorAbbrev = self.options[self.selectedIndex].text
+        var send = {
+            indicator: indicatorAbbrev,
+        };
+        params.attr('disabled', 'disabled');
+        params.empty();
+        $.getJSON("{{ url_for('strategy._get_indicator_params') }}", send, function(data) {
+            if (data) {
+              console.log(data);
+              addParameterFields(data)
+              params.removeAttr('disabled');
+            } else {
+              setTimeout(function(){
+                requestInidicatorParams(self);
+              }, 1000);
+            }
+        });
+    }
+
+
+
+    // update asset dropdown
+    function updateAssetList (data) {
+        data.forEach(function(item) {
+            dropdown.asset.append(
+                $('<option>', {
+                    value: item[0],
+                    text: item[1]
+                })
+            );
+        });
+        dropdown.asset.removeAttr('disabled');
+    }
+
+    function addParameterFields(new_params){
+        console.log('emptying params')
+        params.attr('disabled', 'disabled');
+        params.empty();
+
+        console.log('Adding ')
+        console.log(new_params)
+
+        let idx = 0
+        for (var p in new_params) {
+
+        // append to the params form group
+        let label = $('<label class="control-label"></label>')
+        let input = $('<input class="form-control tabindex="30" type="number">')
+
+        label.attr('for', p)
+        label.text(p)
+
+        input.attr('id', p)
+        input.attr('name', "param-" + p)
+        input.text(p)
+        input.val(new_params[p])
+
+        params.append(label, input)
+        }
+
+    }
+
+    // event listener to group dropdown change
+    dropdown.exchange.on('change', function() {
+        requestExchangePairs();
+    });
+
+    dropdown.asset.on('change', function() {
+		let splitAsset = dropdown.asset.split('_')
+		dropdown.quoteCurrency.val = splitAsset[1]
+
+        // update quote currency based on the selected asset
+
+
+        // requestInidicatorParams(this);
+    });
+});
+
+</script>
+{% endblock %}
+
+
 
 {% endblock %}
