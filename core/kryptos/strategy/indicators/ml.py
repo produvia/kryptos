@@ -61,6 +61,9 @@ class MLIndicator(AbstractIndicator):
         q = Queue('ml', connection=tasks.CONN)
         job = q.fetch_job(self.current_job_id)
 
+        if job is None:
+            self.log.error('Failed to find job calculation job')
+
         self.log.info(f'Waiting for ML job: {self.current_job_id}')
         while not job.is_finished:
             pass

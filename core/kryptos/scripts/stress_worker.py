@@ -6,7 +6,6 @@ import requests
 import click
 
 from kryptos.data.manager import AVAILABLE_DATASETS
-from kryptos.utils.outputs import in_docker
 from kryptos.scripts.build_strategy import load_from_cli
 from kryptos.scripts.kill_strat import kill_from_api
 from kryptos.settings import REMOTE_BASE_URL, LOCAL_BASE_URL
@@ -20,11 +19,18 @@ from kryptos.settings import REMOTE_BASE_URL, LOCAL_BASE_URL
     multiple=True,
     help="Market Indicators listed in order of priority",
 )
-@click.option("--machine-learning-models", "-ml", multiple=True, help="Machine Learning Models")
 @click.option(
-    "--dataset", "-d", type=click.Choice(AVAILABLE_DATASETS), help="Include asset in keyword list"
+    "--machine-learning-models", "-ml", multiple=True, help="Machine Learning Models"
 )
-@click.option("--columns", "-c", multiple=True, help="Target columns for specified dataset")
+@click.option(
+    "--dataset",
+    "-d",
+    type=click.Choice(AVAILABLE_DATASETS),
+    help="Include asset in keyword list",
+)
+@click.option(
+    "--columns", "-c", multiple=True, help="Target columns for specified dataset"
+)
 @click.option("--data-indicators", "-i", multiple=True, help="Dataset indicators")
 @click.option("--json-file", "-f")
 @click.option("--python-script", "-p")
@@ -49,7 +55,7 @@ def run(
 
     if hosted:
         click.secho("Running remotely", fg="yellow")
-        api_url = os.path.join(REMOTE_BASE_URL, 'api')
+        api_url = os.path.join(REMOTE_BASE_URL, "api")
     else:
         click.secho("Running locally", fg="yellow")
         api_url = os.path.join(LOCAL_BASE_URL, "api")
@@ -68,7 +74,8 @@ def run(
         )
         click.secho(f"Spawning strategy {i}")
         strat_id = start_from_api(
-            strat, api_url, paper=paper, live=False, hosted=hosted)
+            strat, api_url, paper=paper, live=False, hosted=hosted
+        )
         strat_ids.append(strat_id)
 
     try:
@@ -110,6 +117,7 @@ def start_from_api(strat, api_url, paper=False, live=False, hosted=False):
     data = {"strat_json": json.dumps(strat.to_dict()), "queue_name": q_name}
 
     endpoint = os.path.join(api_url, "strat")
+
     click.secho(f"Enqueuing strategy at {endpoint} on queue {q_name}", fg="yellow")
 
     resp = requests.post(endpoint, json=data)

@@ -153,7 +153,8 @@ def run_from_api(strat, paper=False, live=False, hosted=False):
     else:
         q_name = "backtest"
 
-    data = {"strat_json": json.dumps(strat.to_dict()), "queue_name": q_name}
+    data = {"strat_json": json.dumps(
+        strat.to_dict()), "queue_name": q_name, "user_id": 1}
 
     endpoint = os.path.join(api_url, "strat")
     click.secho(f"Enqueuing strategy at {endpoint} on queue {q_name}", fg="yellow")

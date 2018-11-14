@@ -165,7 +165,7 @@ class Strategy(object):
 
     @property
     def web_url(self):
-        return os.path.join(WEB_URL, 'strategy', self.id)
+        return os.path.join(WEB_URL, "strategy", self.id)
 
     @property
     def mode(self):
@@ -329,8 +329,7 @@ class Strategy(object):
         for s in signals.get("sell", []):
             sig_func = getattr(signal_utils, s["func"], None)
             if not sig_func:
-                raise Exception(
-                    "JSON defined signals require a defined function")
+                raise Exception("JSON defined signals require a defined function")
 
             # store json repr so we can load params during execution
             self._sell_signal_objs.append(s)
@@ -338,7 +337,7 @@ class Strategy(object):
     def _load_trading(self, strat_dict):
         trade_config = strat_dict.get("trading", {})
         self.trading_info.update(trade_config)
-        # For all trading pairs in the poloniex bundle, the default denomination
+        # For all trading pairs in poloniex bundle, the default denomination
         # currently supported by Catalyst is 1/1000th of a full coin. Use this
         # constant to scale the price of up to that of a full coin if desired.
         if self.trading_info["EXCHANGE"] == "poloniex":
@@ -433,17 +432,17 @@ class Strategy(object):
         # Set self.state.BARS size to work with custom minute frequency
         if self.state.DATA_FREQ == "minute":
             self.state.BARS = int(
-                self.state.BARS * 24 * 60 /
-                int(24 * 60 / int(self.state.MINUTE_FREQ))
+                self.state.BARS * 24 * 60 / int(24 * 60 / int(self.state.MINUTE_FREQ))
             )
 
-        self.date_init_reference = pd.Timestamp("2013-01-01 00:00:00", tz="utc") + pd.Timedelta(
-            minutes=int(self.state.MINUTE_TO_OPERATE)
-        )
+        self.date_init_reference = pd.Timestamp(
+            "2013-01-01 00:00:00", tz="utc"
+        ) + pd.Timedelta(minutes=int(self.state.MINUTE_TO_OPERATE))
 
         # Set commissions
         context.set_commission(
-            maker=self.state.MAKER_COMMISSION, taker=self.state.TAKER_COMMISSION)
+            maker=self.state.MAKER_COMMISSION, taker=self.state.TAKER_COMMISSION
+        )
         self.state.dump_to_context(context)
 
     def _check_configuration(self, context):
@@ -476,6 +475,7 @@ class Strategy(object):
                 raise ValueError(
                     'Internal Error: When DATA_FREQ=="minute" HISTORY_FREQ shoud be divisible by MINUTE_FREQ'
                 )
+
         elif self.state.DATA_FREQ == "daily":
             if self.state.HISTORY_FREQ[-1] != "d":
                 raise ValueError(
@@ -519,7 +519,9 @@ class Strategy(object):
 
     def _check_minute_freq(self, context, data):
         if self.state.DATA_FREQ == "minute":
-            # Calcule the minutes between the last iteration (train dataset) and first iteration (test dataset)
+
+            # Calcule the minutes between the last iteration (train dataset)
+            # and first iteration (test dataset)
             if self.last_date is None:
                 last_date = self._get_last_date(context, data)
             else:
@@ -582,13 +584,14 @@ class Strategy(object):
                 sleeptime=5,
                 retry_exceptions=(ccxt_errors.RequestTimeout),
                 args=(context, data),
-                cleanup=lambda: self.log.warning(
-                    "CCXT request timed out, retrying..."),
+                cleanup=lambda: self.log.warning("CCXT request timed out, retrying..."),
             )
             return True
 
         except ccxt_errors.ExchangeNotAvailable:
-            self.log.error(f"{self.exchange} API is currently unavailable, skipping trading step")
+            self.log.error(
+                f"{self.exchange} API is currently unavailable, skipping trading step"
+            )
             return False
 
         except ccxt_errors.DDoSProtection:
@@ -610,7 +613,9 @@ class Strategy(object):
                 for dataset, manager in self._datasets.items():
                     self.state.prices.index.tz = None
                     self.state.prices = pd.concat(
-                        [self.state.prices, manager.df], axis=1, join_axes=[self.state.prices.index]
+                        [self.state.prices, manager.df],
+                        axis=1,
+                        join_axes=[self.state.prices.index],
                     )
             i.calculate(self.state.prices, self.name)
 
@@ -637,8 +642,7 @@ class Strategy(object):
             outputs.upload_state_to_storage(self)
 
         else:
-            self.log.debug(
-                "Skipping stats upload until catalyst writes to file")
+            self.log.debug("Skipping stats upload until catalyst writes to file")
 
         end = arrow.get(self.state.END)
         time_left = end.humanize(only_distance=True)
@@ -695,8 +699,7 @@ class Strategy(object):
                 i.record()
             except Exception as e:
                 self.log.error(e)
-                self.log.error(
-                    "Error calculating {}, skipping...".format(i.name))
+                self.log.error("Error calculating {}, skipping...".format(i.name))
 
         for i in self._ml_models:
             i.record()
@@ -718,7 +721,12 @@ class Strategy(object):
         for d, m in self._datasets.items():
             dataset_inds += len(m._indicators)
 
-        return len(self._market_indicators) + len(self._datasets) + dataset_inds + self._extra_plots
+        return (
+            len(self._market_indicators)
+            + len(self._datasets)
+            + dataset_inds
+            + self._extra_plots
+        )
 
     def _get_last_date(self, context, data):
         """Get last date filtered to work in the train dataset.
@@ -778,7 +786,7 @@ class Strategy(object):
         url = outputs.save_plot_to_storage(self, filename)
         if self.in_job:
             job = get_current_job()
-            job.meta['results']['plot_url'] = url
+            job.meta["results"]["plot_url"] = url
             job.save_meta()
             self.notify(f"You can view your strategy's plot at {url}")
 
@@ -787,16 +795,18 @@ class Strategy(object):
         self.log.info("Calling analyze function and completing algorithm")
         ending_cash = results.cash[-1]
         self.log.notice("Ending cash: ${}".format(ending_cash))
-        self.log.notice(
-            "completed for {} trading periods".format(self.state.i))
-        self.notify(f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}")
+        self.log.notice("completed for {} trading periods".format(self.state.i))
+        self.notify(
+            f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}"
+        )
 
         try:
             self._make_plots(context, results)
             # TODO - fix KeyError in quant analysis
             # quant.dump_plots_to_file(self.name, results)
             self.quant_results = quant.dump_summary_table(
-                self.name, self.trading_info, results)
+                self.name, self.trading_info, results
+            )
 
             extra_results = self.get_extra_results(context, results)
 
@@ -815,13 +825,12 @@ class Strategy(object):
             url = outputs.save_analysis_to_storage(self, results)
             if self.in_job:
                 job = get_current_job()
-                job.meta['results']['analysis_url'] = url
+                job.meta["results"]["analysis_url"] = url
                 job.save_meta()
                 self.notify(f"You can view your strategy's analysis at {url}")
 
         except Exception:
-            self.log.error(
-                "Failed to upload strat analysis to storage", exec_info=True)
+            self.log.error("Failed to upload strat analysis to storage", exec_info=True)
 
         self.state.dump_to_context(context)
 
@@ -842,14 +851,80 @@ class Strategy(object):
 
         if self.state.DATA_FREQ == "minute":
             try:
-                self.filter_dates = self.filter_dates.append(results.algorithm_period_return.tail(1).index)
-                if results.algorithm_period_return.loc[self.filter_dates].dropna().std() != 0.0:
-                    extra_results['sharpe_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / results.algorithm_period_return.loc[self.filter_dates].dropna().std()
-                if (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std() != 0.0:
-                    extra_results['sharpe_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).std()
-                if self.filter_dates in results.algorithm_period_return.loc[results.algorithm_period_return < 0].index:
-                    extra_results['sortino_ratio'] = results.algorithm_period_return.loc[self.filter_dates].dropna().mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
-                    extra_results['sortino_ratio_benchmark'] = (results.algorithm_period_return.loc[self.filter_dates].dropna() - results.benchmark_period_return.loc[self.filter_dates].dropna()).mean() / np.sqrt((results.algorithm_period_return.loc[results.algorithm_period_return < 0].loc[self.filter_dates].dropna() ** 2).mean())
+                self.filter_dates = self.filter_dates.append(
+                    results.algorithm_period_return.tail(1).index
+                )
+                if (
+                    results.algorithm_period_return.loc[self.filter_dates]
+                    .dropna()
+                    .std()
+                    != 0.0
+                ):
+                    extra_results["sharpe_ratio"] = (
+                        results.algorithm_period_return.loc[self.filter_dates]
+                        .dropna()
+                        .mean()
+                        / results.algorithm_period_return.loc[self.filter_dates]
+                        .dropna()
+                        .std()
+                    )
+                if (
+                    results.algorithm_period_return.loc[self.filter_dates].dropna()
+                    - results.benchmark_period_return.loc[self.filter_dates].dropna()
+                ).std() != 0.0:
+                    extra_results["sharpe_ratio_benchmark"] = (
+                        (
+                            results.algorithm_period_return.loc[
+                                self.filter_dates
+                            ].dropna()
+                            - results.benchmark_period_return.loc[
+                                self.filter_dates
+                            ].dropna()
+                        ).mean()
+                        / (
+                            results.algorithm_period_return.loc[
+                                self.filter_dates
+                            ].dropna()
+                            - results.benchmark_period_return.loc[
+                                self.filter_dates
+                            ].dropna()
+                        ).std()
+                    )
+                if (
+                    self.filter_dates
+                    in results.algorithm_period_return.loc[
+                        results.algorithm_period_return < 0
+                    ].index
+                ):
+                    extra_results[
+                        "sortino_ratio"
+                    ] = results.algorithm_period_return.loc[
+                        self.filter_dates
+                    ].dropna().mean() / np.sqrt(
+                        (
+                            results.algorithm_period_return.loc[
+                                results.algorithm_period_return < 0
+                            ]
+                            .loc[self.filter_dates]
+                            .dropna()
+                            ** 2
+                        ).mean()
+                    )
+                    extra_results["sortino_ratio_benchmark"] = (
+                        results.algorithm_period_return.loc[self.filter_dates].dropna()
+                        - results.benchmark_period_return.loc[
+                            self.filter_dates
+                        ].dropna()
+                    ).mean() / np.sqrt(
+                        (
+                            results.algorithm_period_return.loc[
+                                results.algorithm_period_return < 0
+                            ]
+                            .loc[self.filter_dates]
+                            .dropna()
+                            ** 2
+                        ).mean()
+                    )
             except:
                 pass
         else:
@@ -904,7 +979,9 @@ class Strategy(object):
             ).strftime("%Y-%m-%d")
             data_manager = get_data_manager(dataset_name, cols=columns, config=config)
         else:
-            data_manager = get_data_manager(dataset_name, cols=columns, config=self.trading_info)
+            data_manager = get_data_manager(
+                dataset_name, cols=columns, config=self.trading_info
+            )
         self._datasets[dataset_name] = data_manager
 
     def _get_kw_from_signal_params(self, sig_params, func):
@@ -1016,7 +1093,8 @@ class Strategy(object):
     def _weigh_signals(self, context, buys, sells, neutrals):
         self.log.debug(
             "Buy signals: {}, Sell signals: {}, Neutral Signals: {}".format(
-                buys, sells, neutrals)
+                buys, sells, neutrals
+            )
         )
         if buys > sells:
             msg = "Signaling to buy"
@@ -1051,8 +1129,7 @@ class Strategy(object):
             order_id = self._buy_func(context)
 
         if order_id is not None:
-            self.log.info(f'Order ID: {order_id}')
-
+            self.log.info(f"Order ID: {order_id}")
 
     def _default_buy(self, context, size=None, price=None, slippage=None):
         position = context.portfolio.positions.get(self.state.asset)
@@ -1110,7 +1187,9 @@ class Strategy(object):
 
         order_id = None
         try:
-            order_id = order(asset=self.state.asset, amount=amount, limit_price=limit_price)
+            order_id = order(
+                asset=self.state.asset, amount=amount, limit_price=limit_price
+            )
             msg = "Bought {amount} @ {price}".format(
                 amount=self.state.ORDER_SIZE, price=self.state.price
             )
@@ -1174,10 +1253,15 @@ class Strategy(object):
             limit_price=self.state.price * (1 - self.state.SLIPPAGE_ALLOWED),
         )
 
-        profit = (self.state.price * position.amount) - (position.cost_basis * position.amount)
+        profit = (self.state.price * position.amount) - (
+            position.cost_basis * position.amount
+        )
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by take-profit signal".format(
-            amount=position.amount, price=self.state.price, profit=profit, date=get_datetime()
+            amount=position.amount,
+            price=self.state.price,
+            profit=profit,
+            date=get_datetime(),
         )
 
         self.log.notice(msg)
@@ -1190,16 +1274,23 @@ class Strategy(object):
             # limit_price=self.state.price * (1 - self.state.SLIPPAGE_ALLOWED),
         )
 
-        profit = (self.state.price * position.amount) - (position.cost_basis * position.amount)
+        profit = (self.state.price * position.amount) - (
+            position.cost_basis * position.amount
+        )
 
         msg = "Sold {amount} @ {price} Profit: {profit}; Produced by stop-loss signal at {date}".format(
-            amount=position.amount, price=self.state.price, profit=profit, date=get_datetime()
+            amount=position.amount,
+            price=self.state.price,
+            profit=profit,
+            date=get_datetime(),
         )
 
         self.log.notice(msg)
         self.notify(dedent(msg))
 
-    def run(self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False):
+    def run(
+        self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False
+    ):
         """Executes the trade strategy as a catalyst algorithm
 
         Basic algorithm behavior is defined cia the config object, while
@@ -1281,7 +1372,9 @@ class Strategy(object):
             return pd.DataFrame()
 
         try:
-            self._run_real_time(simulate_orders=False, user_id=user_id, auth_aliases=auth_alias)
+            self._run_real_time(
+                simulate_orders=False, user_id=user_id, auth_aliases=auth_alias
+            )
         except exchange_errors.ExchangeAuthEmpty:
             self.log.critical("Failed to run strategy due to missing exchange auth")
             self.notify(
@@ -1300,19 +1393,27 @@ class Strategy(object):
             auth.delete_alias_file(self.user_id, self.exchange)
 
     def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
-        self.log.notice("Running live trading, simulating orders: {}".format(simulate_orders))
+        self.log.notice(
+            "Running live trading, simulating orders: {}".format(simulate_orders)
+        )
         if self.trading_info["DATA_FREQ"] != "minute":
-            self.log.warning('"daily" data frequency is not supported in live mode, using "minute"')
+            self.log.warning(
+                '"daily" data frequency is not supported in live mode, using "minute"'
+            )
             self.trading_info["DATA_FREQ"] = "minute"
 
         end_arrow = arrow.get(self.trading_info["END"])
 
         if end_arrow < arrow.utcnow().floor("minute"):
-            self.log.warning(f"End Date: {end_arrow} is invalid, will use 30 minutes from now")
-            end_arrow = arrow.utcnow().shift(minutes=+30)
+            self.log.warning(
+                f"End Date: {end_arrow} is invalid, will use 30 minutes from now"
+            )
+            end_arrow = arrow.utcnow().shift(minutes=+5)
 
         self.trading_info["END"] = end_arrow.datetime
-        self.log.debug(f"Stopping strategy {end_arrow.humanize()} -- {end_arrow.datetime}")
+        self.log.debug(
+            f"Stopping strategy {end_arrow.humanize()} -- {end_arrow.datetime}"
+        )
 
         # catalyst loads state before init called
         # so need to fetch state before algorithm starts
