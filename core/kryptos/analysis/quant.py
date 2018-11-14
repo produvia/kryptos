@@ -47,12 +47,12 @@ def dump_summary_table(strat, df):
     df_quant = quant_utils.build_row_table(df)
 
     # Write to file
-    f_path = os.path.join(ALGO_DIR, "summary.csv")
+    f_path = os.path.join(ALGO_DIR, "quant_summary.csv")
     with open(f_path, "w") as f:
         df_quant.T.to_csv(f)
         log.info("Wrote Summary Table to {}".format(f_path))
 
-    return df_quant
+    return df_quant, f_path
 
 
 def dump_summary_table_all_strategies(config, list_dfs, output_dir):

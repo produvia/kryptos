@@ -810,7 +810,8 @@ class Strategy(object):
             self.log.error("Not enough data to make plots")
 
         try:
-            self.quant_results = quant.dump_summary_table(self, results)
+            self.quant_results, quant_file = quant.dump_summary_table(self, results)
+            outputs.save_quant_to_storage(self, quant_file)
         except Exception as e:
             self.log.error("Failed to perform quant analysys")
             self.log.error(str(e), exc_info=True)

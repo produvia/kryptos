@@ -152,6 +152,20 @@ def save_stats_to_storage(strat):
     return blob_name, stats_bucket.name
 
 
+def save_quant_to_storage(strat, quant_file):
+    strat.log.debug("Uploading quant summary to storage")
+
+    stats_bucket = get_stats_bucket()
+
+    blob_name = f"{strat.id}/stats_{strat.mode}/quant_summary.csv"
+    blob = stats_bucket.blob(blob_name)
+    blob.upload_from_filename(quant_file)
+    url = f"https://storage.cloud.google.com/strat_stats/{blob_name}"
+    strat.log.info(f"Uploaded strat plot to storage")
+    strat.log.info(f"Quant Summary URL: {url}")
+    return url
+
+
 def upload_state_to_storage(strat):
     stats_bucket = get_stats_bucket()
     filename = get_algo_state_file(strat)
