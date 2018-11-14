@@ -1,4 +1,5 @@
 import os
+from typing import Set
 import json
 import redis
 from rq import Queue
@@ -21,7 +22,9 @@ def get_queue(queue_name):
     return Queue(queue_name, connection=CONN)
 
 
-def queue_strat(strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None):
+def queue_strat(
+    strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None
+):
     current_app.logger.info(f"Queueing new strat with user_id {user_id}")
     strat_model = StrategyModel.from_json(strat_json, user_id=user_id)
 
@@ -144,7 +147,9 @@ def indicator_group_name_selectors() -> [(str, str)]:
     job = q.fetch_job(job_id)
     if job is None:
         job = q.enqueue(
-            "kryptos.worker.jobs.indicator_group_name_selectors", job_id=job_id, result_ttl=86400
+            "kryptos.worker.jobs.indicator_group_name_selectors",
+            job_id=job_id,
+            result_ttl=86400,
         )
     return job.result
 
@@ -158,7 +163,9 @@ def all_indicator_selectors() -> [(str, str)]:
     job = q.fetch_job(job_id)
     if job is None:
         job = q.enqueue(
-            "kryptos.worker.jobs.all_indicator_selectors", job_id=job_id, result_ttl=86400
+            "kryptos.worker.jobs.all_indicator_selectors",
+            job_id=job_id,
+            result_ttl=86400,
         )
     return job.result
 
@@ -190,6 +197,49 @@ def get_indicators_by_group(group: str) -> [(str, str)]:
             "kryptos.worker.jobs.get_indicators_by_group",
             job_id=job_id,
             kwargs={"group": group},
+            result_ttl=86400,
+        )
+    return job.result
+
+
+def get_exchange_asset_pairs(exchange: str) -> [(str, str)]:
+    q = get_queue("ta")
+    job_id = f"ta-get-exchange-asset-pairs-{exchange}"
+    job = q.fetch_job(job_id)
+    if job is None:
+        job = q.enqueue(
+            "kryptos.worker.jobs.get_exchange_asset_pairs",
+            job_id=job_id,
+            kwargs={"exchange": exchange},
+            result_ttl=86400,
+        )
+
+    return job.result
+
+
+def get_exchange_quote_currencies(exchange: str) -> Set[str]:
+    q = get_queue("ta")
+    job_id = f"ta-get-exchange-quote-currencies-{exchange}"
+    job = q.fetch_job(job_id)
+    if job is None:
+        job = q.enqueue(
+            "kryptos.worker.jobs.get_exchange_quote_currencies",
+            job_id=job_id,
+            kwargs={"exchange": exchange},
+            result_ttl=86400,
+        )
+    return job.result
+
+
+def get_available_base_currencies(exchange: str, quote_currency: str) -> Set[str]:
+    q = get_queue("ta")
+    job_id = f"ta-get-available-base-currencies-{exchange}"
+    job = q.fetch_job(job_id)
+    if job is None:
+        job = q.enqueue(
+            "kryptos.worker.jobs.get_available_base_currencies",
+            job_id=job_id,
+            kwargs={"exchange": exchange, "quote_currency": quote_currency},
             result_ttl=86400,
         )
     return job.result

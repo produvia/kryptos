@@ -50,37 +50,6 @@ def get_message_payload() -> Dict:
         return platform_data["callback_query"]["from"]
 
 
-def get_exchange_pairs(exchange_name: str) -> List[str]:
-    current_app.logger.debug(f"Fetching {exchange_name} markets with ccxt")
-    exchange_class = getattr(ccxt, exchange_name)
-    markets = exchange_class().load_markets()
-    symbols = []
-    for pair in markets:
-        s = pair.replace("/", "_").lower()
-        symbols.append(s)
-    return symbols
-
-
-def get_exchange_quote_currencies(exchange: str) -> Set[str]:
-    symbols = get_exchange_pairs(exchange)
-    quotes = set()
-    for s in symbols:
-        _, quote = s.split("_")
-        quotes.add(quote)
-    return quotes
-
-
-def get_available_base_currencies(exchange: str, quote_currency: str) -> Set[str]:
-    symbols = get_exchange_pairs(exchange)
-    base_currencies = set()
-    for s in [s for s in symbols if quote_currency in s]:
-        base, quote = s.split("_")
-        if quote == quote_currency:
-            base_currencies.add(base)
-
-    return base_currencies
-
-
 def build_strat_dict_from_context(context, mode):
     strat = context.get("existing_strategy")
     exchange = context.get("exchange").title()
@@ -103,7 +72,9 @@ def build_strat_dict_from_context(context, mode):
     strat_dict["trading"]["EXCHANGE"] = exchange
     strat_dict["trading"]["ASSET"] = trade_pair
     strat_dict["trading"]["CAPITAL_BASE"] = float(capital_base)
-    strat_dict["trading"]["BASE_CURRENCY"] = quote_currency.lower()  # TODO change refs of base to quote
+    strat_dict["trading"][
+        "BASE_CURRENCY"
+    ] = quote_currency.lower()  # TODO change refs of base to quote
 
     strat_dict["name"] = f"{strat}-{mode.title()}"
     return strat_dict
@@ -141,7 +112,9 @@ def launch_backtest(config_context):
 def launch_paper(config_context):
     user = get_user()
     strat_dict = build_strat_dict_from_context(config_context, "paper")
-    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
+    job_id, _ = task.queue_strat(
+        json.dumps(strat_dict), user.id, live=True, simulate_orders=True
+    )
 
     return job_id
 
@@ -149,8 +122,12 @@ def launch_paper(config_context):
 def launch_live(config_context):
     user = get_user()
     strat_dict = build_strat_dict_from_context(config_context, "live")
-    cap_base = strat_dict['trading']['CAPITAL_BASE']
-    quote_curr = strat_dict['trading']['BASE_CURRENCY']
-    current_app.logger.info(f'Queuing live strat for user {user.id}: {cap_base} {quote_curr}')
-    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=False)
+    cap_base = strat_dict["trading"]["CAPITAL_BASE"]
+    quote_curr = strat_dict["trading"]["BASE_CURRENCY"]
+    current_app.logger.info(
+        f"Queuing live strat for user {user.id}: {cap_base} {quote_curr}"
+    )
+    job_id, _ = task.queue_strat(
+        json.dumps(strat_dict), user.id, live=True, simulate_orders=False
+    )
     return job_id
