@@ -3,7 +3,6 @@ import logbook
 from rq import get_current_job
 
 from kryptos import logger_group
-from kryptos.strategy import DEFAULT_CONFIG
 
 
 MA_TYPE_MAP = {
@@ -45,7 +44,7 @@ class AbstractIndicator(object):
 
         self.name = name.upper()
         self.label = label or self.name
-        self.symbol = symbol or DEFAULT_CONFIG["ASSET"]
+        self.symbol = symbol
         self.dataset = dataset
 
         self.params = {}

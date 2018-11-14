@@ -1,29 +1,18 @@
+import os
 import json
 import time
 import requests
 
-from flask.helpers import get_debug_flag
-
 import click
-# from flask_jsonrpc.proxy import ServiceProxy
-import pandas as pd
-from rq import Queue, Connection, Worker, get_failed_queue
 
-from kryptos.strategy import Strategy
 from kryptos.data.manager import AVAILABLE_DATASETS
-from kryptos import setup_logging
-from kryptos.utils.outputs import in_docker
-from kryptos.utils.load import get_strat
-from kryptos.utils import tasks
+from kryptos.scripts.build_strategy import load_from_cli
+from kryptos.scripts.kill_strat import kill_from_api
+from kryptos.settings import REMOTE_BASE_URL, LOCAL_BASE_URL
 
 
-REMOTE_API_URL = 'http://kryptos.produvia.com/api'
-LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/api'
-
-
-
-@click.command()
-@click.argument('job_quantity', type=int)
+@click.command(help="Launch multiple strategies")
+@click.argument("job_quantity", type=int)
 @click.option(
     "--market-indicators",
     "-ta",
@@ -31,111 +20,136 @@ LOCAL_API_URL = "http://web:5000/api" if in_docker() else 'http://0.0.0.0:5000/a
     help="Market Indicators listed in order of priority",
 )
 @click.option(
-    "--machine-learning-models",
-    "-ml",
-    multiple=True,
-    help="Machine Learning Models",
+    "--machine-learning-models", "-ml", multiple=True, help="Machine Learning Models"
 )
 @click.option(
-    "--dataset", "-d", type=click.Choice(AVAILABLE_DATASETS), help="Include asset in keyword list"
+    "--dataset",
+    "-d",
+    type=click.Choice(AVAILABLE_DATASETS),
+    help="Include asset in keyword list",
 )
-@click.option("--columns", "-c", multiple=True, help="Target columns for specified dataset")
+@click.option(
+    "--columns", "-c", multiple=True, help="Target columns for specified dataset"
+)
 @click.option("--data-indicators", "-i", multiple=True, help="Dataset indicators")
 @click.option("--json-file", "-f")
 @click.option("--python-script", "-p")
 @click.option("--paper", is_flag=True, help="Run the strategy in Paper trading mode")
-@click.option("--clean", is_flag=True, help='Kill all jobs before running')
-def run(job_quantity, market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper, clean):
-    click.secho(f'About to start {job_quantity} worker processes')
+@click.option("--clean", is_flag=True, help="Kill all jobs before running")
+@click.option("--hosted", "-h", is_flag=True, help="Run on a GCP instance via the API")
+def run(
+    job_quantity,
+    market_indicators,
+    machine_learning_models,
+    dataset,
+    columns,
+    data_indicators,
+    json_file,
+    python_script,
+    paper,
+    clean,
+    hosted,
+):
 
-    remove_zombie_workers()
+    click.secho(f"About to start {job_quantity} worker processes")
 
-    if clean:
-        with Connection(tasks.CONN):
-            click.secho('Killing all exisiting jobs', fg='yellow')
+    if hosted:
+        click.secho("Running remotely", fg="yellow")
+        api_url = os.path.join(REMOTE_BASE_URL, "api")
+    else:
+        click.secho("Running locally", fg="yellow")
+        api_url = os.path.join(LOCAL_BASE_URL, "api")
 
-            for q_name in ['live', 'paper', 'backtest']:
-                q = Queue(q_name)
-                num_jobs = q.empty()
-                click.echo('{0} jobs removed from {1} queue'.format(num_jobs, q.name))
-
-            for w in Worker.all():
-                job = w.get_current_job()
-                if job:
-                    click.echo(f'cancelling job {job.id} from {job.origin}')
-                    job.delete()
-
-            for j in get_failed_queue().jobs:
-                click.echo(f'cancelling job {j.id} from failed queue')
-                j.delete()
+    strat_ids = []
 
     for i in range(job_quantity):
-        strat = load_from_cli(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper)
-        click.secho(f'Spawning strategy {i}')
-        run_in_worker(strat, paper)
+        strat = load_from_cli(
+            market_indicators,
+            machine_learning_models,
+            dataset,
+            columns,
+            data_indicators,
+            json_file,
+            python_script,
+        )
+        click.secho(f"Spawning strategy {i}")
+        strat_id = start_from_api(
+            strat, api_url, paper=paper, live=False, hosted=hosted
+        )
+        strat_ids.append(strat_id)
+
+    try:
+        monitor_strats(strat_ids, api_url)
+    finally:
+        clean_up(strat_ids, hosted)
 
 
-# TODO refactor the next two functions so they arent repeated in build_strategy.py and worker.py
-def load_from_cli(market_indicators, machine_learning_models, dataset, columns, data_indicators, json_file, python_script, paper):
-    strat = Strategy()
-
-    if python_script is not None:
-        strat = get_strat(python_script)
-
-    columns = list(columns)
-
-    for i in market_indicators:
-        strat.add_market_indicator(i.upper())
-
-    for i in machine_learning_models:
-        strat.add_ml_models(i.upper())
-
-    # currently assigns -i indicator to the column provided at the same index
-    if dataset is not None:
-        strat.use_dataset(dataset, columns)
-        for i, ind in enumerate(data_indicators):
-            strat.add_data_indicator(dataset, ind.upper(), col=columns[i])
-
-    if json_file is not None:
-        strat.load_json_file(json_file)
-
-    click.secho(strat.serialize(), fg="white")
-    return strat
+def display_summary(result_json):
+    click.secho("\n\nResults:\n", fg="magenta")
+    result_dict = json.loads(result_json)
+    for k, v in result_dict.items():
+        # nested dict with trading type as key
+        metric, val = k, v["Backtest"]
+        click.secho("{}: {}".format(metric, val), fg="green")
 
 
-def remove_zombie_workers():
-    click.secho('Removing zombie workers', fg='yellow')
-    workers = Worker.all(connection=tasks.CONN)
-    for worker in workers:
-        if len(worker.queues) < 1:
-            click.secho(f"{worker} is a zombie, killing...", fg='red')
-            job = worker.get_current_job()
-            if job is not None:
-                job.ended_at = datetime.datetime.utcnow()
-                worker.failed_queue.quarantine(job, exc_info=("Dead worker", "Moving job to failed queue"))
-            worker.register_death()
-
-def run_in_worker(strat, paper):
+def get_strat_url(strat_id, base_url, paper):
     if paper:
-        q_name = 'paper'
-    else:
-        q_name = 'backtest'
-    q = Queue(q_name, connection=tasks.CONN)
-    click.secho(f'Enqueuing strat on {q_name} queue', fg='cyan')
-    #
-    # # note that the strat.id will look different from app-created strategies
-    job = q.enqueue(
-        'worker.run_strat',
-        job_id=strat.id,
-        kwargs={
-            'strat_json': json.dumps(strat.to_dict()),
-            'strat_id': strat.id,
-            'telegram_id': None,
-            'live': paper,
-            'simulate_orders': True
-        },
-        timeout=-1
-    )
+        return os.path.join(base_url, "strategy/strategy", strat_id)
+    return os.path.join(base_url, "strategy/backtest/strategy", strat_id)
 
-    click.secho(f'View the strat at http://0.0.0.0:8080/strategy/backtest/strategy/{strat.id}', fg='blue')
-    return job
+
+def clean_up(strat_ids, hosted):
+    for i in strat_ids:
+        kill_from_api(i, hosted)
+
+
+def start_from_api(strat, api_url, paper=False, live=False, hosted=False):
+    click.secho("Running strat via API", fg="cyan")
+
+    if paper:
+        q_name = "paper"
+    elif live:
+        q_name = "live"
+    else:
+        q_name = "backtest"
+
+    data = {"strat_json": json.dumps(strat.to_dict()), "queue_name": q_name}
+
+    endpoint = os.path.join(api_url, "strat")
+
+    click.secho(f"Enqueuing strategy at {endpoint} on queue {q_name}", fg="yellow")
+
+    resp = requests.post(endpoint, json=data)
+    click.echo(resp)
+    resp.raise_for_status()
+    data = resp.json()
+    strat_id = data["strat_id"]
+
+    strat_url = get_strat_url(strat_id, api_url, paper)
+    click.echo(f"Strategy enqueued to job {strat_id}")
+    click.secho(f"View the strat at {strat_url}", fg="blue")
+    return strat_id
+
+
+def monitor_strats(strat_ids, api_url):
+    from itertools import cycle
+
+    # from textwrap import dedent
+    for i in cycle(strat_ids):
+        endpoint = os.path.join(api_url, "monitor")
+        resp = requests.get(endpoint, params={"strat_id": i})
+        data = resp.json()["strat_info"]
+
+        status, result = data.get("status", ""), data.get("result", "")
+        meta = data.get("meta", None)
+        if status == "failed":
+            click.secho(f"Strat: {i} has failed", fg="red")
+
+        elif status == "finished":
+            display_summary(result)
+
+        else:
+            click.echo(f"Strat {i}: {status}\n")
+
+        time.sleep(3)

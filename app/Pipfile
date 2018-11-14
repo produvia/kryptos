@@ -14,14 +14,16 @@ flask-user = "*"
 flask-migrate = "*"
 "psycopg2" = "*"
 python-telegram-bot = "*"
-numpy = "*"
-ta-lib = "*"
 gunicorn = "*"
 shortuuid = "*"
 honcho = "*"
 google-cloud-datastore = "*"
 logbook = "*"
 raven = {extras = ["flask"]}
+google-cloud-storage = "*"
+google-cloud-kms = "*"
+ccxt = "*"
+numpy = "*"
 
 [dev-packages]
 black = "==18.4a4"

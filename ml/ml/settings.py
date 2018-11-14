@@ -45,14 +45,24 @@ class MLConfig(object):
         'method': 'diff' # 'max', 'diff' or 'std'
     }
 
-
-
     ## MODEL HYPER PARAMETERS OPTIMIZATION
     OPTIMIZE_PARAMS = {
-        'enabled': False, # Apply hyper model params optimization
+        'enabled': True, # Apply hyper model params optimization
         'iterations': 30, # Test dataframe size to optimize model params
-        'n_evals': 250, # Number of evaluations to hyperopt
+        'n_evals': 10, # Number of evaluations to apply hyperopt
         'size': 100 # Test dataframe size to optimize model params
+    }
+
+    ## FEATURE MODEL VISUALIZATION: SHAP
+    VISUALIZE_MODEL = {
+        'enabled': True, # Apply hyper model params optimization
+        'n_iterations': 50 # Number of evaluations to apply shap
+    }
+
+    ## Generates profile reports from a pandas DataFrame: pandas-profiling
+    PROFILING_REPORT = {
+        'enabled': True, # Apply pandas-profiling
+        'n_iterations': 50 # Number of evaluations to apply pandas-profiling
     }
 
     ## FEATURE SELECTION
@@ -70,7 +80,7 @@ class MLConfig(object):
     # Feature Engineering: tsfresh
     FE_TSFRESH = {
         'enabled': False,
-        # 'method': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
+        # 'method': MinimalFCParameters(), # https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html -> MinimalFCParameters() | EfficientFCParameters() | ComprehensiveFCParameters()
         'window': 30,
     }
 
@@ -110,4 +120,5 @@ class MLConfig(object):
 
     if CLASSIFICATION_TYPE == 2:
         # Check if threshold is in range [0,1]
-        assert THRESHOLD <= 1.0 and THRESHOLD >= 0.0
+        if THRESHOLD < 0.0 or THRESHOLD > 1.0:
+            raise ValueError('THRESHOLD should be on [0,1] range.')

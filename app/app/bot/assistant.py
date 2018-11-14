@@ -1,93 +1,56 @@
 import logging
 import os
-import json
 from textwrap import dedent
-import datetime
 
-from flask import Blueprint, request, current_app
+from flask import Blueprint, current_app
 from flask_assistant import Assistant, tell, event, context_manager
-from flask_assistant.response import _Response
-import talib as ta
-import talib.abstract as ab
 
-from app.models import User
 from app.bot.response import ask, inline_keyboard
-from app import task
+from app.bot import utils
 
-blueprint = Blueprint('bot', __name__, url_prefix='/bot')
+blueprint = Blueprint("bot", __name__, url_prefix="/bot")
 assist = Assistant(blueprint=blueprint)
 
 
-logging.getLogger('flask_assistant').setLevel(logging.INFO)
-
-EXISTING_STRATS = [
-    # display, callback
-    ('Bollinger Bands (BBANDS)', 'BBANDS'),
-    ('Stop and Reverse (SAR)', 'SAR'),
-    ('Moving Average Convergence/Divergence (MACD)', 'MACD'),
-    ('Moving Average Convergence/Divergence Fix (MACDFIX)', 'MACDFIX'),
-    ('On Balance Volume (OBV)', 'OBV'),
-    ('Relative Strength Index (RSI)', 'RSI'),
-    ('Stochastic (STOCH)', 'STOCH')
-]
+logging.getLogger("flask_assistant").setLevel(logging.INFO)
 
 
-# TODO possibly use tleegram chat_id
-def get_user():
-    telegram_id = get_message_payload()['id']
-    user = User.query.filter_by(telegram_id=telegram_id).first()
-    current_app.logger.debug(f'Got user {user}')
-    return user
-
-def get_first_name():
-    name =  get_message_payload().get('first_name', None)
-    if name is not None:
-        return name
-    return ''
-
-
-
-def get_message_payload():
-    platform_data =  request.json.get('originalRequest', {}).get('data', {})
-    current_app.logger.info(platform_data)
-    if not platform_data:
-        return {'first_name': 'DialogFlow', 'id': 111}
-
-    if platform_data.get('message'):
-        return platform_data['message']['from']
-
-    elif platform_data.get('callback_query'):
-        return platform_data['callback_query']['from']
-
-
-@assist.action('Default Welcome Intent')
+@assist.action("Default Welcome Intent")
 def welcome_message():
-    user_name = get_first_name()
-    msg = f"Hello {user_name}! I’m Kryptos AI, your virtual investment assistant that manages your cryptocurrency portfolio and automates your cryptocurrency trading"
+    user_name = utils.get_first_name()
+    msg = f"Hello {user_name}!"
+    msg += """I’m Kryptos AI, your virtual investment assistant\
+    that manages your cryptocurrency portfolio and automate\
+    your cryptocurrency trading"""
 
-    if get_user() is None:
-        current_app.logger.info('Prompting user to login')
-        msg += f"\n\nBefore we can get started, you'll need to create a free Kryptos account and authentiate with Telegram"
+    if utils.get_user() is None:
+        current_app.logger.info("Prompting user to login")
+        msg += """\n\n \
+        Before we can get started,you'll need to \
+        create a free Kryptos account and authentiate with Telegram
+        """
         resp = inline_keyboard(msg)
-        url = os.path.join(current_app.config['FRONTEND_URL'], 'account/telegram')
-        resp.add_button('Create an account', url=current_app.config['FRONTEND_URL'])
+        url = os.path.join(
+            current_app.config["FRONTEND_URL"], "account/telegram")
+        resp.add_button("Create an account", url=url)
         return resp
 
     return ask(msg)
 
 
-@assist.action('account-unlink')
+@assist.action("account-unlink")
 def unlink_telegram_confirm():
     speech = """\
     Are you sure you want to unlink your telegram account from Kryptos?
     You won't be able to receive updates from me anymore.
     """
 
-    return ask(dedent(speech)).with_quick_reply('yes', 'no')
+    return ask(dedent(speech)).with_quick_reply("yes", "no")
 
-@assist.action('account-unlink-yes')
+
+@assist.action("account-unlink-yes")
 def unlink_telegram_account():
-    user = get_user()
+    user = utils.get_user()
     user.unlink_telegram()
     speech = f"""\
     Your account is now unlinked
@@ -96,106 +59,221 @@ def unlink_telegram_account():
     return tell(dedent(speech))
 
 
-@assist.action('activity-menu')
+@assist.action("activity-menu")
 def show_menu():
-    user_name = get_first_name()
-    speech = f"""\
-    Hi {user_name}. Let's get started. Please select a number or text me the named
-    1. Launch New Strategy
-    2. Run Performance Report
-    3. Update Goals
-    4. Upgrade SKills
-    5. Adjust Kryptos"""
-    return ask(speech).with_quick_reply('1', '2', '3', '4', '5')
+    user_name = utils.get_first_name()
+    resp = inline_keyboard(f"Hi {user_name}. Let's get started")
+    resp.add_button("Launch New Strategy", "new_strat")
+    resp.add_button("Run performance report", "performance_report")
+    resp.add_button("Update Goals", "update_goals")
+    resp.add_button("Upgrade Skills", "upgrade_skills")
+    resp.add_button("Adjust Kryptos", "adjust_keytpos")
+
+    return resp
 
 
-# @assist.context('activity-selection')
-@assist.action('new-strategy')
+# TODO get group indicators from rq
+# @assist.action("new-strategy-display-momentum")
+# def display_momentum_indicators():
+#     momentum_indicators = ta.get_function_groups()["Momentum Indicators"]
+#     speech = "Here are all the possible Momentum Indicators you can use:"
+#     for i in range(len(momentum_indicators)):
+#         abbrev = momentum_indicators[i]
+
+#         func = getattr(ab, abbrev)
+#         name = func.info["display_name"]
+#         speech += f"\n{i+1}. {abbrev} - {name}"
+#     return ask(speech)
+
+
+#########################
+# BUILD STRATEGY CONFIG #
+#########################
+
+
+@assist.action("new-strategy")
 def display_available_strats():
-    # speech = """\
-    # Great. Which strategy do you wish to try?
-    # 1. Simple Moving Average (SMA) Crossover
-    # 2. Relative Strength Index (RSI)
-    # 3. Explore Momentum Indicators
-    # """
+    context_manager.add("strat-config-data")
     resp = inline_keyboard("Which strategy do you wish to try?")
-    for i in EXISTING_STRATS:
+    for i in utils.EXISTING_STRATS:
         resp.add_button(*i)
     return resp
 
 
+@assist.context("strat-config-data")
+@assist.action("new-strategy-select-strat")
+def select_strategy(existing_strategy):
+    return event("strat-config-start", existing_strategy=existing_strategy)
 
-@assist.action('new-strategy-display-momentum')
-def display_momentum_indicators():
-    momentum_indicators = ta.get_function_groups()['Momentum Indicators']
-    speech = "Here are all the possible Momentum Indicators you can use:"
-    for i in range(len(momentum_indicators)):
-        abbrev = momentum_indicators[i]
 
-        func = getattr(ab, abbrev)
-        name = func.info['display_name']
-        speech += f'\n{i+1}. {abbrev} - {name}'
+@assist.context("strat-config-data")
+@assist.action("strat-config", events=["strat-config-start"])
+def prompt_exchange(existing_strategy):
+    current_app.logger.debug(f"Building strategy for {existing_strategy}")
+    context_manager.set("strat-config-data",
+                        "existing_strategy", existing_strategy)
+    speech = "Which exchange would you like to trade on?"
+    resp = inline_keyboard(dedent(speech))
+    resp.add_button("Binance", "binance")
+    resp.add_button("Bittrex", "bittrex")
+    resp.add_button("Bitfinex", "bitfinex")
+    resp.add_button("Poloniex", "poloniex")
+    return resp
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-exchange")
+def prompt_quote_currency(exchange):
+    current_app.logger.debug(f"Setting exchange as {exchange}")
+    context_manager.set("strat-config-data", "exchange", exchange)
+    speech = f"""\
+    Which currency would you like to use as the quote currency?
+    This is the currency you will sell when making a buy order, and recieve when making a sell order.
+
+    You must also allocate an amount of this currency to the strategy as capital base
+    This means you must hold the currency on {exchange} for live trading.
+    """
+    resp = inline_keyboard(dedent(speech))
+    quotes = utils.get_exchange_quote_currencies(exchange)
+
+    for q in quotes:
+        resp.add_button(q, q.lower())
+    return resp
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-quote-currency")
+def prompt_capital_base(quote_currency):
+    current_app.logger.debug(f"Setting quote currency as {quote_currency}")
+    context_manager.set("strat-config-data", "quote_currency", quote_currency)
+    speech = f"How much {quote_currency.upper()} would you like to allocate as the capital base?"
     return ask(speech)
 
-@assist.context('new-strategy-select-followup')
-@assist.action('new-strategy-select')
-def select_strategy(existing_strategy):
-    # TODO determine exchange
-    backtest_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
-    backtest_dict['name'] = f"{existing_strategy} Backtest"
 
-    # Can't use today as the end date bc data bundles are updated daily,
-    # so current market data won't be avialable for backtest until the following day
-    # use past week up to yesterday
-    back_start = datetime.datetime.today() - datetime.timedelta(days=4)
-    back_end = datetime.datetime.today() - datetime.timedelta(days=1)
+@assist.context("strat-config-data")
+@assist.action("strat-config-capital-base")
+def prompt_trade_currency(capital_base):
+    current_app.logger.debug(f"Setting capital base as {capital_base}")
+    context_manager.set("strat-config-data", "captial_base", capital_base)
 
-    backtest_dict['trading']['START'] = datetime.datetime.strftime(back_start, '%Y-%m-%d')
-    backtest_dict['trading']['END'] = datetime.datetime.strftime(back_end, '%Y-%m-%d')
-    backtest_dict['trading']['DATA_FREQ'] = 'minute'
-    backtest_dict['trading']['HISTORY_FREQ'] = '1T'
+    speech = "Which asset would you like to trade?"
+    resp = inline_keyboard(speech)
 
+    exchange = context_manager.get("strat-config-data").get("exchange")
+    quote_currency = context_manager.get(
+        "strat-config-data").get("quote_currency")
 
+    options = utils.get_available_base_currencies(exchange, quote_currency)
 
-    backtest_id, _ = task.queue_strat(json.dumps(backtest_dict), user_id=None, live=False, simulate_orders=True)
-    current_app.logger.info(f'Queues Strat {backtest_id}')
-    backtest_url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/backtest/strategy/', backtest_id)
+    for o in options:
+        resp.add_button(o, o)
+    return resp
 
 
+@assist.context("strat-config-data")
+@assist.action("strat-config-trade-currency")
+def prompt_for_hours(trade_currency):
+    current_app.logger.debug(f"Setting trade currency as {trade_currency}")
+    context_manager.set("strat-config-data", "trade_currency", trade_currency)
 
-    speech = f'You selected {existing_strategy}!\n\n Would you like to launch it?\n\n Here’s a preview of how well this strategy performed over the past 3 days.'
+    speech = "For how many hours would you like the run the strategy?"
+    return ask(speech)
+
+
+@assist.context("strat-config-data")
+@assist.action("strat-config-hours")
+def review_config(hours):
+    current_app.logger.debug(f"Setting hours as {hours}")
+    context_manager.set("strat-config-data", "hours", hours)
+    context = context_manager.get("strat-config-data")
+
+    strat = context.get("existing_strategy")
+    exchange = context.get("exchange").title()
+    base_currency = context.get("trade_currency").upper()
+    quote_currency = context.get("quote_currency").upper()
+    capital_base = context.get("capital_base")
+    trade_pair = f"{base_currency}_{quote_currency}".lower()
+
+    speech = """\
+        Great, does this look right?
+
+        Strategy: {}
+        Exchange: {}
+        Trade Pair: {}
+        Capital Base: {} ({})
+        Run for: {} hours
+    """.format(
+        strat, exchange, trade_pair, capital_base, quote_currency, hours
+    )
+
+    return ask(dedent(speech)).with_quick_reply("yes", "no")
+
+
+@assist.action("strat-config-confirm-yes")
+def begin_mode_prompt():
+    return event("strat-mode-start")
+
+
+@assist.action("strat-mode", events=["strat-mode-start"])
+def prompt_for_mode():
+    context = context_manager.get("strat-config-data")
+    # backtest_id = utils.launch_backtest(context)
+
+    # current_app.logger.info(f"Queues Strat {backtest_id}")
+    # backtest_url = os.path.join(
+    #     current_app.config["FRONTEND_URL"], "strategy/backtest/strategy/", backtest_id
+    # )
+
+    speech = f"Your strategy is now configured!\n\n Would you like to launch it?\n\n"
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View Past Performance', url=backtest_url)
-    resp.add_button('Launch in Paper Mode', 'yes')
-    # resp.add_button('Lauch Live')
-    resp.add_button('Nevermind', 'no')
+    # resp.add_button("View Past Performance", url=backtest_url)
+    resp.add_button("Launch in Paper Mode", "paper")
+    resp.add_button("Lauch in Live mode", "live")
+    resp.add_button("Nevermind", "no")
 
     return resp
 
-@assist.action('new-strategy-select-yes')
-def launch_strategy(existing_strategy):
-    # will fill with default values
-    start = datetime.datetime.today()
-    end = start + datetime.timedelta(days=7)
 
-    user = get_user()
-    strat_dict = {'trading': {}, 'indicators': [{"name": existing_strategy}]}
-    strat_dict['trading']['START'] = datetime.datetime.strftime(start, '%Y-%m-%d')
-    strat_dict['trading']['END'] = datetime.datetime.strftime(end, '%Y-%m-%d')
-    strat_dict['name'] = f"{existing_strategy}-Paper"
+@assist.context("strat-config-data")
+@assist.action("strat-mode-paper")
+def launch_strategy_paper(existing_strategy):
+    context = context_manager.get("strat-config-data")
+    job_id = utils.launch_paper(context)
+
+    url = os.path.join(
+        current_app.config["FRONTEND_URL"], "strategy", job_id)
+
+    hours = context.get("hours")
+    speech = """\
+    Great! The strategy is now running in paper mode \
+    and will run for the next {} hours.
+
+    You can view your strategy's progress by clicking the link \
+    below and I will keep you updated on how it performs.
+    """.format(
+        hours
+    )
+
+    resp = inline_keyboard(dedent(speech))
+    resp.add_button("View your Strategy", url=url)
+    return resp
 
 
+@assist.action("strat-mode-live")
+def launch_strategy_paper(existing_strategy):
+    context = context_manager.get("strat-config-data")
+    job_id = utils.launch_live(context)
 
-    job_id, _ = task.queue_strat(json.dumps(strat_dict), user.id, live=True, simulate_orders=True)
-    url = os.path.join(current_app.config['FRONTEND_URL'], 'strategy/strategy/', job_id)
+    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
 
+    hours = context.get("hours")
     speech = f"""\
-    Great! The strategy is now live and will run for the next 7 days.
+    Great! The strategy is now live and will run for the next {hours} hours.
 
     You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
     """
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button('View your Strategy', url=url)
+    resp.add_button("View your Strategy", url=url)
     return resp

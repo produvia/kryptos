@@ -6,12 +6,15 @@
    "MINUTE_FREQ": "5", "doc":"minute interval",
    "MINUTE_TO_OPERATE": "1", "doc":"minute to operate on range [0, MINUTE_FREQ]",
    "CAPITAL_BASE": 20000,
-   "BASE_CURRENCY": "usd",
+   "BASE_CURRENCY": "usdt",
    "START": "2018-8-10",
    "END": "2018-8-15",
    "BARS": 2000, "doc": "Use values > 200 if you want apply ML techniques",
    "ORDER_SIZE": 0.5,
-   "SLIPPAGE_ALLOWED": 0.02,
+   "SLIPPAGE_ALLOWED": 0.01,
    "MAKER_COMMISSION": 0.0,
-   "TAKER_COMMISSION": 0.0
+   "TAKER_COMMISSION": 0.0,
+   "TAKE_PROFIT": 0.04,
+   "STOP_LOSS": 0.02
+
 }

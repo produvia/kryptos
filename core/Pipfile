@@ -23,6 +23,9 @@ google-cloud = "*"
 google-cloud-datastore = "*"
 gunicorn = "*"
 raven = "*"
+google-cloud-storage = "*"
+google-cloud-kms = "*"
+google-cloud-logging = "*"
 
 [dev-packages]
 black = "==18.4a4"

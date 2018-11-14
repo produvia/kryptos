@@ -2,40 +2,48 @@ import os
 import json
 from google.cloud import datastore
 
+
 def get_from_datastore(config_key, env):
     ds = datastore.Client()
-    print('Fetching {}'.format(config_key))
+    print("Fetching {}".format(config_key))
 
-    product_key = ds.key('Settings', env)
+    product_key = ds.key("Settings", env)
     entity = ds.get(product_key)
 
     return entity[config_key]
 
+
+CONFIG_ENV = os.getenv("CONFIG_ENV", 'production')
+PROJECT_ID = os.getenv("PROJECT_ID", "kryptos-205115")
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
 PERF_DIR = os.path.join(BASE_DIR, "performance_results")
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis-19779.c1.us-central1-2.gce.cloud.redislabs.com')
-REDIS_PORT = os.getenv('REDIS_PORT', 19779)
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None) or get_from_datastore('REDIS_PASSWORD', 'production')
+REDIS_HOST = os.getenv("REDIS_HOST", "10.0.0.3")
+REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
-SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+SENTRY_DSN = os.getenv("SENTRY_DSN", None)
+
+CLOUD_LOGGING = os.getenv('CLOUD_LOGGING', False)
+
+REMOTE_BASE_URL = "https://kryptos-205115.appspot.com"
+LOCAL_BASE_URL = "http://web:8080"
+
+if CONFIG_ENV == 'dev':
+    WEB_URL = LOCAL_BASE_URL
+else:
+    WEB_URL = REMOTE_BASE_URL
 
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
 
-# TODO move into strategy config.json
-# TAKE-PROFIT / STOP-LOSS STRATEGY
-TAKE_PROFIT = 0.04  # Take-Profit
-STOP_LOSS = 0.02  # Stop-Loss
 
-QUEUE_NAMES = ['paper', 'live', 'backtest']
+QUEUE_NAMES = ["paper", "live", "backtest", "ta"]
 
 with open(DEFAULT_CONFIG_FILE, "r") as f:
     DEFAULT_CONFIG = json.load(f)
-
 
 
 # Optionally set metrics here instead of with the metrics "-m" option

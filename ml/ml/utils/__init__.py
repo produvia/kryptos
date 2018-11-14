@@ -1,8 +1,13 @@
+import os
+
 from ml.settings import PERF_DIR
+
+
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
+
 
 # TODO set up perf dir to be available to alls services
 def get_algo_dir(namespace):

@@ -10,9 +10,10 @@ env_variables:
     # but may need to be changed if different instances
     # should log to different sentry projects
     SENTRY_DSN: 'https://919694577d5b4907a54de058d3df359b:f2426c5c9e274fcfb1d84295107e5b60@sentry.io/1269706'
-    REDIS_HOST: redis-19779.c1.us-central1-2.gce.cloud.redislabs.com
-    REDIS_PORT: 19779
+    REDIS_HOST: 10.0.0.3
+    REDIS_PORT: 6379
     CONFIG_ENV: 'production'
+    PROJECT_ID:  kryptos-205115
 
 network:
   name: default

@@ -27,6 +27,11 @@ RUN pip install 'numpy==1.14.3'
 RUN pip install -r /requirements.txt
 
 
+# matplotlib config (used by benchmark)
+RUN mkdir -p /root/.config/matplotlib
+RUN echo "backend : Agg" > /root/.config/matplotlib/matplotlibrc
+
+
 FROM builder
 
 COPY --from=builder /root/.cache /root/.cache

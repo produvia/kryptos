@@ -4,8 +4,9 @@ import pandas as pd
 import talib as ta
 from datetime import datetime
 from ta import add_all_ta_features
-
-
+#from tsfresh import extract_features, extract_relevant_features
+#from tsfresh.utilities.dataframe_functions import roll_time_series
+#from fbprophet import Prophet
 
 def add_utils_features(df):
     """Add utils features.
@@ -269,13 +270,72 @@ def add_ta_features(df, ta_settings):
     return df
 
 
-def add_fbprophet_features(df, fbprophet_settings):
-    # IMPLEMENTED ON https://github.com/produvia/kryptos/tree/ml-tsfresh
-    # WAITING CATALYST UPDATE: https://github.com/enigmampc/catalyst/issues/269
+def add_fbprophet_features(df, data_freq, fbprophet_settings):
+    """
+    """
+    pass
+
+    """
+    df_prophet = df[['timestamp', 'price']]
+    df_prophet.columns = ['ds', 'y']
+
+    # m = Prophet()
+    # m.fit(df_prophet)
+
+    m = Prophet().fit(df_prophet)
+
+    import pdb; pdb.set_trace()
+
+    if data_freq == "daily":
+        freq = 'D'
+    else:
+        freq = 'min'
+
+    future = m.make_future_dataframe(periods=1, freq=freq)
+    forecast = m.predict(future)
+
+    print(forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail())
+    print(df_prophet.tail())
+    print(df.tail())
+
+    df_prophet.shift(1) # hacia arriba
+    df = pd.concat([df, df_prophet], axis=1, join_axes=[df.index]) # merge
     return df
+    """
 
 
 def add_tsfresh_features(df, tsfresh_settings):
-    # IMPLEMENTED ON https://github.com/produvia/kryptos/tree/ml-tsfresh
-    # WAITING CATALYST UPDATE: https://github.com/enigmampc/catalyst/issues/269
-    return df
+    """Automatic extraction of relevant features from time series.
+    http://tsfresh.readthedocs.io
+    https://github.com/blue-yonder/tsfresh
+    """
+    pass
+    """
+    # Prepare some columns useful for tsfresh
+    n = df.shape[0]
+    df['id'] = 1
+    df['time'] = np.array(range(1, n + 1))
+    excl = ['target', 'pred', 'timestamp']
+    cols = [c for c in df.columns if c not in excl]
+
+    # Prepare rolling
+    df_id_changed = roll_time_series(df[cols], column_id="id",
+                            column_sort="time", column_kind=None,
+                            rolling_direction=1,
+                            max_timeshift=tsfresh_settings['window'])
+
+    # Extract tsfresh features
+    extracted_features = extract_features(df_id_changed,
+                            default_fc_parameters=tsfresh_settings['method'],
+                            column_id="id", column_sort="time",
+                            disable_progressbar=True, n_jobs=os.cpu_count())
+
+    # merge originals and new features
+    extracted_features['time'] = np.array(range(1, n + 1))
+    df_tsfresh = pd.merge(df, extracted_features, on=['time'])
+
+    excl = ['id', 'time']
+    cols = [c for c in df_tsfresh.columns if c not in excl]
+
+    return df_tsfresh[cols]
+    """

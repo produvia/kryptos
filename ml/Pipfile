@@ -16,6 +16,9 @@ lightgbm = "*"
 matplotlib = "*"
 xgboost = "*"
 google-cloud-datastore = "*"
+hyperopt = "*"
+shap = "*"
+pandas-profiling = "*"
 
 [dev-packages]
 

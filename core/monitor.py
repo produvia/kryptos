@@ -2,12 +2,12 @@ import logging
 from flask import Flask
 import redis
 
-from kryptos.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+from kryptos.settings import REDIS_HOST, REDIS_PORT
 
 
 app = Flask(__name__)
 
-redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
+redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 @app.route('/')

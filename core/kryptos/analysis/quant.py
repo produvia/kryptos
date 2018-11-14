@@ -12,11 +12,12 @@ log = Logger("QUANT")
 logger_group.add_logger(log)
 
 
-def dump_summary_table(namespace, config, df):
+def dump_summary_table(strat, df):
+    config = strat.trading_info
     if not isinstance(config, dict):
         config = config.__dict__
 
-    ALGO_DIR = get_algo_dir(namespace)
+    ALGO_DIR = get_algo_dir(strat)
     ERROR_FILE = os.path.join(ALGO_DIR, "errors.txt")
 
     log.debug("Completed Strategy with config:\n{}".format(config))
@@ -28,7 +29,9 @@ def dump_summary_table(namespace, config, df):
     try:
         # No missing days in index
         if config["DATA_FREQ"] == "daily":
-            assert (pd.date_range(start=df.index.min(), periods=len(df)) == df.index).all()
+            assert (
+                pd.date_range(start=df.index.min(), periods=len(df)) == df.index
+            ).all()
 
         # There should be no missing data
         # Note: we expect some missing data in the first row(s)
@@ -44,12 +47,12 @@ def dump_summary_table(namespace, config, df):
     df_quant = quant_utils.build_row_table(df)
 
     # Write to file
-    f_path = os.path.join(ALGO_DIR, "backtest_summary.csv")
+    f_path = os.path.join(ALGO_DIR, "quant_summary.csv")
     with open(f_path, "w") as f:
         df_quant.T.to_csv(f)
         log.info("Wrote Summary Table to {}".format(f_path))
 
-    return df_quant
+    return df_quant, f_path
 
 
 def dump_summary_table_all_strategies(config, list_dfs, output_dir):
@@ -66,7 +69,7 @@ def dump_summary_table_all_strategies(config, list_dfs, output_dir):
     # Build the table
     df_quant = pd.DataFrame()
     for df in list_dfs:
-        df = quant_utils.build_row_table(df['results'], config, df['namespace'])
+        df = quant_utils.build_row_table(df["results"], config, df["namespace"])
         df_quant = df_quant.append(df, ignore_index=True)
 
     # Write to file
@@ -79,7 +82,7 @@ def dump_summary_table_all_strategies(config, list_dfs, output_dir):
 
 
 def dump_plots_to_file(namespace, df):
-    log.info('Creating and dumping quant plots')
+    log.info("Creating and dumping quant plots")
     algo_dir = get_algo_dir(namespace)
     SAVE_FOLDER = os.path.join(algo_dir, "figures")
     if not os.path.exists(SAVE_FOLDER):
@@ -93,9 +96,7 @@ def dump_plots_to_file(namespace, df):
     dump_metric_plot(
         pd.DataFrame(
             [(t["dt"], t["amount"]) for t_list in df.transactions for t in t_list]
-        ).set_index(
-            0
-        ),
+        ).set_index(0),
         "Trades",
         SAVE_FOLDER,
     )
@@ -122,12 +123,16 @@ def dump_plots_to_file(namespace, df):
         SAVE_FOLDER,
     )
     dump_metric_plot(
-        (df.portfolio_value - df.portfolio_value.shift(1)) / df.portfolio_value.shift(1) * 100,
+        (df.portfolio_value - df.portfolio_value.shift(1))
+        / df.portfolio_value.shift(1)
+        * 100,
         "Max Daily Drawdown %",
         SAVE_FOLDER,
     )
     dump_metric_plot(
-        (df.portfolio_value - df.portfolio_value.shift(7)) / df.portfolio_value.shift(7) * 100,
+        (df.portfolio_value - df.portfolio_value.shift(7))
+        / df.portfolio_value.shift(7)
+        * 100,
         "Max Weekly Drawdown %",
         SAVE_FOLDER,
     )

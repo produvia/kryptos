@@ -1,0 +1,21 @@
+2018/09/12 17:10:24
+Date Start: 2018-7-1
+Date End: 2018-8-15
+Minute Frequency: 360
+Accuracy: 0.5409836065573771
+Coefficient Kappa: 0.08237822349570201
+Classification Report:
+             precision    recall  f1-score   support
+
+       KEEP       0.50      0.55      0.52        84
+         UP       0.58      0.54      0.56        99
+
+avg / total       0.54      0.54      0.54       183
+Confussion Matrix:
+[[46 38]
+ [46 53]]
+Return Profit Percentage: 0.012891579574750844
+Sharpe Ratio: 1.170596616355189
+Sortino Ratio: 
+Sharpe Ratio (Bitcoin Benchmark): -0.7944863044409247
+Sortino Ratio (Bitcoin Benchmark): 

@@ -16,7 +16,6 @@ services:
       # uses docker redis and db, but fetches other credentials from datastore
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=password
       - FLASK_APP=autoapp.py
       - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
       - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
@@ -43,7 +42,6 @@ services:
     environment:
      - REDIS_HOST=redis
      - REDIS_PORT=6379
-     - REDIS_PASSWORD=password
      - CONFIG_ENV=dev
      - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
     depends_on:
@@ -58,17 +56,15 @@ services:
       context: ./core
       dockerfile: Dockerfile
     volumes:
-      - catalyst:/root/.catalyst
+      # - catalyst:/root/.catalyst
       - ./core:/core
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=password
       - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
       - PYTHONUNBUFFERED=1
+      - CONFIG_ENV=dev
 
-    # entrypoint: ['python', 'worker.py']
-    entrypoint: ['honcho', 'start', 'worker', '--no-prefix']
     depends_on:
     - redis
 
@@ -83,7 +79,6 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=password
       - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
 
     depends_on:
@@ -108,7 +103,7 @@ services:
   redis:
     container_name: redis
     image: redis:4.0.5-alpine
-    command: redis-server --requirepass password
+    command: redis-server
 
 
 volumes:
