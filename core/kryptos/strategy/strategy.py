@@ -797,29 +797,36 @@ class Strategy(object):
         self.log.notice("Ending cash: ${}".format(ending_cash))
         self.log.notice("completed for {} trading periods".format(self.state.i))
         self.notify(
-            f"Your strategy {self.name} has completed. You're ending cash is {ending_cash}"
+            f"Your strategy {self.name} has completed.\
+            You're ending cash is {ending_cash} \
+            \nView your strategy's performance at {self.web_url}"
         )
 
         try:
             self._make_plots(context, results)
             # TODO - fix KeyError in quant analysis
             # quant.dump_plots_to_file(self.name, results)
-            self.quant_results = quant.dump_summary_table(
-                self.name, self.trading_info, results
-            )
-
-            extra_results = self.get_extra_results(context, results)
-
-            for i in self._ml_models:
-                i.analyze(self.name, self.state.DATA_FREQ, extra_results)
-
         except (ValueError, ZeroDivisionError, KeyError):
             self.log.error("Not enough data to make plots")
 
-        # need to catch all exceptions because algo will end either way
+        try:
+            self.quant_results = quant.dump_summary_table(self, results)
         except Exception as e:
-            self.log.error("Error during shutdown/analyze()")
-            self.log.error(str(e))
+            self.log.error("Failed to perform quant analysys")
+            self.log.error(str(e), exc_info=True)
+
+        try:
+            extra_results = self.get_extra_results(context, results)
+        except Exception:
+            self.log.error("Failed to get extra results")
+
+        for i in self._ml_models:
+            i.analyze(self.name, self.state.DATA_FREQ, extra_results)
+
+        # need to catch all exceptions because algo will end either way
+        # except Exception as e:
+        #     self.log.error("Error during shutdown/analyze()")
+        #     self.log.error(str(e))
 
         try:
             url = outputs.save_analysis_to_storage(self, results)
