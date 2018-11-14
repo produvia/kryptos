@@ -2,32 +2,25 @@
 import os
 from setuptools import setup, find_packages
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 #
 # See https://packaging.python.org/requirements/  and
 # https://caremad.io/posts/2013/07/setup-vs-requirement/  for more details.
-requires = [
-    'enigma-catalyst',
-    'matplotlib',
-    'TA-Lib',
-    'quandl',
-    'click',
-    'logbook'
-]
+requires = ["enigma-catalyst", "matplotlib", "TA-Lib", "quandl", "click", "logbook"]
 
 
 def package_files(directory):
     for path, _, filenames in os.walk(directory):
         for filename in filenames:
-            yield os.path.join('..', path, filename)
+            yield os.path.join("..", path, filename)
 
 
 package_name = "kryptos"
 base_dir = os.path.abspath(os.path.dirname(__file__))
 # Get the long description from the README file
-with open(os.path.join(base_dir, 'README.md'), 'rb') as f:
-    long_description = f.read().decode('utf-8')
+with open(os.path.join(base_dir, "README.md"), "rb") as f:
+    long_description = f.read().decode("utf-8")
 
 setup(
     name=package_name,
@@ -41,13 +34,13 @@ setup(
     # license='MIT',
     packages=find_packages(base_dir),
     install_requires=requires,
-    entry_points='''
+    entry_points="""
         [console_scripts]
         bchain=kryptos.scripts.bchain_activity:run
         trends=kryptos.scripts.trends:run
         strat=kryptos.scripts.strat:cli
         compare_all_ta=kryptos.scripts.run_all_ta:run
         workers=kryptos.worker.worker:manage_workers
-    ''',
+    """,
     zip_safe=False,
 )
