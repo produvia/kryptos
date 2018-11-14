@@ -24,6 +24,9 @@ $(document).ready(function() {
         quoteCurrency: $('#quote_select')
     };
 
+	dropdown.quoteCurrency.attr('disabled', 'disabled')
+
+
     // call to update on load
     requestExchangePairs();
 
@@ -47,27 +50,6 @@ $(document).ready(function() {
         });
     }
 
-    function requestInidicatorParams (self) {
-        let indicatorAbbrev = self.options[self.selectedIndex].text
-        var send = {
-            indicator: indicatorAbbrev,
-        };
-        params.attr('disabled', 'disabled');
-        params.empty();
-        $.getJSON("{{ url_for('strategy._get_indicator_params') }}", send, function(data) {
-            if (data) {
-              console.log(data);
-              addParameterFields(data)
-              params.removeAttr('disabled');
-            } else {
-              setTimeout(function(){
-                requestInidicatorParams(self);
-              }, 1000);
-            }
-        });
-    }
-
-
 
     // update asset dropdown
     function updateAssetList (data) {
@@ -80,35 +62,17 @@ $(document).ready(function() {
             );
         });
         dropdown.asset.removeAttr('disabled');
+		updateQuoteCurrencyString();
     }
 
-    function addParameterFields(new_params){
-        console.log('emptying params')
-        params.attr('disabled', 'disabled');
-        params.empty();
+	// update quote currency based on the selected asset
+	function updateQuoteCurrencyString () {
+		let pair = dropdown.asset.val()
+		if (pair) {
+			dropdown.quoteCurrency.val(pair.split('_')[1])
+		}
 
-        console.log('Adding ')
-        console.log(new_params)
-
-        let idx = 0
-        for (var p in new_params) {
-
-        // append to the params form group
-        let label = $('<label class="control-label"></label>')
-        let input = $('<input class="form-control tabindex="30" type="number">')
-
-        label.attr('for', p)
-        label.text(p)
-
-        input.attr('id', p)
-        input.attr('name', "param-" + p)
-        input.text(p)
-        input.val(new_params[p])
-
-        params.append(label, input)
-        }
-
-    }
+	}
 
     // event listener to group dropdown change
     dropdown.exchange.on('change', function() {
@@ -116,13 +80,8 @@ $(document).ready(function() {
     });
 
     dropdown.asset.on('change', function() {
-		let splitAsset = dropdown.asset.split('_')
-		dropdown.quoteCurrency.val = splitAsset[1]
+		updateQuoteCurrencyString()
 
-        // update quote currency based on the selected asset
-
-
-        // requestInidicatorParams(this);
     });
 });
 
