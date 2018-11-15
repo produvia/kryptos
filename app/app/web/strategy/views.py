@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import datetime
 from flask import (
     Blueprint,
     redirect,
@@ -74,6 +75,13 @@ def build_strategy():
 
         live = form.trade_type.data in ["live", "paper"]
         simulate_orders = form.trade_type.data == "paper"
+
+        trading_dict["START"] = datetime.datetime.strftime(
+            form.start.data, "%Y-%m-%d %H:%M"
+        )
+        trading_dict["END"] = datetime.datetime.strftime(
+            form.end.data, "%Y-%m-%d %H:%M"
+        )
 
         session["strat_dict"] = {
             "name": form.name.data,
