@@ -10,14 +10,25 @@ from wtforms import (
     SubmitField,
 )
 from wtforms.validators import DataRequired, Required
+from app.utils import build
 
-
-trade_types = [("backtest", "backtest"), ("paper", "paper"), ("live", "live")]
+trade_types = [("paper", "paper"), ("live", "live"), ("backtest", "backtest")]
 exchanges = [
     ("binance", "binance"),
     ("bitfinex", "bitfinex"),
     ("poloniex", "poloniex"),
     ("bittrex", "bittrex"),
+]
+existing_strats = [
+    ("BBANDS", "Bollinger Bands (BBANDS)"),
+    ("SAR", "Stop and Reverse (SAR)"),
+    ("MACD", "Moving Average Convergence/Divergence (MACD)"),
+    ("MACDFIX", "Moving Average Convergence/Divergence Fix (MACDFIX)"),
+    ("OBV", "On Balance Volume (OBV)"),
+    ("RSI", "Relative Strength Index (RSI)"),
+    ("STOCH", "Stochastic (STOCH)"),
+    ("XGBOOST", "XGBOOST (ML)"),
+    ("LIGHTGBM", "LIGHTGBM (ML)"),
 ]
 
 
@@ -60,7 +71,7 @@ class UserExchangeKeyRemoveForm(FlaskForm):
     remove = SubmitField("Remove")
 
 
-class TradeInfoForm(FlaskForm):
+class _TradeInfoForm(FlaskForm):
     name = StringField("name", validators=[DataRequired()])
 
     exchange = SelectField(
@@ -74,9 +85,7 @@ class TradeInfoForm(FlaskForm):
     asset = DynamicChoiceField("Asset", id="asset_select", validators=[])
 
     base_currency = StringField("Base Currency", id="quote_select", validators=[])
-    capital_base = IntegerField(
-        "Capital Base", validators=[DataRequired()], default=5000
-    )
+    capital_base = IntegerField("Capital Base", validators=[DataRequired()])
 
     trade_type = SelectField(
         "Trade Type",
@@ -94,6 +103,17 @@ class TradeInfoForm(FlaskForm):
         default=(datetime.datetime.utcnow() + datetime.timedelta(days=1)),
         format="%Y-%m-%d %I:%M %p",
     )
+
+
+class BasicTradeInfoForm(_TradeInfoForm):
+
+    strat_template = SelectField("Strategy", choices=existing_strats)
+
+    submit = SubmitField("Submit")
+    # advanced = SubmitField("Advanced")
+
+
+class AdvancedTradeInfoForm(_TradeInfoForm):
 
     data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
     history_freq = StringField("History frequency", default="1d")

@@ -2,17 +2,20 @@ def process_trading_form(form):
     trading_dict = {
         "EXCHANGE": form.exchange.data,
         "ASSET": form.asset.data,
-        "DATA_FREQ": form.data_freq.data,
-        "HISTORY_FREQ": form.history_freq.data,
         "CAPITAL_BASE": form.capital_base.data,
         "BASE_CURRENCY": form.base_currency.data,
         "START": form.start.data,
         "END": form.end.data,
-        "BARS": form.bar_period.data,
-        "ORDER_SIZE": form.order_size.data,
-        "SLIPPAGE_ALLOWED": form.slippage_allowed.data,
+        # the following are not provided in the basic form
+        "DATA_FREQ": form.data.get("data_freq"),
+        "HISTORY_FREQ": form.data.get("history_freq"),
+        "BARS": form.data.get("bar_period"),
+        "ORDER_SIZE": form.data.get("order_size"),
+        "SLIPPAGE_ALLOWED": form.data.get("slippage_allowed"),
     }
-    return trading_dict
+
+    # remove None vals so strat will use defaults
+    return {k: v for k, v in trading_dict.items() if v is not None}
 
 
 def process_indicator_form(form):

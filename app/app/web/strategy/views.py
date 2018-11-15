@@ -66,7 +66,48 @@ def public_backtest_status(strat_id):
 def build_strategy():
     task.indicator_group_name_selectors()
     task.all_indicator_selectors()
-    form = forms.TradeInfoForm()
+    form = forms.BasicTradeInfoForm()
+    form.base_currency.choices = []
+    form.asset.choices = []
+
+    if form.validate_on_submit():
+
+        current_app.logger.info(form.data)
+
+        trading_dict = form_utils.process_trading_form(form)
+
+        live = form.trade_type.data in ["live", "paper"]
+        simulate_orders = form.trade_type.data == "paper"
+
+        trading_dict["START"] = datetime.datetime.strftime(
+            form.start.data, "%Y-%m-%d %H:%M"
+        )
+        trading_dict["END"] = datetime.datetime.strftime(
+            form.end.data, "%Y-%m-%d %H:%M"
+        )
+
+        strat_dict = {
+            "name": form.name.data,
+            "trading": trading_dict,
+            "indicators": [{"name": form.strat_template.data}],
+            "live": live,
+            "simulate_orders": simulate_orders,
+        }
+
+        session["strat_dict"] = strat_dict
+        job_id, queue_name = task.queue_strat(
+            json.dumps(strat_dict), current_user.id, live, simulate_orders
+        )
+        return redirect(url_for("strategy.strategy_status", strat_id=job_id))
+
+    return render_template("strategy/trading.html", form=form)
+
+
+@blueprint.route("/build_advanced", methods=["GET", "POST"])
+def build_strategy_advanced():
+    task.indicator_group_name_selectors()
+    task.all_indicator_selectors()
+    form = forms.AdvancedTradeInfoForm()
     form.base_currency.choices = []
     form.asset.choices = []
     if form.validate_on_submit():
