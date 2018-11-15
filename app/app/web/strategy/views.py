@@ -14,7 +14,7 @@ from flask import (
 from flask_user import current_user, login_required
 
 from app.forms import forms
-from app.utils import form_utils, build as build_utils
+from app.utils import form_utils
 from app.models import StrategyModel
 from app import task
 
@@ -72,8 +72,8 @@ def build_strategy():
 
         trading_dict = form_utils.process_trading_form(form)
 
-        live = form.trade_type in ["live", "paper"]
-        simulate_orders = form.trade_type == "live"
+        live = form.trade_type.data in ["live", "paper"]
+        simulate_orders = form.trade_type.data == "paper"
 
         session["strat_dict"] = {
             "name": form.name.data,
