@@ -1,5 +1,4 @@
 import datetime
-from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField,
@@ -7,13 +6,10 @@ from wtforms import (
     SelectField,
     IntegerField,
     FloatField,
-    FieldList,
-    FormField,
     PasswordField,
     SubmitField,
-    SelectMultipleField,
 )
-from wtforms.validators import DataRequired, Required, Optional
+from wtforms.validators import DataRequired, Required
 
 
 trade_types = [("backtest", "backtest"), ("paper", "paper"), ("live", "live")]
@@ -88,6 +84,17 @@ class TradeInfoForm(FlaskForm):
         validators=[Required()],
         default=trade_types[0],
     )
+
+    start = DateTimeField(
+        "Start", default=datetime.datetime.utcnow(), format="%Y-%m-%d %I:%M %p"
+    )
+
+    end = DateTimeField(
+        "End",
+        default=(datetime.datetime.utcnow() + datetime.timedelta(days=1)),
+        format="%Y-%m-%d %I:%M %p",
+    )
+
     data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
     history_freq = StringField("History frequency", default="1d")
 
