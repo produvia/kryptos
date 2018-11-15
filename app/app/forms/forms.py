@@ -75,16 +75,22 @@ class TradeInfoForm(FlaskForm):
         id="exchange_select",
     )
 
-    base_currency = DynamicChoiceField(
-        "Base Currency", id="quote_select", validators=[]
-    )
     asset = DynamicChoiceField("Asset", id="asset_select", validators=[])
-    data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
-    history_freq = StringField("History frequency", default="1d")
 
+    base_currency = StringField("Base Currency", id="quote_select", validators=[])
     capital_base = IntegerField(
         "Capital Base", validators=[DataRequired()], default=5000
     )
+
+    trade_type = SelectField(
+        "Trade Type",
+        choices=trade_types,
+        validators=[Required()],
+        default=trade_types[0],
+    )
+    data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
+    history_freq = StringField("History frequency", default="1d")
+
     bar_period = IntegerField("Bar Period", validators=[DataRequired()], default=50)
     order_size = FloatField("Order Size", validators=[DataRequired()], default=0.5)
     slippage_allowed = FloatField(
