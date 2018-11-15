@@ -22,6 +22,14 @@ EXISTING_STRATS = [
     ("LIGHTGBM (ML)", "LIGHTGBM"),
 ]
 
+EXCHANGES = [
+    ("Binance", "binance"),
+    ("Bittrex", "bittrex"),
+    ("Bitfinex", "bitfinex"),
+    ("Poloniex", "poloniex"),
+]
+
+
 # TODO possibly use telegram chat_id
 def get_user() -> User:
     telegram_id = get_message_payload()["id"]
@@ -77,17 +85,6 @@ def build_strat_dict_from_context(context, mode):
     ] = quote_currency.lower()  # TODO change refs of base to quote
 
     strat_dict["name"] = f"{strat}-{mode.title()}"
-    return strat_dict
-
-
-def build_strat_dict(strategy_name, mode):
-    start = datetime.datetime.today()
-    end = start + datetime.timedelta(days=3)
-
-    strat_dict = {"trading": {}, "indicators": [{"name": strategy_name}]}
-    strat_dict["trading"]["START"] = datetime.datetime.strftime(start, "%Y-%m-%d")
-    strat_dict["trading"]["END"] = datetime.datetime.strftime(end, "%Y-%m-%d")
-    strat_dict["name"] = f"{strategy_name}-{mode.title()}"
     return strat_dict
 
 

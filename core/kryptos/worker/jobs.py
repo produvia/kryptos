@@ -93,7 +93,7 @@ def get_exchange_quote_currencies(exchange: str) -> Set[str]:
     symbols = get_exchange_asset_pairs(exchange)
     quotes = set()
     for s in symbols:
-        _, quote = s.split("_")
+        _, quote = s[0].split("_")
         quotes.add(quote)
     return quotes
 
@@ -101,8 +101,8 @@ def get_exchange_quote_currencies(exchange: str) -> Set[str]:
 def get_available_base_currencies(exchange: str, quote_currency: str) -> Set[str]:
     symbols = get_exchange_asset_pairs(exchange)
     base_currencies = set()
-    for s in [s for s in symbols if quote_currency in s]:
-        base, quote = s.split("_")
+    for s in [s for s in symbols if quote_currency in s[0]]:
+        base, quote = s[0].split("_")
         if quote == quote_currency:
             base_currencies.add(base)
 

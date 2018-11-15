@@ -16,7 +16,6 @@ CONN = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 def get_queue(queue_name):
-    current_app.logger.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
     # if queue_name == 'ta':
     #     return Queue(queue_name, connection=CONN, async=False)
     return Queue(queue_name, connection=CONN)
