@@ -18,14 +18,13 @@ $ cd kryptos
 
 Build the docker images
 ```bash
-docker-compose build
+$ docker-compose build
 ```
-
 
 ## Running locally
 
 ```bash
-docker-compose up
+$ docker-compose up
 ```
 
 This will spin up a web, worker, ml, postgres, and redis container.
@@ -34,19 +33,28 @@ The web app will be accessible at http://0.0.0.0:8080
 
 You can also view the RQ dashboard at http://0.0.0.0:8080/rq
 
+Hitting Ctl-C will stop all the containers.
+To prevent this and run the containers in the background:
+
+``` bash
+$ docker-compose up -d
+```
+
+You can then selectively view the logs of any of the containers
+
+``` bash
+$ docker-compose logs -f <web|worker|ml>
+```
+
 
 ## Local Development
 
- To only view the logs of a desired service:
-```bash
-docker-compose up -d
-docker-compose logs -f <web|worker|ml>
-```
+Once the containers are running, you can access the the shell of any of the containers, use the `exec` command
 
- To simply run strategies from CLI:
+
+For instance, to run strategies from CLI:
 ```bash
-docker-compose up -d
-docker exec -it worker /bin/bash
+$ docker-compose exec worker bash
 ```
 
 This will provide a command prompt inside the worker container from which you can run the `strat` command
@@ -54,10 +62,13 @@ This will provide a command prompt inside the worker container from which you ca
 For example, to work on the ML service:
 ```bash
 # start all containers w/o logging
-docker-compose up -d
+$ docker-compose up -d
 
-# enter the worker shell
-docker exec -it worker /bin/bash
+# enter the ml shell
+$ docker-compose exec ml bash
+
+# or enter the worker shell to run a strategy
+$ docker-compose exec worker bash
 ```
 
 Then to stream ML logs in a separate terminal
@@ -65,96 +76,65 @@ Then to stream ML logs in a separate terminal
 docker-compose logs -f ml
 ```
 
-Note the following `strat` options to set where a strategy is run
-```bash
-Usage: strat [OPTIONS]
+To stop all containers
 
-
-Options:
-
-  ...
-
-  --paper                         Run the strategy in Paper trading mode
-  -a, --api                       Run the strategy via API
-  -w, --worker                    Run the strategy inside an RQ worker
-  -h, --hosted                    Run on a GCP instance via the API
+``` bash
+$ docker-compose stop
 ```
 
-## Deployment
+To stopa specific container
 
-### Initial deployement setup
-If this is the first time deploying, begin by pushing the images to GCR
-
-```bash
-# worker
-cd /core
-gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-worker --timeout 1200 .
-
-# then the app image
-cd /app
-gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-app . --timeout 1200
-
-# then the ml image
-cd /ml
-gcloud builds submit --tag gcr.io/kryptos-205115/kryptos-ml . --timeout 1200
-```
-
-Then deploy the app and ml services to Google App engine using the pushed images
-
-```bash
-# we could drop the image_url, but this way is quicker
-
-# in app/
-gcloud app deploy app.yaml --image-url=gcr.io/kryptos-205115/kryptos-app
-
-# in /ml/
-gcloud app deploy ml.yaml --image-url=gcr.io/kryptos-205115/kryptos-ml
-
-# in /core
-gcloud app deploy worker.yaml --image-url=gcr.io/kryptos-205115/kryptos-worker
+``` bash
+$ docker-compose stop <web|worker|ml>
 ```
 
 
 
-### Triggered deployments
-There are three build triggers in place to help automate the deployments
 
-1. The first rebuilds and deploys the worker image if a pushed commit changes any files in the /core directory
-2. The third rebuilds and deploys the ml service if changes are made to the /ml directory
-2. The third rebuilds and deploys the app/default service if changes are made to the /app directory
 
-You can view the cloudbuild.yaml file in the /core and /app directories to see the steps
+## Contributing
 
-These steps are
-- pulls the latest relevant image (which is why manual building needs to be done initially)
-- rebuilds the image by caching the latest version (this speeds up the builds)
-- Tags the the newly built image, making it the latest version
+When contributing to the codebase, please follow the branching model described [here](https://nvie.com/posts/a-successful-git-branching-model/)
 
-In the case of changes to the app directory, the new image is also deployed from the cloud
+Essentially, the two main branches are
 
-Always check to see if there were any errors or if the build was not triggered.
+ - `master`: the main branch containing the latest stable code released to production
+ - `develop`: the "Work in Progress" branch where all new changes are merged into
 
-### Getting production info
-To view GAE instance logs
-```bash
-$ gcloud app logs read -s <default|worker|ml|>
-```
-To view worker statuses, run the following inside the *core/* dir
-```bash
-$ rq info -c kryptos.settings
-```
-or for the web dashboard
-```bash
-$ rq-dashboard -c kryptos.settings
+Then there are [feature branches](https://nvie.com/posts/a-successful-git-branching-model/#feature-branches). These are the branches where you will make most of your commits. They branch off of develop, and are merged back into develop when the feature is complete.
+
+### Setting up the development envrionment
+
+Remember to get the lastest changes
+
+``` bash
+$ git checkout develop
+$ git pull
 ```
 
-To connect to the production database, install the google cloud local cloud-sql-proxy
-```bash
-./cloud_sql_proxy -instances=kryptos-205115:us-west1:kryptos-db=tcp:5432
+Then create your new feature branch
+
+``` bash
+$ git checkout -b feature/<YOUR_FEATURE_NAME>
 ```
+
+To push your latest changes to the repo
+
+``` bash
+$ git push origin feature<YOUR_FEATURE_BRANCH>
+```
+
+When you are ready to merge your feature branch back into develop
+
+1. Ensure you have pushed your latest changes to the origin feature/<FEATURE_BRANCH> branch
+2. Submit a pull request to the `develop` branch
+
+
 
 ## Project Components
 
-To work with the core kryptos code base:
+For more information, check out documentation for the different services:
 
-Checkout the [core documentation](core/README.md)
+- [core](core/README.md) - for strategy related logic
+- [ml](ml/README.md) - for machine learning models
+- [web](web/README.md) - for the Telegram bot and web frontend

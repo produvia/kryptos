@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import datetime
 from flask import (
     Blueprint,
     redirect,
@@ -13,11 +14,40 @@ from flask import (
 )
 from flask_user import current_user, login_required
 
-from app.forms import forms, utils
+from app.forms import forms
+from app.utils import form_utils
 from app.models import StrategyModel
 from app import task
 
 blueprint = Blueprint("strategy", __name__, url_prefix="/strategy")
+
+
+@blueprint.route("/_get_exchange_quote_currencies")
+def _get_exchange_quote_currencies():
+    exchange = request.args.get("exchange")
+    quote_currencies = task.get_exchange_quote_currencies(exchange) or []
+    quote_choices = []
+    for q in quote_currencies:
+        # value, display
+        quote_choices.append((q, q.upper()))
+    return jsonify(quote_choices)
+
+
+@blueprint.route("/_get_available_asset_pairs")
+def _get_available_asset_pairs():
+    exchange = request.args.get("exchange")
+    quote_currency = request.args.get("quote_currency")
+    asset_pairs = task.get_exchange_asset_pairs(exchange) or []
+    pair_choices = []
+
+    # asset pairs are tuple of same pair (choice)
+    for p in asset_pairs:
+        quote = p.split("_")[1]
+        if quote.lower() == quote_currency.lower():
+            # value, display
+            pair_choices.append((p, p.upper()))
+
+    return jsonify(pair_choices)
 
 
 @blueprint.route("/_get_group_indicators/")
@@ -55,15 +85,63 @@ def public_backtest_status(strat_id):
 
 @blueprint.route("/build", methods=["GET", "POST"])
 def build_strategy():
-    task.indicator_group_name_selectors()
-    task.all_indicator_selectors()
-    form = forms.TradeInfoForm()
+
+    form = forms.BasicTradeInfoForm()
+    form.asset.choices = []
+    form.quote_currency.choices = []
     if form.validate_on_submit():
 
-        trading_dict = utils.process_trading_form(form)
+        current_app.logger.info(form.data)
 
-        live = form.trade_type in ["live", "paper"]
-        simulate_orders = form.trade_type == "live"
+        trading_dict = form_utils.process_trading_form(form)
+
+        live = form.trade_type.data in ["live", "paper"]
+        simulate_orders = form.trade_type.data == "paper"
+
+        trading_dict["START"] = datetime.datetime.strftime(
+            form.start.data, "%Y-%m-%d %H:%M"
+        )
+        trading_dict["END"] = datetime.datetime.strftime(
+            form.end.data, "%Y-%m-%d %H:%M"
+        )
+
+        strat_dict = {
+            "name": form.name.data,
+            "trading": trading_dict,
+            "indicators": [{"name": form.strat_template.data}],
+            "live": live,
+            "simulate_orders": simulate_orders,
+        }
+
+        session["strat_dict"] = strat_dict
+        job_id, queue_name = task.queue_strat(
+            json.dumps(strat_dict), current_user.id, live, simulate_orders
+        )
+        return redirect(url_for("strategy.strategy_status", strat_id=job_id))
+
+    return render_template("strategy/trading.html", form=form)
+
+
+@blueprint.route("/build_advanced", methods=["GET", "POST"])
+def build_strategy_advanced():
+    task.indicator_group_name_selectors()
+    task.all_indicator_selectors()
+    form = forms.AdvancedTradeInfoForm()
+    # form.base_currency.choices = []
+    form.asset.choices = []
+    if form.validate_on_submit():
+
+        trading_dict = form_utils.process_trading_form(form)
+
+        live = form.trade_type.data in ["live", "paper"]
+        simulate_orders = form.trade_type.data == "paper"
+
+        trading_dict["START"] = datetime.datetime.strftime(
+            form.start.data, "%Y-%m-%d %H:%M"
+        )
+        trading_dict["END"] = datetime.datetime.strftime(
+            form.end.data, "%Y-%m-%d %H:%M"
+        )
 
         session["strat_dict"] = {
             "name": form.name.data,
@@ -89,7 +167,7 @@ def build_indicators():
 
     if request.method == "POST" and indicator_form.validate_on_submit():
 
-        indicator_dict = utils.process_indicator_form(indicator_form)
+        indicator_dict = form_utils.process_indicator_form(indicator_form)
         params = {}
 
         # get params outside of wtf form
@@ -145,7 +223,7 @@ def build_signals():
         existing_signals["sell"] = existing_signals.get("sell", [])
         existing_signals["buy"] = existing_signals.get("buy", [])
 
-        signal_dict = utils.process_signal_form(signal_form)
+        signal_dict = form_utils.process_signal_form(signal_form)
 
         if signal_form.signal_type == "sell":
             existing_signals["sell"].append(signal_dict)

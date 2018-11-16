@@ -5,7 +5,7 @@
       "DATA_FREQ": "daily",
       "HISTORY_FREQ": "1d",
       "CAPITAL_BASE": 5000,
-      "BASE_CURRENCY": "usd",
+      "QUOTE_CURRENCY": "usd",
       "START": "2016-10-10",
       "END": "2018-3-28"
    },
