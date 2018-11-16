@@ -10,7 +10,7 @@ from wtforms import (
     SubmitField,
 )
 from wtforms.validators import DataRequired, Required
-from app.utils import build
+from app.utils import choices
 
 
 class DynamicChoiceField(SelectField):
@@ -23,9 +23,9 @@ class DynamicChoiceField(SelectField):
 class UserExchangeKeysForm(FlaskForm):
     exchange = SelectField(
         "Exchange",
-        choices=build.EXCHANGES,
+        choices=choices.EXCHANGES,
         validators=[Required()],
-        default=build.EXCHANGES[0],
+        default=choices.EXCHANGES[0],
     )
     api_key = StringField("API Key", validators=[DataRequired()])
     api_secret = PasswordField("API Secret", validators=[DataRequired()])
@@ -42,9 +42,9 @@ class _TradeInfoForm(FlaskForm):
 
     exchange = SelectField(
         "Exchange",
-        choices=build.EXCHANGES,
+        choices=choices.EXCHANGES,
         validators=[Required()],
-        default=build.EXCHANGES[0],
+        default=choices.EXCHANGES[0],
         id="exchange_select",
     )
 
@@ -57,9 +57,9 @@ class _TradeInfoForm(FlaskForm):
     capital_base = IntegerField("Capital Base", validators=[DataRequired()])
     trade_type = SelectField(
         "Trade Type",
-        choices=build.TRADE_TYPES,
+        choices=choices.TRADE_TYPES,
         validators=[Required()],
-        default=build.TRADE_TYPES[0],
+        default=choices.TRADE_TYPES[0],
     )
 
     start = DateTimeField(
@@ -75,7 +75,7 @@ class _TradeInfoForm(FlaskForm):
 
 class BasicTradeInfoForm(_TradeInfoForm):
 
-    strat_template = SelectField("Strategy", choices=build.EXISTING_STRATS)
+    strat_template = SelectField("Strategy", choices=choices.EXISTING_STRATS)
 
     submit = SubmitField("Submit")
     # advanced = SubmitField("Advanced")
@@ -84,7 +84,7 @@ class BasicTradeInfoForm(_TradeInfoForm):
 class AdvancedTradeInfoForm(_TradeInfoForm):
 
     data_freq = SelectField(
-        "Data Frequency", choices=build.FREQS, validators=[Required()]
+        "Data Frequency", choices=choices.FREQS, validators=[Required()]
     )
     history_freq = StringField("History frequency", default="1d")
 
@@ -111,10 +111,10 @@ class IndicatorInfoForm(FlaskForm):
 
 class SignalForm(FlaskForm):
 
-    signal_type = SelectField("Signal Type", choices=build.SIGNAL_TYPES)
+    signal_type = SelectField("Signal Type", choices=choices.SIGNAL_TYPES)
     target_series = SelectField("Target Indicator")
     func = SelectField(
-        "Signal Function", choices=build.SIGNAL_FUNCS, id="signal-func-select"
+        "Signal Function", choices=choices.SIGNAL_FUNCS, id="signal-func-select"
     )
 
     # only one of the following will be active
