@@ -63,11 +63,11 @@ def unlink_telegram_account():
 def show_menu():
     user_name = build.get_first_name()
     resp = inline_keyboard(f"Hi {user_name}. Let's get started")
-    resp.add_button("Launch New Strategy", "new_strat")
-    resp.add_button("Run performance report", "performance_report")
-    resp.add_button("Update Goals", "update_goals")
-    resp.add_button("Upgrade Skills", "upgrade_skills")
-    resp.add_button("Adjust Kryptos", "adjust_keytpos")
+    resp.add_button("new_strat", "Launch New Strategy")
+    resp.add_button("performance_report", "Run performance report")
+    resp.add_button("update_goals", "Update Goals")
+    resp.add_button("upgrade_skills", "Upgrade Skills")
+    resp.add_button("adjust_keytpos", "Adjust Kryptos")
 
     return resp
 
@@ -139,7 +139,7 @@ def prompt_quote_currency(exchange):
     quotes = task.get_exchange_quote_currencies(exchange)
 
     for q in quotes:
-        resp.add_button(q, q.lower())
+        resp.add_button(q.lower(), q)
     return resp
 
 
@@ -234,9 +234,9 @@ def prompt_for_mode():
 
     resp = inline_keyboard(dedent(speech))
     # resp.add_button("View Past Performance", url=backtest_url)
-    resp.add_button("Launch in Paper Mode", "paper")
-    resp.add_button("Lauch in Live mode", "live")
-    resp.add_button("Nevermind", "no")
+    resp.add_button("paper", "Launch in Paper Mode")
+    resp.add_button("live", "Lauch in Live mode")
+    resp.add_button("no", "Nevermind")
 
     return resp
 
@@ -261,7 +261,7 @@ def launch_strategy_paper(existing_strategy):
     )
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("View your Strategy", url=url)
+    resp.add_link(url, "View your Strategy")
     return resp
 
 
@@ -283,5 +283,5 @@ def launch_strategy_live(existing_strategy):
     )
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("View your Strategy", url=url)
+    resp.add_button(url, "View your Strategy")
     return resp

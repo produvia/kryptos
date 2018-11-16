@@ -12,43 +12,6 @@ from wtforms import (
 from wtforms.validators import DataRequired, Required
 from app.utils import build
 
-trade_types = [("paper", "paper"), ("live", "live"), ("backtest", "backtest")]
-exchanges = [
-    ("binance", "binance"),
-    ("bitfinex", "bitfinex"),
-    ("poloniex", "poloniex"),
-    ("bittrex", "bittrex"),
-]
-existing_strats = [
-    ("BBANDS", "Bollinger Bands (BBANDS)"),
-    ("SAR", "Stop and Reverse (SAR)"),
-    ("MACD", "Moving Average Convergence/Divergence (MACD)"),
-    ("MACDFIX", "Moving Average Convergence/Divergence Fix (MACDFIX)"),
-    ("OBV", "On Balance Volume (OBV)"),
-    ("RSI", "Relative Strength Index (RSI)"),
-    ("STOCH", "Stochastic (STOCH)"),
-    ("XGBOOST", "XGBOOST (ML)"),
-    ("LIGHTGBM", "LIGHTGBM (ML)"),
-]
-
-
-freqs = [("daily", "daily"), ("minute", "minute")]
-datasets = [
-    ("None", "None"),
-    ("Google Trends, google"),
-    ("Quandl Blochain Data", "quandl"),
-]
-
-signal_types = [("buy", "Buy"), ("sell", "Sell")]
-
-
-signal_funcs = [
-    ("decreasing", "Decreasing for"),
-    ("increasing", "Increasing for"),
-    ("cross_above", "Crosses Above"),
-    ("cross_below", "Crosses Below"),
-]
-
 
 class DynamicChoiceField(SelectField):
     """An open ended select field to accept dynamic choices added by the browser"""
@@ -59,7 +22,10 @@ class DynamicChoiceField(SelectField):
 
 class UserExchangeKeysForm(FlaskForm):
     exchange = SelectField(
-        "Exchange", choices=exchanges, validators=[Required()], default=exchanges[0]
+        "Exchange",
+        choices=build.EXCHANGES,
+        validators=[Required()],
+        default=build.EXCHANGES[0],
     )
     api_key = StringField("API Key", validators=[DataRequired()])
     api_secret = PasswordField("API Secret", validators=[DataRequired()])
@@ -76,9 +42,9 @@ class _TradeInfoForm(FlaskForm):
 
     exchange = SelectField(
         "Exchange",
-        choices=exchanges,
+        choices=build.EXCHANGES,
         validators=[Required()],
-        default=exchanges[0],
+        default=build.EXCHANGES[0],
         id="exchange_select",
     )
 
@@ -91,9 +57,9 @@ class _TradeInfoForm(FlaskForm):
     capital_base = IntegerField("Capital Base", validators=[DataRequired()])
     trade_type = SelectField(
         "Trade Type",
-        choices=trade_types,
+        choices=build.TRADE_TYPES,
         validators=[Required()],
-        default=trade_types[0],
+        default=build.TRADE_TYPES[0],
     )
 
     start = DateTimeField(
@@ -109,7 +75,7 @@ class _TradeInfoForm(FlaskForm):
 
 class BasicTradeInfoForm(_TradeInfoForm):
 
-    strat_template = SelectField("Strategy", choices=existing_strats)
+    strat_template = SelectField("Strategy", choices=build.EXISTING_STRATS)
 
     submit = SubmitField("Submit")
     # advanced = SubmitField("Advanced")
@@ -117,7 +83,9 @@ class BasicTradeInfoForm(_TradeInfoForm):
 
 class AdvancedTradeInfoForm(_TradeInfoForm):
 
-    data_freq = SelectField("Data Frequency", choices=freqs, validators=[Required()])
+    data_freq = SelectField(
+        "Data Frequency", choices=build.FREQS, validators=[Required()]
+    )
     history_freq = StringField("History frequency", default="1d")
 
     bar_period = IntegerField("Bar Period", validators=[DataRequired()], default=50)
@@ -143,9 +111,11 @@ class IndicatorInfoForm(FlaskForm):
 
 class SignalForm(FlaskForm):
 
-    signal_type = SelectField("Signal Type", choices=signal_types)
+    signal_type = SelectField("Signal Type", choices=build.SIGNAL_TYPES)
     target_series = SelectField("Target Indicator")
-    func = SelectField("Signal Function", choices=signal_funcs, id="signal-func-select")
+    func = SelectField(
+        "Signal Function", choices=build.SIGNAL_FUNCS, id="signal-func-select"
+    )
 
     # only one of the following will be active
     # depending on the func

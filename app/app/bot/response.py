@@ -14,7 +14,9 @@ class ask(_Response):
         self._quick_reply = None
 
     def reprompt(self, prompt):
-        self._response["data"]["google"]["no_input_prompts"] = [{"text_to_speech": prompt}]
+        self._response["data"]["google"]["no_input_prompts"] = [
+            {"text_to_speech": prompt}
+        ]
 
         return self
 
@@ -66,10 +68,13 @@ class inline_keyboard(ask):
             }
         }
 
-    def add_button(self, text, callback_data=None, url=None):
-        if None not in [callback_data, url]:
-            raise ValueError("Buttons may only include one of callback_data or url")
-        btn = {"text": text, "callback_data": callback_data, "url": url}
+    def add_button(self, callback_data, text):
+        btn = {"text": text, "callback_data": callback_data}
+        btn_row = [btn]  # inline keybaord accepts array of button row arrays
+        self._buttons.append(btn_row)
+
+    def add_link(self, url, text):
+        btn = {"text": text, "url": url}
         btn_row = [btn]  # inline keybaord accepts array of button row arrays
         self._buttons.append(btn_row)
 

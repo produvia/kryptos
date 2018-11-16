@@ -9,25 +9,46 @@ from app import task
 
 ML_MODELS = ["XGBOOST", "LIGHTGBM"]
 
+
+TRADE_TYPES = [("paper", "paper"), ("live", "live"), ("backtest", "backtest")]
+FREQS = [("daily", "daily"), ("minute", "minute")]
+
+
+DATASETS = [
+    ("None", "None"),
+    ("Google Trends, google"),
+    ("Quandl Blochain Data", "quandl"),
+]
+
+
 EXISTING_STRATS = [
-    # display, callback
-    ("Bollinger Bands (BBANDS)", "BBANDS"),
-    ("Stop and Reverse (SAR)", "SAR"),
-    ("Moving Average Convergence/Divergence (MACD)", "MACD"),
-    ("Moving Average Convergence/Divergence Fix (MACDFIX)", "MACDFIX"),
-    ("On Balance Volume (OBV)", "OBV"),
-    ("Relative Strength Index (RSI)", "RSI"),
-    ("Stochastic (STOCH)", "STOCH"),
-    ("XGBOOST (ML)", "XGBOOST"),
-    ("LIGHTGBM (ML)", "LIGHTGBM"),
+    ("BBANDS", "Bollinger Bands (BBANDS)"),
+    ("SAR", "Stop and Reverse (SAR)"),
+    ("MACD", "Moving Average Convergence/Divergence (MACD)"),
+    ("MACDFIX", "Moving Average Convergence/Divergence Fix (MACDFIX)"),
+    ("OBV", "On Balance Volume (OBV)"),
+    ("RSI", "Relative Strength Index (RSI)"),
+    ("STOCH", "Stochastic (STOCH)"),
+    ("XGBOOST", "XGBOOST (ML)"),
+    ("LIGHTGBM", "LIGHTGBM (ML)"),
 ]
 
 EXCHANGES = [
-    ("Binance", "binance"),
-    ("Bittrex", "bittrex"),
-    ("Bitfinex", "bitfinex"),
-    ("Poloniex", "poloniex"),
+    ("binance", "Binance"),
+    ("bittrex", "Bittrex"),
+    ("bitfinex", "Bitfinex"),
+    ("poloniex", "Poloniex"),
 ]
+
+SIGNAL_FUNCS = [
+    ("decreasing", "Decreasing for"),
+    ("increasing", "Increasing for"),
+    ("cross_above", "Crosses Above"),
+    ("cross_below", "Crosses Below"),
+]
+
+
+SIGNAL_TYPES = [("buy", "Buy"), ("sell", "Sell")]
 
 
 # TODO possibly use telegram chat_id
