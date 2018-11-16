@@ -90,30 +90,14 @@ def build_strategy():
     form.asset.choices = []
     form.quote_currency.choices = []
     if form.validate_on_submit():
-
-        current_app.logger.info(form.data)
-
-        trading_dict = form_utils.process_trading_form(form)
-
         live = form.trade_type.data in ["live", "paper"]
         simulate_orders = form.trade_type.data == "paper"
 
-        trading_dict["START"] = datetime.datetime.strftime(
-            form.start.data, "%Y-%m-%d %H:%M"
-        )
-        trading_dict["END"] = datetime.datetime.strftime(
-            form.end.data, "%Y-%m-%d %H:%M"
-        )
-
-        strat_dict = {
-            "name": form.name.data,
-            "trading": trading_dict,
-            "indicators": [{"name": form.strat_template.data}],
-            "live": live,
-            "simulate_orders": simulate_orders,
-        }
-
+        strat_dict = form_utils.build_strat_dict_from_form(form)
+        strat_dict["live"] = live
+        strat_dict["simulate_orders"] = simulate_orders
         session["strat_dict"] = strat_dict
+
         job_id, queue_name = task.queue_strat(
             json.dumps(strat_dict), current_user.id, live, simulate_orders
         )

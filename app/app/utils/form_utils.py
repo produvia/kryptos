@@ -1,3 +1,8 @@
+from flask import current_app
+import datetime
+from app.utils import choices
+
+
 def process_trading_form(form):
     trading_dict = {
         "EXCHANGE": form.exchange.data,
@@ -16,6 +21,30 @@ def process_trading_form(form):
 
     # remove None vals so strat will use defaults
     return {k: v for k, v in trading_dict.items() if v is not None}
+
+
+def build_strat_dict_from_form(form):
+    current_app.logger.info(form.data)
+
+    trading_dict = process_trading_form(form)
+
+    trading_dict["START"] = datetime.datetime.strftime(
+        form.start.data, "%Y-%m-%d %H:%M"
+    )
+    trading_dict["END"] = datetime.datetime.strftime(form.end.data, "%Y-%m-%d %H:%M")
+
+    strat_dict = {"name": form.name.data, "trading": trading_dict}
+
+    strat_tmpl = form.strat_template.data
+    if strat_tmpl in choices.ML_MODELS:
+        strat_dict["models"] = [{"name": strat_tmpl}]
+    else:
+        strat_dict["inidicators"] = [{"name": strat_tmpl}]
+
+    current_app.logger.info("Built reading dict")
+    current_app.logger.info(strat_dict)
+
+    return strat_dict
 
 
 def process_indicator_form(form):

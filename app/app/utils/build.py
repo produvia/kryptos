@@ -6,49 +6,7 @@ import ccxt
 
 from app.models import User
 from app import task
-
-ML_MODELS = ["XGBOOST", "LIGHTGBM"]
-
-
-TRADE_TYPES = [("paper", "paper"), ("live", "live"), ("backtest", "backtest")]
-FREQS = [("daily", "daily"), ("minute", "minute")]
-
-
-DATASETS = [
-    ("None", "None"),
-    ("Google Trends, google"),
-    ("Quandl Blochain Data", "quandl"),
-]
-
-
-EXISTING_STRATS = [
-    ("BBANDS", "Bollinger Bands (BBANDS)"),
-    ("SAR", "Stop and Reverse (SAR)"),
-    ("MACD", "Moving Average Convergence/Divergence (MACD)"),
-    ("MACDFIX", "Moving Average Convergence/Divergence Fix (MACDFIX)"),
-    ("OBV", "On Balance Volume (OBV)"),
-    ("RSI", "Relative Strength Index (RSI)"),
-    ("STOCH", "Stochastic (STOCH)"),
-    ("XGBOOST", "XGBOOST (ML)"),
-    ("LIGHTGBM", "LIGHTGBM (ML)"),
-]
-
-EXCHANGES = [
-    ("binance", "Binance"),
-    ("bittrex", "Bittrex"),
-    ("bitfinex", "Bitfinex"),
-    ("poloniex", "Poloniex"),
-]
-
-SIGNAL_FUNCS = [
-    ("decreasing", "Decreasing for"),
-    ("increasing", "Increasing for"),
-    ("cross_above", "Crosses Above"),
-    ("cross_below", "Crosses Below"),
-]
-
-
-SIGNAL_TYPES = [("buy", "Buy"), ("sell", "Sell")]
+from app.utils import choices
 
 
 # TODO possibly use telegram chat_id
@@ -91,7 +49,7 @@ def build_strat_dict_from_context(context, mode):
     start = datetime.datetime.utcnow()
     end = start + datetime.timedelta(hours=hours)
 
-    if strat in ML_MODELS:
+    if strat in choices.ML_MODELS:
         strat_dict = {"trading": {}, "models": [{"name": strat}]}
     else:
         strat_dict = {"trading": {}, "indicators": [{"name": strat}]}
