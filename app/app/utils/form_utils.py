@@ -3,7 +3,7 @@ def process_trading_form(form):
         "EXCHANGE": form.exchange.data,
         "ASSET": form.asset.data,
         "CAPITAL_BASE": form.capital_base.data,
-        "BASE_CURRENCY": form.base_currency.data,
+        "QUOTE_CURRENCY": form.quote_currency.data,
         "START": form.start.data,
         "END": form.end.data,
         # the following are not provided in the basic form

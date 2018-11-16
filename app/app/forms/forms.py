@@ -84,7 +84,7 @@ class _TradeInfoForm(FlaskForm):
 
     asset = DynamicChoiceField("Asset", id="asset_select", validators=[])
 
-    base_currency = StringField("Base Currency", id="quote_select", validators=[])
+    quote_currency = StringField("Quote Currency", id="quote_select", validators=[])
     capital_base = IntegerField("Capital Base", validators=[DataRequired()])
 
     trade_type = SelectField(

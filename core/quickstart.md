@@ -31,7 +31,7 @@ You will see the following JSON structure output in the console
       "DATA_FREQ": "daily",
       "HISTORY_FREQ": "1d",
       "CAPITAL_BASE": 5000,
-      "BASE_CURRENCY": "usd",
+      "QUOTE_CURRENCY": "usd",
       "START": "2017-10-10",
       "END": "2018-3-28"
    },
@@ -154,7 +154,7 @@ For instance, we can adjust the dates to run the strategy.
    "DATA_FREQ": "daily",
    "HISTORY_FREQ": "1d",
    "CAPITAL_BASE": 5000,
-   "BASE_CURRENCY": "usd",
+   "QUOTE_CURRENCY": "usd",
    "START": "2016-10-10",
    "END": "2018-3-28"
 }

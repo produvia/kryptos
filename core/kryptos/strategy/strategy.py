@@ -1339,7 +1339,7 @@ class Strategy(object):
                 handle_data=self._process_data,
                 analyze=self._analyze,
                 exchange_name=self.trading_info["EXCHANGE"],
-                quote_currency=self.trading_info["BASE_CURRENCY"],
+                quote_currency=self.trading_info["QUOTE_CURRENCY"],
                 start=pd.to_datetime(self.trading_info["START"], utc=True),
                 end=pd.to_datetime(self.trading_info["END"], utc=True),
             )
@@ -1438,7 +1438,7 @@ class Strategy(object):
             exchange_name=self.trading_info["EXCHANGE"],
             live=True,
             algo_namespace=self.id,
-            quote_currency=self.trading_info["BASE_CURRENCY"],
+            quote_currency=self.trading_info["QUOTE_CURRENCY"],
             live_graph=False,
             simulate_orders=simulate_orders,
             stats_output=None,
