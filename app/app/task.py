@@ -201,7 +201,7 @@ def get_indicators_by_group(group: str) -> [(str, str)]:
     return job.result
 
 
-def get_exchange_asset_pairs(exchange: str) -> [(str, str)]:
+def get_exchange_asset_pairs(exchange: str) -> [str]:
     q = get_queue("ta")
     job_id = f"ta-get-exchange-asset-pairs-{exchange}"
     job = q.fetch_job(job_id)

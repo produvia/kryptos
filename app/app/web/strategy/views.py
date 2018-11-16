@@ -22,19 +22,13 @@ from app import task
 blueprint = Blueprint("strategy", __name__, url_prefix="/strategy")
 
 
-@blueprint.route("/_get_exchange_pairs")
-def _get_exchange_asset_pairs():
-    exchange = request.args.get("exchange")
-    assets = task.get_exchange_asset_pairs(exchange)
-    return jsonify(assets)
-
-
 @blueprint.route("/_get_exchange_quote_currencies")
 def _get_exchange_quote_currencies():
     exchange = request.args.get("exchange")
     quote_currencies = task.get_exchange_quote_currencies(exchange) or []
     quote_choices = []
     for q in quote_currencies:
+        # value, display
         quote_choices.append((q, q.upper()))
     return jsonify(quote_choices)
 
@@ -44,17 +38,16 @@ def _get_available_asset_pairs():
     exchange = request.args.get("exchange")
     quote_currency = request.args.get("quote_currency")
     asset_pairs = task.get_exchange_asset_pairs(exchange) or []
-    pairs = []
+    pair_choices = []
 
-    # TODO standardize response from job
     # asset pairs are tuple of same pair (choice)
-    for c, _ in asset_pairs:
-        quote = c.split("_")[1]
+    for p in asset_pairs:
+        quote = p.split("_")[1]
         if quote.lower() == quote_currency.lower():
             # value, display
-            pairs.append((c, c.upper()))
+            pair_choices.append((p, p.upper()))
 
-    return jsonify(pairs)
+    return jsonify(pair_choices)
 
 
 @blueprint.route("/_get_group_indicators/")
@@ -92,8 +85,6 @@ def public_backtest_status(strat_id):
 
 @blueprint.route("/build", methods=["GET", "POST"])
 def build_strategy():
-    task.indicator_group_name_selectors()
-    task.all_indicator_selectors()
 
     form = forms.BasicTradeInfoForm()
     form.asset.choices = []
