@@ -25,34 +25,74 @@ $(document).ready(function() {
     };
 
 	dropdown.quoteCurrency.attr('disabled', 'disabled')
-
+	dropdown.asset.attr('disabled', 'disabled')
 
     // call to update on load
-    requestExchangePairs();
+	requestExchangeQuoteCurrencies();
+	// requestAvailableExchangePairs();
 
 
-    function requestExchangePairs () {
-        var send = {
-            exchange: dropdown.exchange.val()
+
+	function requestExchangeQuoteCurrencies () {
+		var send = {
+			exchange: dropdown.exchange.val()
+		};
+		dropdown.quoteCurrency.attr('disabled', 'disabled');
+		dropdown.quoteCurrency.empty();
+		console.log('Fetching quote currencies for ' + dropdown.exchange.val())
+		var url = "{{ url_for('strategy._get_exchange_quote_currencies') }}"
+		$.getJSON(url, send, function(data) {
+			if (data) {
+				console.log('Received quote currencies')
+				updateQuoteCurrencyList(data);
+				requestAvailableExchangePairs();
+			} else {
+				console.log('No data for quote currencies')
+				setTimeout(function() {
+					requestExchangeQuoteCurrencies();
+				}, 1000);
+			}
+		});
+	}
+
+	function requestAvailableExchangePairs () {
+		 var send = {
+             exchange: dropdown.exchange.val(),
+			 quote_currency: dropdown.quoteCurrency.val()
         };
         dropdown.asset.attr('disabled', 'disabled');
         dropdown.asset.empty();
-        $.getJSON("{{ url_for('strategy._get_exchange_asset_pairs') }}", send, function(data) {
+		let url = "{{ url_for('strategy._get_available_asset_pairs') }}"
+        $.getJSON(url, send, function(data) {
 
             if (data) {
-                updateAssetList(data)
+                updateAssetList(data);
             } else{
                 setTimeout(function(){
 
-                    requestExchangePairs();
+                    requestAvailableExchangePairs();
                 }, 1000);
             }
         });
     }
 
 
+	function updateQuoteCurrencyList (data) {
+
+		data.forEach(function(item) {
+			dropdown.quoteCurrency.append(
+				$('<option>', {
+					value: item[0],
+					text: item[1]
+				})
+			);
+		});
+		dropdown.quoteCurrency.removeAttr('disabled');
+	}
+
     // update asset dropdown
     function updateAssetList (data) {
+
         data.forEach(function(item) {
             dropdown.asset.append(
                 $('<option>', {
@@ -62,25 +102,16 @@ $(document).ready(function() {
             );
         });
         dropdown.asset.removeAttr('disabled');
-		updateQuoteCurrencyString();
     }
 
-	// update quote currency based on the selected asset
-	function updateQuoteCurrencyString () {
-		let pair = dropdown.asset.val()
-		if (pair) {
-			dropdown.quoteCurrency.val(pair.split('_')[1])
-		}
-
-	}
 
     // event listener to group dropdown change
     dropdown.exchange.on('change', function() {
-        requestExchangePairs();
+		requestExchangeQuoteCurrencies();
     });
 
-    dropdown.asset.on('change', function() {
-		updateQuoteCurrencyString()
+    dropdown.quoteCurrency.on('change', function() {
+		requestAvailableExchangePairs();
 
     });
 });

@@ -29,6 +29,34 @@ def _get_exchange_asset_pairs():
     return jsonify(assets)
 
 
+@blueprint.route("/_get_exchange_quote_currencies")
+def _get_exchange_quote_currencies():
+    exchange = request.args.get("exchange")
+    quote_currencies = task.get_exchange_quote_currencies(exchange) or []
+    quote_choices = []
+    for q in quote_currencies:
+        quote_choices.append((q, q.upper()))
+    return jsonify(quote_choices)
+
+
+@blueprint.route("/_get_available_asset_pairs")
+def _get_available_asset_pairs():
+    exchange = request.args.get("exchange")
+    quote_currency = request.args.get("quote_currency")
+    asset_pairs = task.get_exchange_asset_pairs(exchange) or []
+    pairs = []
+
+    # TODO standardize response from job
+    # asset pairs are tuple of same pair (choice)
+    for c, _ in asset_pairs:
+        quote = c.split("_")[1]
+        if quote.lower() == quote_currency.lower():
+            # value, display
+            pairs.append((c, c.upper()))
+
+    return jsonify(pairs)
+
+
 @blueprint.route("/_get_group_indicators/")
 def _get_group_indicators():
     group = request.args.get("group", "01", type=str)
@@ -66,10 +94,10 @@ def public_backtest_status(strat_id):
 def build_strategy():
     task.indicator_group_name_selectors()
     task.all_indicator_selectors()
-    form = forms.BasicTradeInfoForm()
-    form.base_currency.choices = []
-    form.asset.choices = []
 
+    form = forms.BasicTradeInfoForm()
+    form.asset.choices = []
+    form.quote_currency.choices = []
     if form.validate_on_submit():
 
         current_app.logger.info(form.data)
@@ -108,7 +136,7 @@ def build_strategy_advanced():
     task.indicator_group_name_selectors()
     task.all_indicator_selectors()
     form = forms.AdvancedTradeInfoForm()
-    form.base_currency.choices = []
+    # form.base_currency.choices = []
     form.asset.choices = []
     if form.validate_on_submit():
 
