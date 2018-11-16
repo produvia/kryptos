@@ -114,7 +114,7 @@ For example:
      "MINUTE_FREQ": "5",
      "MINUTE_TO_OPERATE": "1",
      "CAPITAL_BASE": 20000,
-     "BASE_CURRENCY": "usd",
+     "QUOTE_CURRENCY": "usd",
      "START": "2018-8-10",
      "END": "2018-8-15",
      "BARS": 2000,

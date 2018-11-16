@@ -1,4 +1,5 @@
 {% extends 'flask_user/_authorized_base.html' %}
+{% from "flask_user/_macros.html" import render_field, render_submit_field %}
 {% from "_macros.html" import render_form %}
 {% block content %}
 
@@ -7,5 +8,117 @@
 <h3 class=text-center>Basic Configuration</h3>
 
 {{ render_form(form) }}
+
+
+{% block extra_js %}
+<script charset="utf-8" type="text/javascript">
+
+$(document).ready(function() {
+
+    var params = $('#param-field-group')
+
+    // jQuery selection for the 2 select boxes
+    var dropdown = {
+        exchange: $('#exchange_select'),
+		asset: $('#asset_select'),
+        quoteCurrency: $('#quote_select')
+    };
+
+	dropdown.quoteCurrency.attr('disabled', 'disabled')
+	dropdown.asset.attr('disabled', 'disabled')
+
+    // call to update on load
+	requestExchangeQuoteCurrencies();
+	// requestAvailableExchangePairs();
+
+
+
+	function requestExchangeQuoteCurrencies () {
+		var send = {
+			exchange: dropdown.exchange.val()
+		};
+		dropdown.quoteCurrency.attr('disabled', 'disabled');
+		dropdown.quoteCurrency.empty();
+		console.log('Fetching quote currencies for ' + dropdown.exchange.val())
+		var url = "{{ url_for('strategy._get_exchange_quote_currencies') }}"
+		$.getJSON(url, send, function(data) {
+			if (data) {
+				console.log('Received quote currencies')
+				updateQuoteCurrencyList(data);
+				requestAvailableExchangePairs();
+			} else {
+				console.log('No data for quote currencies')
+				setTimeout(function() {
+					requestExchangeQuoteCurrencies();
+				}, 1000);
+			}
+		});
+	}
+
+	function requestAvailableExchangePairs () {
+		 var send = {
+             exchange: dropdown.exchange.val(),
+			 quote_currency: dropdown.quoteCurrency.val()
+        };
+        dropdown.asset.attr('disabled', 'disabled');
+        dropdown.asset.empty();
+		let url = "{{ url_for('strategy._get_available_asset_pairs') }}"
+        $.getJSON(url, send, function(data) {
+
+            if (data) {
+                updateAssetList(data);
+            } else{
+                setTimeout(function(){
+
+                    requestAvailableExchangePairs();
+                }, 1000);
+            }
+        });
+    }
+
+
+	function updateQuoteCurrencyList (data) {
+
+		data.forEach(function(item) {
+			dropdown.quoteCurrency.append(
+				$('<option>', {
+					value: item[0],
+					text: item[1]
+				})
+			);
+		});
+		dropdown.quoteCurrency.removeAttr('disabled');
+	}
+
+    // update asset dropdown
+    function updateAssetList (data) {
+
+        data.forEach(function(item) {
+            dropdown.asset.append(
+                $('<option>', {
+                    value: item[0],
+                    text: item[1]
+                })
+            );
+        });
+        dropdown.asset.removeAttr('disabled');
+    }
+
+
+    // event listener to group dropdown change
+    dropdown.exchange.on('change', function() {
+		requestExchangeQuoteCurrencies();
+    });
+
+    dropdown.quoteCurrency.on('change', function() {
+		requestAvailableExchangePairs();
+
+    });
+});
+
+</script>
+{% endblock %}
+
+
 
 {% endblock %}

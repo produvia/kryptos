@@ -6,7 +6,8 @@ from flask import Blueprint, current_app
 from flask_assistant import Assistant, tell, event, context_manager
 
 from app.bot.response import ask, inline_keyboard
-from app.bot import utils
+from app.utils import build
+from app import task
 
 blueprint = Blueprint("bot", __name__, url_prefix="/bot")
 assist = Assistant(blueprint=blueprint)
@@ -17,21 +18,20 @@ logging.getLogger("flask_assistant").setLevel(logging.INFO)
 
 @assist.action("Default Welcome Intent")
 def welcome_message():
-    user_name = utils.get_first_name()
+    user_name = build.get_first_name()
     msg = f"Hello {user_name}!"
     msg += """I’m Kryptos AI, your virtual investment assistant\
     that manages your cryptocurrency portfolio and automate\
     your cryptocurrency trading"""
 
-    if utils.get_user() is None:
+    if build.get_user() is None:
         current_app.logger.info("Prompting user to login")
         msg += """\n\n \
         Before we can get started,you'll need to \
         create a free Kryptos account and authentiate with Telegram
         """
         resp = inline_keyboard(msg)
-        url = os.path.join(
-            current_app.config["FRONTEND_URL"], "account/telegram")
+        url = os.path.join(current_app.config["FRONTEND_URL"], "account/telegram")
         resp.add_button("Create an account", url=url)
         return resp
 
@@ -50,7 +50,7 @@ def unlink_telegram_confirm():
 
 @assist.action("account-unlink-yes")
 def unlink_telegram_account():
-    user = utils.get_user()
+    user = build.get_user()
     user.unlink_telegram()
     speech = f"""\
     Your account is now unlinked
@@ -61,13 +61,13 @@ def unlink_telegram_account():
 
 @assist.action("activity-menu")
 def show_menu():
-    user_name = utils.get_first_name()
+    user_name = build.get_first_name()
     resp = inline_keyboard(f"Hi {user_name}. Let's get started")
-    resp.add_button("Launch New Strategy", "new_strat")
-    resp.add_button("Run performance report", "performance_report")
-    resp.add_button("Update Goals", "update_goals")
-    resp.add_button("Upgrade Skills", "upgrade_skills")
-    resp.add_button("Adjust Kryptos", "adjust_keytpos")
+    resp.add_button("new_strat", "Launch New Strategy")
+    resp.add_button("performance_report", "Run performance report")
+    resp.add_button("update_goals", "Update Goals")
+    resp.add_button("upgrade_skills", "Upgrade Skills")
+    resp.add_button("adjust_keytpos", "Adjust Kryptos")
 
     return resp
 
@@ -95,7 +95,7 @@ def show_menu():
 def display_available_strats():
     context_manager.add("strat-config-data")
     resp = inline_keyboard("Which strategy do you wish to try?")
-    for i in utils.EXISTING_STRATS:
+    for i in build.EXISTING_STRATS:
         resp.add_button(*i)
     return resp
 
@@ -110,14 +110,16 @@ def select_strategy(existing_strategy):
 @assist.action("strat-config", events=["strat-config-start"])
 def prompt_exchange(existing_strategy):
     current_app.logger.debug(f"Building strategy for {existing_strategy}")
-    context_manager.set("strat-config-data",
-                        "existing_strategy", existing_strategy)
+    context_manager.set("strat-config-data", "existing_strategy", existing_strategy)
     speech = "Which exchange would you like to trade on?"
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("Binance", "binance")
-    resp.add_button("Bittrex", "bittrex")
-    resp.add_button("Bitfinex", "bitfinex")
-    resp.add_button("Poloniex", "poloniex")
+    for e in build.EXCHANGES:
+        resp.add_button(*e)
+        current_app.logger.debug("Engqueuing exchange option jobs")
+        # enqueue job to be ready when needed
+        task.get_exchange_asset_pairs(e[1])
+        task.get_exchange_quote_currencies(e[1])
+
     return resp
 
 
@@ -134,10 +136,10 @@ def prompt_quote_currency(exchange):
     This means you must hold the currency on {exchange} for live trading.
     """
     resp = inline_keyboard(dedent(speech))
-    quotes = utils.get_exchange_quote_currencies(exchange)
+    quotes = task.get_exchange_quote_currencies(exchange)
 
     for q in quotes:
-        resp.add_button(q, q.lower())
+        resp.add_button(q.lower(), q)
     return resp
 
 
@@ -147,6 +149,11 @@ def prompt_capital_base(quote_currency):
     current_app.logger.debug(f"Setting quote currency as {quote_currency}")
     context_manager.set("strat-config-data", "quote_currency", quote_currency)
     speech = f"How much {quote_currency.upper()} would you like to allocate as the capital base?"
+
+    exchange = context_manager.get("strat-config-data").get("exchange")
+    # enqueue base_currency options
+    current_app.logger.debug("enqueing for base currencies")
+    task.get_available_base_currencies(exchange, quote_currency)
     return ask(speech)
 
 
@@ -160,10 +167,9 @@ def prompt_trade_currency(capital_base):
     resp = inline_keyboard(speech)
 
     exchange = context_manager.get("strat-config-data").get("exchange")
-    quote_currency = context_manager.get(
-        "strat-config-data").get("quote_currency")
+    quote_currency = context_manager.get("strat-config-data").get("quote_currency")
 
-    options = utils.get_available_base_currencies(exchange, quote_currency)
+    options = task.get_available_base_currencies(exchange, quote_currency)
 
     for o in options:
         resp.add_button(o, o)
@@ -217,7 +223,7 @@ def begin_mode_prompt():
 @assist.action("strat-mode", events=["strat-mode-start"])
 def prompt_for_mode():
     context = context_manager.get("strat-config-data")
-    # backtest_id = utils.launch_backtest(context)
+    # backtest_id = build.launch_backtest(context)
 
     # current_app.logger.info(f"Queues Strat {backtest_id}")
     # backtest_url = os.path.join(
@@ -228,9 +234,9 @@ def prompt_for_mode():
 
     resp = inline_keyboard(dedent(speech))
     # resp.add_button("View Past Performance", url=backtest_url)
-    resp.add_button("Launch in Paper Mode", "paper")
-    resp.add_button("Lauch in Live mode", "live")
-    resp.add_button("Nevermind", "no")
+    resp.add_button("paper", "Launch in Paper Mode")
+    resp.add_button("live", "Lauch in Live mode")
+    resp.add_button("no", "Nevermind")
 
     return resp
 
@@ -239,10 +245,9 @@ def prompt_for_mode():
 @assist.action("strat-mode-paper")
 def launch_strategy_paper(existing_strategy):
     context = context_manager.get("strat-config-data")
-    job_id = utils.launch_paper(context)
+    job_id = build.launch_paper(context)
 
-    url = os.path.join(
-        current_app.config["FRONTEND_URL"], "strategy", job_id)
+    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy", job_id)
 
     hours = context.get("hours")
     speech = """\
@@ -256,24 +261,27 @@ def launch_strategy_paper(existing_strategy):
     )
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("View your Strategy", url=url)
+    resp.add_link(url, "View your Strategy")
     return resp
 
 
 @assist.action("strat-mode-live")
-def launch_strategy_paper(existing_strategy):
+def launch_strategy_live(existing_strategy):
     context = context_manager.get("strat-config-data")
-    job_id = utils.launch_live(context)
+    job_id = build.launch_live(context)
 
-    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy/strategy/", job_id)
+    url = os.path.join(current_app.config["FRONTEND_URL"], "strategy", job_id)
 
     hours = context.get("hours")
     speech = f"""\
     Great! The strategy is now live and will run for the next {hours} hours.
 
-    You can view your strategy's progress by clicking the link below and I will keep you updated on how it performs.
-    """
+    You can view your strategy's progress by clicking the link \
+    below and I will keep you updated on how it performs.
+    """.format(
+        hours
+    )
 
     resp = inline_keyboard(dedent(speech))
-    resp.add_button("View your Strategy", url=url)
+    resp.add_button(url, "View your Strategy")
     return resp
