@@ -23,7 +23,7 @@ def run_strat():
     data = request.json
     strat_dict = data.get("strat_json")
     queue_name = data.get("queue_name")
-    user_id = data.get("user_id")
+    user_uuid = data.get("user_uuid")
 
     live, simulate_orders = False, True
     if queue_name in ["paper", "live"]:
@@ -34,7 +34,7 @@ def run_strat():
 
     current_app.logger.info(f"Enqueuing strat to {queue_name} queue")
     job_id, _ = task.queue_strat(
-        strat_dict, user_id=user_id, live=live, simulate_orders=simulate_orders
+        strat_dict, user_uuid=user_uuid, live=live, simulate_orders=simulate_orders
     )
     current_app.logger.info(f"Strat running in job {job_id}")
     return jsonify(strat_id=job_id)

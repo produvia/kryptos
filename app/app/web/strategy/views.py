@@ -99,7 +99,7 @@ def build_strategy():
         session["strat_dict"] = strat_dict
 
         job_id, queue_name = task.queue_strat(
-            json.dumps(strat_dict), current_user.id, live, simulate_orders
+            json.dumps(strat_dict), current_user.uuid, live, simulate_orders
         )
         return redirect(url_for("strategy.strategy_status", strat_id=job_id))
 
@@ -189,7 +189,7 @@ def build_signals():
     active_indicators = session["strat_dict"].get("indicators")
     if active_indicators is None:
         job_id, queue_name = task.queue_strat(
-            json.dumps(strat_dict), current_user.id, live, simulate_orders
+            json.dumps(strat_dict), current_user.uuid, live, simulate_orders
         )
         return redirect(url_for("account.strategy_status", strat_id=job_id))
 
@@ -225,7 +225,7 @@ def build_signals():
         live, simulate_orders = strat_dict["live"], strat_dict["simulate_orders"]
 
         job_id, queue_name = task.queue_strat(
-            json.dumps(strat_dict), current_user.id, live, simulate_orders
+            json.dumps(strat_dict), current_user.uuid, live, simulate_orders
         )
         return redirect(url_for("strategy.strategy_status", strat_id=job_id))
 

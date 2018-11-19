@@ -39,7 +39,7 @@ class GoogleCloudHandler(logbook.Handler, StringFormatterHandlerMixin):
                     "strat_id": record.extra["strat_id"],
                     "mode": record.extra["mode"],
                     "message": self.format(record),
-                    "user_id": record.extra["user_id"],
+                    "user_uuid": record.extra["user_uuid"],
                 },
                 severity=record.level_name,
                 labels={"channel": record.channel},
@@ -64,7 +64,9 @@ def setup_logging():
     handlers = [logbook.NullHandler()]
 
     if CLOUD_LOGGING:
-        cloud_handler = GoogleCloudHandler(level="DEBUG", bubble=True, format_string=format_string)
+        cloud_handler = GoogleCloudHandler(
+            level="DEBUG", bubble=True, format_string=format_string
+        )
         handlers.append(cloud_handler)
 
     file_handler = logbook.RotatingFileHandler(
@@ -74,7 +76,9 @@ def setup_logging():
     stream_handler = logbook.StreamHandler(sys.stdout, level="INFO", bubble=True)
     stream_handler.format_string = format_string
 
-    error_file_handler = logbook.RotatingFileHandler(ERROR_LOG, level="ERROR", bubble=True)
+    error_file_handler = logbook.RotatingFileHandler(
+        ERROR_LOG, level="ERROR", bubble=True
+    )
     error_file_handler.format_string = """
 ----------------------------------------------------------------------------------
 {record.time:%H:%M:%S} KRYPTOS:{record.channel}:{record.level_name}:

@@ -54,7 +54,7 @@ class StratLogger(logbook.Logger):
         record.extra["trade_date"] = self.strat.current_date
         record.extra["strat_id"] = self.strat.id
         record.extra["mode"] = self.strat.mode
-        record.extra["user_id"] = self.strat.user_id
+        record.extra["user_uuid"] = self.strat.user_uuid
 
         if self.strat.in_job:
             job = get_current_job()
@@ -1299,7 +1299,7 @@ class Strategy(object):
         self.notify(dedent(msg))
 
     def run(
-        self, live=False, simulate_orders=True, user_id=None, viz=True, as_job=False
+        self, live=False, simulate_orders=True, user_uuid=None, viz=True, as_job=False
     ):
         """Executes the trade strategy as a catalyst algorithm
 
@@ -1317,7 +1317,7 @@ class Strategy(object):
 
         self._live = live or self.trading_info.get("LIVE", False)
         self._simulate_orders = simulate_orders
-        self.user_id = user_id
+        self.user_uuid = user_uuid
 
         if self.is_backtest:
             return self.run_backtest()
@@ -1326,7 +1326,7 @@ class Strategy(object):
             return self.run_paper()
 
         elif self.is_live:
-            return self.run_live(user_id)
+            return self.run_live(user_uuid)
 
     def run_backtest(self):
         self.log.notice("Running in backtest mode")
@@ -1358,18 +1358,18 @@ class Strategy(object):
         self._simulate_orders = True
         self._run_real_time(simulate_orders=True)
 
-    def run_live(self, user_id):
+    def run_live(self, user_uuid):
         from google.api_core.exceptions import NotFound
 
         self._live = True
         self._simulate_orders = False
         self.log.notice("Running in live mode")
-        if user_id is None:
-            raise ValueError("user_id is required for auth when running in live mode")
-        self.user_id = user_id
+        if user_uuid is None:
+            raise ValueError("user_uuid is required for auth when running in live mode")
+        self.user_uuid = user_uuid
 
         try:
-            auth_alias = auth.get_user_auth_alias(self.user_id, self.exchange.lower())
+            auth_alias = auth.get_user_auth_alias(self.user_uuid, self.exchange.lower())
         except NotFound:
             self.log.error("Missing user exchange auth")
             self.notify(
@@ -1383,7 +1383,7 @@ class Strategy(object):
 
         try:
             self._run_real_time(
-                simulate_orders=False, user_id=user_id, auth_aliases=auth_alias
+                simulate_orders=False, user_uuid=user_uuid, auth_aliases=auth_alias
             )
         except exchange_errors.ExchangeAuthEmpty:
             self.log.critical("Failed to run strategy due to missing exchange auth")
@@ -1400,9 +1400,9 @@ class Strategy(object):
             return pd.DataFrame()
 
         finally:
-            auth.delete_alias_file(self.user_id, self.exchange)
+            auth.delete_alias_file(self.user_uuid, self.exchange)
 
-    def _run_real_time(self, simulate_orders=True, user_id=None, auth_aliases=None):
+    def _run_real_time(self, simulate_orders=True, user_uuid=None, auth_aliases=None):
         self.log.notice(
             "Running live trading, simulating orders: {}".format(simulate_orders)
         )

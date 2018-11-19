@@ -18,7 +18,7 @@ log.warn(f"Using Redis connection {REDIS_HOST}:{REDIS_PORT}")
 def run_strat(
     strat_json,
     strat_id,
-    user_id=None,
+    user_uuid=None,
     telegram_id=None,
     live=False,
     simulate_orders=True,
@@ -33,7 +33,7 @@ def run_strat(
         viz=False,
         live=live,
         simulate_orders=simulate_orders,
-        user_id=user_id,
+        user_uuid=user_uuid,
         as_job=True,
     )
     result_df = strat.quant_results

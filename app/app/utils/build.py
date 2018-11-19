@@ -78,7 +78,7 @@ def launch_backtest(config_context):
     strat_dict["trading"]["END"] = datetime.datetime.strftime(back_end, "%Y-%m-%d")
 
     backtest_id, _ = task.queue_strat(
-        json.dumps(strat_dict), user_id=None, live=False, simulate_orders=True
+        json.dumps(strat_dict), user_uuid=None, live=False, simulate_orders=True
     )
     return backtest_id
 
@@ -87,7 +87,7 @@ def launch_paper(config_context):
     user = get_user()
     strat_dict = build_strat_dict_from_context(config_context, "paper")
     job_id, _ = task.queue_strat(
-        json.dumps(strat_dict), user.id, live=True, simulate_orders=True
+        json.dumps(strat_dict), user.uuid, live=True, simulate_orders=True
     )
 
     return job_id
@@ -99,9 +99,9 @@ def launch_live(config_context):
     cap_base = strat_dict["trading"]["CAPITAL_BASE"]
     quote_curr = strat_dict["trading"]["QUOTE_CURRENCY"]
     current_app.logger.info(
-        f"Queuing live strat for user {user.id}: {cap_base} {quote_curr}"
+        f"Queuing live strat for user {user.uuid}: {cap_base} {quote_curr}"
     )
     job_id, _ = task.queue_strat(
-        json.dumps(strat_dict), user.id, live=True, simulate_orders=False
+        json.dumps(strat_dict), user.uuid, live=True, simulate_orders=False
     )
     return job_id

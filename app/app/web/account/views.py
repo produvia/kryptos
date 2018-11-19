@@ -109,7 +109,6 @@ def remove_exchange_auth():
             f"Removing new auth key for {current_user} {exchange_name}"
         )
 
-        # destroy_user_exchange_key(current_user.id, exchange_name)
         delete_user_auth(current_user.uuid, exchange_name)
 
         auth_ref = UserExchangeAuth.query.filter_by(

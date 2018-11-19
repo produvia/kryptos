@@ -49,7 +49,7 @@ class User(db.Model, UserMixin):
 class UserExchangeAuth(db.Model):
     id = db.Column(db.Integer, nullable=False, unique=True, primary_key=True)
     exchange = db.Column(db.String(), nullable=False, unique=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user_uuid = db.Column(db.String(), db.ForeignKey("users.uuid"))
 
 
 class StrategyModel(db.Model):
@@ -68,10 +68,10 @@ class StrategyModel(db.Model):
 
     result_json = db.Column(db.JSON(), nullable=True, unique=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user_uuid = db.Column(db.String(), db.ForeignKey("users.uuid"))
 
     @classmethod
-    def from_json(cls, strat_json, user_id=None):
+    def from_json(cls, strat_json, user_uuid=None):
         d = json.loads(strat_json)
         instance = cls()
 
@@ -82,8 +82,8 @@ class StrategyModel(db.Model):
         instance.indicators_config = d.get("indicators")
         instance.signals_config = d.get("signals")
 
-        if user_id is not None:
-            instance.user_id = user_id
+        if user_uuid is not None:
+            instance.user_uuid = user_uuid
 
         return instance
 

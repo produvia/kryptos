@@ -22,14 +22,14 @@ def get_queue(queue_name):
 
 
 def queue_strat(
-    strat_json, user_id=None, live=False, simulate_orders=True, depends_on=None
+    strat_json, user_uuid=None, live=False, simulate_orders=True, depends_on=None
 ):
-    current_app.logger.info(f"Queueing new strat with user_id {user_id}")
-    strat_model = StrategyModel.from_json(strat_json, user_id=user_id)
+    current_app.logger.info(f"Queueing new strat with user_uuid {user_uuid}")
+    strat_model = StrategyModel.from_json(strat_json, user_uuid=user_uuid)
 
     telegram_id = None
-    if user_id is not None:
-        user = User.query.get(user_id)
+    if user_uuid is not None:
+        user = User.query.filter_by(uuid=user_uuid).first()
         telegram_id = user.telegram_id
 
     if live and simulate_orders:
@@ -49,18 +49,20 @@ def queue_strat(
             "strat_id": strat_model.uuid,
             "telegram_id": telegram_id,  # allows worker to queue notfication w/o db
             "live": live,
-            "user_id": user_id,
+            "user_uuid": user_uuid,
             "simulate_orders": simulate_orders,
         },
         timeout=86400,
         depends_on=depends_on,
     )
 
-    if user_id is None:
+    if user_uuid is None:
         current_app.logger.warn("Not Saving Strategy to DB because no User specified")
         return job.id, q.name
 
-    current_app.logger.info(f"Creating Strategy {strat_model.name} with user {user_id}")
+    current_app.logger.info(
+        f"Creating Strategy {strat_model.name} with user {user_uuid}"
+    )
     db.session.add(strat_model)
     db.session.commit()
 
