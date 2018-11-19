@@ -79,10 +79,10 @@ def register_extensions(app):
     UserManager(app, db, models.User)
 
     # apply any/all pending migrations.
-    with app.app_context():
-        from flask_migrate import upgrade as _upgrade
+    # with app.app_context():
+    #     from flask_migrate import upgrade as _upgrade
 
-        _upgrade()
+    #     _upgrade()
 
     return None
 
