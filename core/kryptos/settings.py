@@ -13,7 +13,7 @@ def get_from_datastore(config_key, env):
     return entity[config_key]
 
 
-CONFIG_ENV = os.getenv("CONFIG_ENV", 'production')
+CONFIG_ENV = os.getenv("CONFIG_ENV", "production")
 PROJECT_ID = os.getenv("PROJECT_ID", "kryptos-205115")
 PLATFORM_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.dirname(PLATFORM_DIR)
@@ -25,15 +25,17 @@ REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
 SENTRY_DSN = os.getenv("SENTRY_DSN", None)
 
-CLOUD_LOGGING = os.getenv('CLOUD_LOGGING', False)
+CLOUD_LOGGING = os.getenv("CLOUD_LOGGING", False)
 
 REMOTE_BASE_URL = "https://kryptos-205115.appspot.com"
 LOCAL_BASE_URL = "http://web:8080"
 
-if CONFIG_ENV == 'dev':
+if CONFIG_ENV == "dev":
     WEB_URL = LOCAL_BASE_URL
+    EXCHANGE_AUTH_KEYRING = "exchange_auth_dev"
 else:
     WEB_URL = REMOTE_BASE_URL
+    EXCHANGE_AUTH_KEYRING = "exchange_auth_prod"
 
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")

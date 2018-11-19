@@ -5,7 +5,7 @@ from pathlib import Path
 
 import logbook
 
-from kryptos.settings import PROJECT_ID
+from kryptos.settings import PROJECT_ID, EXCHANGE_AUTH_KEYRING
 from kryptos.utils import storage_client
 
 
@@ -19,14 +19,18 @@ log = logbook.Logger("ExchangeAuth")
 
 def get_auth_alias_path(user_id: str, exchange_name: str) -> str:
     home_dir = str(Path.home())
-    exchange_dir = os.path.join(home_dir, ".catalyst/data/exchanges/", exchange_name.lower())
+    exchange_dir = os.path.join(
+        home_dir, ".catalyst/data/exchanges/", exchange_name.lower()
+    )
     os.makedirs(exchange_dir, exist_ok=True)
     user_file = f"auth{user_id}.json"
     file_name = os.path.join(exchange_dir, user_file)
     return file_name
 
 
-def decrypt_auth_key(user_id: int, exchange_name: str, ciphertext: bytes) -> Dict[str, str]:
+def decrypt_auth_key(
+    user_id: int, exchange_name: str, ciphertext: bytes
+) -> Dict[str, str]:
     """Decrypts auth data using google cloud KMS
 
     Args:
@@ -39,7 +43,7 @@ def decrypt_auth_key(user_id: int, exchange_name: str, ciphertext: bytes) -> Dic
     """
     log.debug("decrypting exchange auth")
     key_path = key_client.crypto_key_path_path(
-        PROJECT_ID, "global", "exchange_auth", f"{exchange_name}_{user_id}_key"
+        PROJECT_ID, "global", EXCHANGE_AUTH_KEYRING, f"{exchange_name}_{user_id}_key"
     )
 
     response = key_client.decrypt(key_path, ciphertext)
@@ -66,7 +70,9 @@ def get_encrypted_auth(user_id: int, exchange_name: str) -> bytes:
     return encrypted_text
 
 
-def save_to_catalyst(user_id: int, exchange_name: str, auth_dict: Dict[str, str]) -> None:
+def save_to_catalyst(
+    user_id: int, exchange_name: str, auth_dict: Dict[str, str]
+) -> None:
     """Saves decrypted auth data to catalyst dir"""
     file_name = get_auth_alias_path(user_id, exchange_name)
 
@@ -101,5 +107,3 @@ def delete_alias_file(user_id: int, exchange_name: str) -> None:
     log.debug(f"Deleting user {user_id}'s {exchange_name} auth alias file")
     file_name = get_auth_alias_path(user_id, exchange_name)
     os.remove(file_name)
-
-
