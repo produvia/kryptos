@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
     # We can simply create auth files with the user ID and pass the file to the strategy
 
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(), unique=True, nullable=False, default=shortuuid.uuid())
     active = db.Column("is_active", db.Boolean(), nullable=False, server_default="1")
 
     # User Authentication fields
@@ -28,7 +29,9 @@ class User(db.Model, UserMixin):
     telegram_auth_date = db.Column(db.Integer, nullable=True, unique=False)
 
     strategies = db.relationship("StrategyModel", backref="user", lazy=True)
-    authenticated_exchanges = db.relationship("UserExchangeAuth", backref="user", lazy=True)
+    authenticated_exchanges = db.relationship(
+        "UserExchangeAuth", backref="user", lazy=True
+    )
 
     # User information
     # first_name = db.Column(db.String(100), nullable=False, server_default='')
