@@ -98,8 +98,6 @@ def user_strategies():
 
 @blueprint.route("/exchanges/remove", methods=["POST"])
 def remove_exchange_auth():
-    new_form = forms.UserExchangeKeysForm()
-
     remove_form = forms.UserExchangeKeyRemoveForm()
     remove_form.exchange_name.choices = [
         (e.exchange, e.exchange) for e in current_user.authenticated_exchanges
@@ -112,7 +110,7 @@ def remove_exchange_auth():
         )
 
         # destroy_user_exchange_key(current_user.id, exchange_name)
-        delete_user_auth(current_user.id, exchange_name)
+        delete_user_auth(current_user.uuid, exchange_name)
 
         auth_ref = UserExchangeAuth.query.filter_by(
             user=current_user, exchange=exchange_name
@@ -157,7 +155,7 @@ def manage_exchanges():
             )
             return redirect(url_for("account.manage_exchanges"))
 
-        blob_name, auth_bucket = upload_user_auth(exchange_dict, current_user.id)
+        blob_name, auth_bucket = upload_user_auth(exchange_dict, current_user.uuid)
         user = current_user
         exchange_ref = UserExchangeAuth(exchange=exchange_name, user=user)
 

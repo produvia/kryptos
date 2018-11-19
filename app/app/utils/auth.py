@@ -21,20 +21,20 @@ def get_keyring_path():
     )
 
 
-def get_key_path(user_id: int, exchange_name: str) -> str:
+def get_key_path(user_uuid: str, exchange_name: str) -> str:
     return key_client.crypto_key_path_path(
         current_app.config["PROJECT_ID"],
         "global",
         current_app.config["EXCHANGE_AUTH_KEYRING"],
-        f"{exchange_name}_{user_id}_key",
+        f"{exchange_name}_{user_uuid}_key",
     )
 
 
-def create_user_exchange_key(user_id: int, exchange_name: str) -> CryptoKey:
+def create_user_exchange_key(user_uuid: str, exchange_name: str) -> CryptoKey:
     current_app.logger.info("Creating new crypto key for user {} {} auth")
     keyring_path = get_keyring_path()
 
-    crypto_key_id = f"{exchange_name}_{user_id}_key"
+    crypto_key_id = f"{exchange_name}_{user_uuid}_key"
     purpose = enums.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
     crypto_key = {"purpose": purpose}
     key = key_client.create_crypto_key(keyring_path, crypto_key_id, crypto_key)
@@ -44,16 +44,16 @@ def create_user_exchange_key(user_id: int, exchange_name: str) -> CryptoKey:
     return key
 
 
-def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
+def destroy_user_exchange_key(user_uuid: str, exchange_name: str) -> None:
     current_app.logger.info(
-        f"Deleting crypto key for user {user_id} {exchange_name} auth"
+        f"Deleting crypto key for user {user_uuid} {exchange_name} auth"
     )
-    key_path = get_key_path(user_id, exchange_name)
+    key_path = get_key_path(user_uuid, exchange_name)
     try:
         key = key_client.get_crypto_key(key_path)
     except NotFound:
         current_app.logger.warn(
-            f"Attempted to destory user {user_id} {exchange_name} key that does not exist"
+            f"Attempted to destory user {user_uuid} {exchange_name} key that does not exist"
         )
         return
 
@@ -63,31 +63,31 @@ def destroy_user_exchange_key(user_id: int, exchange_name: str) -> None:
         current_app.logger.info(f"Scheduled key version destroy")
     except FailedPrecondition:
         current_app.logger.info(
-            f"{user_id} {exchange_name} already scheduled for destroy"
+            f"{user_uuid} {exchange_name} already scheduled for destroy"
         )
 
 
-def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
+def encrypt_user_auth(exchange_dict: Dict[str, str], user_uuid: str) -> bytes:
     exchange_name = exchange_dict["name"]
     current_app.logger.debug(
-        f"Encrypting User {user_id} exchange auth for {exchange_name}"
+        f"Encrypting User {user_uuid} exchange auth for {exchange_name}"
     )
 
-    key_path = get_key_path(user_id, exchange_name)
+    key_path = get_key_path(user_uuid, exchange_name)
 
     plaintext = json.dumps(exchange_dict).encode()
 
     try:
         key = key_client.get_crypto_key(key_path)
     except NotFound:
-        key = create_user_exchange_key(user_id, exchange_name)
+        key = create_user_exchange_key(user_uuid, exchange_name)
 
     current_app.logger.debug(f"Current kms key: {key.name}")
 
     key_version = key.primary
 
     if key_version.state != enums.CryptoKeyVersion.CryptoKeyVersionState.ENABLED:
-        destroy_user_exchange_key(user_id, exchange_name)
+        destroy_user_exchange_key(user_uuid, exchange_name)
 
         current_app.logger.debug("Current key version : {}".format(key_version.state))
         current_app.logger.info("Creating new version")
@@ -101,11 +101,13 @@ def encrypt_user_auth(exchange_dict: Dict[str, str], user_id: int) -> bytes:
 
 
 def upload_encrypted_auth(
-    encrypted_text: bytes, user_id: int, exchange: str
+    encrypted_text: bytes, user_uuid: str, exchange: str
 ) -> Tuple[str, str]:
-    current_app.logger.debug(f"Uploading encrypted {exchange} auth for user {user_id}")
+    current_app.logger.debug(
+        f"Uploading encrypted {exchange} auth for user {user_uuid}"
+    )
 
-    blob_name = f"auth_{exchange}_{user_id}_json"
+    blob_name = f"auth_{exchange}_{user_uuid}_json"
     auth_bucket = storage_client.get_bucket("catalyst_auth")
     blob = auth_bucket.blob(blob_name)
     blob.upload_from_string(encrypted_text)
@@ -113,25 +115,27 @@ def upload_encrypted_auth(
     return blob_name, auth_bucket.name
 
 
-def delete_auth_from_storage(user_id: str, exchange_name: str) -> None:
-    blob_name = f"auth_{exchange_name}_{user_id}_json"
+def delete_auth_from_storage(user_uuid: str, exchange_name: str) -> None:
+    blob_name = f"auth_{exchange_name}_{user_uuid}_json"
     auth_bucket = storage_client.get_bucket("catalyst_auth")
     blob = auth_bucket.blob(blob_name)
     try:
         blob.delete()
-        current_app.logger.info(f"Deleted user {user_id} {exchange_name} storage blob")
+        current_app.logger.info(
+            f"Deleted user {user_uuid} {exchange_name} storage blob"
+        )
     except NotFound:
         current_app.logger.warning("auth blob_name not found, skipping delete")
 
 
-def upload_user_auth(exchange_dict: Dict[str, str], user_id: int) -> Tuple[str, str]:
-    encrypted = encrypt_user_auth(exchange_dict, user_id)
-    return upload_encrypted_auth(encrypted, user_id, exchange_dict["name"])
+def upload_user_auth(exchange_dict: Dict[str, str], user_uuid: str) -> Tuple[str, str]:
+    encrypted = encrypt_user_auth(exchange_dict, user_uuid)
+    return upload_encrypted_auth(encrypted, user_uuid, exchange_dict["name"])
 
 
-def delete_user_auth(user_id: int, exchange_name: str):
-    destroy_user_exchange_key(user_id, exchange_name)
-    delete_auth_from_storage(user_id, exchange_name)
+def delete_user_auth(user_uuid: str, exchange_name: str):
+    destroy_user_exchange_key(user_uuid, exchange_name)
+    delete_auth_from_storage(user_uuid, exchange_name)
     current_app.logger.info(
-        f"Successfully removed user {user_id} {exchange_name} auth from kryptos"
+        f"Successfully removed user {user_uuid} {exchange_name} auth from kryptos"
     )
