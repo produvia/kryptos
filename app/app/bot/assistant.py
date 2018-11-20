@@ -6,7 +6,7 @@ from flask import Blueprint, current_app
 from flask_assistant import Assistant, tell, event, context_manager
 
 from app.bot.response import ask, inline_keyboard
-from app.utils import build
+from app.utils import build, choices
 from app import task
 
 blueprint = Blueprint("bot", __name__, url_prefix="/bot")
@@ -95,7 +95,7 @@ def show_menu():
 def display_available_strats():
     context_manager.add("strat-config-data")
     resp = inline_keyboard("Which strategy do you wish to try?")
-    for i in build.EXISTING_STRATS:
+    for i in choices.EXISTING_STRATS:
         resp.add_button(*i)
     return resp
 
@@ -113,9 +113,9 @@ def prompt_exchange(existing_strategy):
     context_manager.set("strat-config-data", "existing_strategy", existing_strategy)
     speech = "Which exchange would you like to trade on?"
     resp = inline_keyboard(dedent(speech))
-    for e in build.EXCHANGES:
+    for e in choices.EXCHANGES:
         resp.add_button(*e)
-        current_app.logger.debug("Engqueuing exchange option jobs")
+        current_app.logger.debug(f"Enqueing {e[1]} exchange option jobs")
         # enqueue job to be ready when needed
         task.get_exchange_asset_pairs(e[1])
         task.get_exchange_quote_currencies(e[1])
