@@ -33,6 +33,10 @@ class User(db.Model, UserMixin):
         "UserExchangeAuth", backref="user", lazy=True
     )
 
+    def __init__(self, *args, **kw):
+        if "uuid" not in kw:
+            self.uuid = shortuuid.uuid()
+
     # User information
     # first_name = db.Column(db.String(100), nullable=False, server_default='')
     # last_name = db.Column(db.String(100), nullable=False, server_default='')
