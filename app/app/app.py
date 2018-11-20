@@ -13,6 +13,12 @@ from app.web import account, strategy, public
 from app.extensions import cors, db, migrate, sentry
 from app.settings import DockerDevConfig, ProdConfig
 
+import google.cloud.logging
+from google.cloud.logging.handlers import CloudLoggingHandler
+
+cloud_client = google.cloud.logging.Client()
+handler = CloudLoggingHandler(cloud_client, name="FLASK")
+
 
 logging.getLogger("flask_assistant").setLevel(logging.INFO)
 
@@ -52,6 +58,7 @@ def create_app(config_object=None):
         config_object = get_config()
 
     app = Flask(__name__.split(".")[0])
+    setup_gcloud_logging(app)
     app.config.from_object(rq_dashboard.default_settings)
     app.config.from_object(config_object)
     app.logger.warn("Using {}".format(config_object))
@@ -60,6 +67,16 @@ def create_app(config_object=None):
     app.logger.warn("USING DB {}".format(app.config["SQLALCHEMY_DATABASE_URI"]))
 
     return app
+
+
+def setup_gcloud_logging(app):
+    if app.config["DEBUG"]:
+        app.logger.debug("Skipping gcloud logging for dev")
+        return
+
+    handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(handler)
+    app.logger.debug("initialized gcloud logger")
 
 
 def register_extensions(app):

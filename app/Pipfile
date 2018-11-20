@@ -24,6 +24,7 @@ google-cloud-storage = "*"
 google-cloud-kms = "*"
 ccxt = "*"
 numpy = "*"
+google-cloud-logging = "*"
 
 [dev-packages]
 black = "==18.4a4"
