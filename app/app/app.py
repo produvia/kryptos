@@ -8,38 +8,20 @@ import logging
 from flask_user import UserManager
 import rq_dashboard
 
-from app import api, bot, models, task
+from app import api, bot, models
 from app.web import account, strategy, public
 from app.extensions import cors, db, migrate, sentry
 from app.settings import DockerDevConfig, ProdConfig
 
 import google.cloud.logging
-from google.cloud.logging.handlers import CloudLoggingHandler
 
 cloud_client = google.cloud.logging.Client()
-handler = CloudLoggingHandler(cloud_client, name="FLASK")
 
 
 logging.getLogger("flask_assistant").setLevel(logging.INFO)
 
 
-def in_docker():
-    if not os.path.exists("/proc/self/cgroup"):
-        return False
-    with open("/proc/self/cgroup", "r") as procfile:
-        for line in procfile:
-            fields = line.strip().split("/")
-            if "docker" in fields:
-                print("**Inside Docker container, will disable visualization**")
-                return True
-
-    return False
-
-
 def get_config():
-    # if not in_docker():
-    #     config = DevConfig
-
     if get_debug_flag():
         config = DockerDevConfig
 
@@ -74,6 +56,7 @@ def setup_gcloud_logging(app):
         app.logger.debug("Skipping gcloud logging for dev")
         return
 
+    handler = cloud_client.get_default_handler()
     handler.setLevel(logging.DEBUG)
     app.logger.addHandler(handler)
     app.logger.debug("initialized gcloud logger")
