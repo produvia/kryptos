@@ -84,6 +84,7 @@ class ProdConfig(Config):
     REDIS_HOST = os.getenv("REDIS_HOST", "10.138.0.4")
     REDIS_PORT = os.getenv("REDIS_PORT", 6379)
     EXCHANGE_AUTH_KEYRING = "exchange_auth_prod"
+    EXCHANGE_AUTH_BUCKET = "auth_bucket_prod"
 
 
 class DockerDevConfig(Config):
@@ -109,6 +110,7 @@ class DockerDevConfig(Config):
     USER_ENABLE_CONFIRM_EMAIL = False
     USER_SEND_REGISTERED_EMAIL = True
     EXCHANGE_AUTH_KEYRING = "exchange_auth_dev"
+    EXCHANGE_AUTH_BUCKET = "auth_bucket_dev"
 
 
 class DevConfig(Config):

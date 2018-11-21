@@ -108,7 +108,8 @@ def upload_encrypted_auth(
     )
 
     blob_name = f"auth_{exchange}_{user_uuid}_json"
-    auth_bucket = storage_client.get_bucket("catalyst_auth")
+    bucket_name = current_app.config["EXCHANGE_AUTH_BUCKET"]
+    auth_bucket = storage_client.get_bucket(bucket_name)
     blob = auth_bucket.blob(blob_name)
     blob.upload_from_string(encrypted_text)
     current_app.logger.info(f"Uploaded encrypted auth with blob name {blob_name}")
@@ -117,7 +118,8 @@ def upload_encrypted_auth(
 
 def delete_auth_from_storage(user_uuid: str, exchange_name: str) -> None:
     blob_name = f"auth_{exchange_name}_{user_uuid}_json"
-    auth_bucket = storage_client.get_bucket("catalyst_auth")
+    bucket_name = current_app.config["EXCHANGE_AUTH_BUCKET"]
+    auth_bucket = storage_client.get_bucket(bucket_name)
     blob = auth_bucket.blob(blob_name)
     try:
         blob.delete()

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import logbook
 
-from kryptos.settings import PROJECT_ID, EXCHANGE_AUTH_KEYRING
+from kryptos.settings import PROJECT_ID, EXCHANGE_AUTH_KEYRING, EXCHANGE_AUTH_BUCKET
 from kryptos.utils import storage_client
 
 
@@ -63,7 +63,7 @@ def get_encrypted_auth(user_uuid: int, exchange_name: str) -> bytes:
     """
 
     log.debug("Fetching encrypted user exchange auth from storage")
-    bucket = storage_client.get_bucket("catalyst_auth")
+    bucket = storage_client.get_bucket(EXCHANGE_AUTH_BUCKET)
     blob = bucket.blob(f"auth_{exchange_name}_{user_uuid}_json")
     encrypted_text = blob.download_as_string()
     log.debug("obtained encrypted auth")

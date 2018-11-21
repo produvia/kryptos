@@ -33,10 +33,11 @@ LOCAL_BASE_URL = "http://web:8080"
 if CONFIG_ENV == "dev":
     WEB_URL = LOCAL_BASE_URL
     EXCHANGE_AUTH_KEYRING = "exchange_auth_dev"
+    EXCHANGE_AUTH_BUCKET = "auth_bucket_dev"
 else:
     WEB_URL = REMOTE_BASE_URL
     EXCHANGE_AUTH_KEYRING = "exchange_auth_prod"
-
+    EXCHANGE_AUTH_BUCKET = "auth_bucket_prod"
 
 STRAT_DIR = os.path.join(PLATFORM_DIR, "strategy")
 DEFAULT_CONFIG_FILE = os.path.join(STRAT_DIR, "config.json")
