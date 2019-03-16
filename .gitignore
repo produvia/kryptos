@@ -73,3 +73,6 @@ data/csv_data/
 .ipynb_checkpoints/
 
 spa-mat/
+
+# Keys
+*.json
