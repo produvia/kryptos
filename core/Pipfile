@@ -17,7 +17,6 @@ enigma-catalyst = "*"
 setuptools = "==38.5.1"
 "psycopg2" = "*"
 logbook = "*"
-"e1839a8" = {path = ".", editable = true}
 honcho = "*"
 google-cloud = "*"
 google-cloud-datastore = "*"
