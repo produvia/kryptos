@@ -18,7 +18,7 @@ services:
       - REDIS_PORT=6379
       - FLASK_APP=autoapp.py
       - SQLALCHEMY_DATABASE_URI=postgres://postgres:postgres@db:5432/kryptos
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
+      - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
       - CONFIG_ENV=dev
       - PYTHONUNBUFFERED=1
     depends_on:
@@ -43,7 +43,7 @@ services:
      - REDIS_HOST=redis
      - REDIS_PORT=6379
      - CONFIG_ENV=dev
-     - GOOGLE_APPLICATION_CREDENTIALS=/app/Kryptos-Staging-3deb8860d570.json
+     - GOOGLE_APPLICATION_CREDENTIALS=Kryptos-Staging-3deb8860d570.json
     depends_on:
       - redis
       - db
