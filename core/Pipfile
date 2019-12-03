@@ -28,7 +28,7 @@ google-cloud-kms = "*"
 google-cloud-logging = "*"
 
 [dev-packages]
-black = "==18.4a4"
+black = "==19.10b0"
 
 [requires]
 python_version = "3.6"
